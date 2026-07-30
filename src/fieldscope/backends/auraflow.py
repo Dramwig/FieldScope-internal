@@ -40,6 +40,7 @@ class AuraFlowBackend:
             config.model_path,
             torch_dtype=self._dtype,
             variant=config.variant,
+            use_safetensors=True,
             local_files_only=config.local_files_only,
         )
         self.pipe.to(self._device)
