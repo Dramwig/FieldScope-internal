@@ -60,3 +60,11 @@ def test_consistency_losses() -> None:
     assert graph_stability_loss(value, value).item() == 0
     assert representation_consistency_loss(value, value).item() == 0
 
+
+def test_feature_transfer_can_normalize_readout_dtype() -> None:
+    features = _features()
+    features.state = features.state.to(torch.bfloat16)
+    normalized = features.to("cpu", dtype=torch.float32)
+    assert normalized.state.dtype == torch.float32
+    assert normalized.response.dtype == torch.float32
+    assert all(value.dtype == torch.float32 for value in normalized.baselines.values())

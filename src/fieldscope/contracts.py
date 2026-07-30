@@ -65,14 +65,22 @@ class FieldFeatures:
         if not all(torch.isfinite(tensor).all() for tensor in tensors):
             raise ValueError("FieldFeatures contains non-finite values")
 
-    def to(self, device: str | torch.device) -> FieldFeatures:
+    def to(
+        self,
+        device: str | torch.device,
+        *,
+        dtype: torch.dtype | None = None,
+    ) -> FieldFeatures:
         return FieldFeatures(
-            state=self.state.to(device),
-            response=self.response.to(device),
-            affinity=self.affinity.to(device),
-            adjacency=self.adjacency.to(device),
+            state=self.state.to(device=device, dtype=dtype),
+            response=self.response.to(device=device, dtype=dtype),
+            affinity=self.affinity.to(device=device, dtype=dtype),
+            adjacency=self.adjacency.to(device=device, dtype=dtype),
             grid_size=self.grid_size,
-            baselines={name: value.to(device) for name, value in self.baselines.items()},
+            baselines={
+                name: value.to(device=device, dtype=dtype)
+                for name, value in self.baselines.items()
+            },
             metadata=dict(self.metadata),
         )
 
@@ -86,4 +94,3 @@ class FieldFeatures:
             baselines={name: value.detach().cpu() for name, value in self.baselines.items()},
             metadata=dict(self.metadata),
         )
-

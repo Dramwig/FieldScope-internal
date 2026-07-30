@@ -39,6 +39,8 @@ def _json_dump(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _set_seed(seed: int, deterministic: bool) -> None:
+    if deterministic:
+        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -124,7 +126,7 @@ def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
     images = batch["image"]
     assert isinstance(images, torch.Tensor)
     features = extractor.extract(images)
-    features_for_model = features.to(backend.device)
+    features_for_model = features.to(backend.device, dtype=torch.float32)
     model = FieldScopeModel(
         state_dim=features.state.shape[-1],
         response_dim=features.response.shape[-1],
@@ -302,7 +304,7 @@ def train_cache(
         batches = 0
         for cached_batch in loader:
             features, _ = select_representation(
-                cached_batch["features"].to(device), representation
+                cached_batch["features"].to(device, dtype=torch.float32), representation
             )
             targets = {
                 name: tensor.to(device) for name, tensor in cached_batch["targets"].items()
