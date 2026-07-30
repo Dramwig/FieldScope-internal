@@ -1,0 +1,6 @@
+name: cifar10
+task: classification
+archive: ${FIELDSCOPE_DATASETS_ROOT}/raw/cifar10/cifar-10-python.tar.gz
+prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/cifar10
+source_local: D:/datasets_raw_hub/registry/cifar10/raw/cifar-10-python.tar.gz
+

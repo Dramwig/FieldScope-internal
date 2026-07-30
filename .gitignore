@@ -13,20 +13,20 @@ build/
 dist/
 
 # Runtime products
-outputs/
-logs/
-tmp/
-artifacts/cache/
+/outputs/
+/logs/
+/tmp/
+/artifacts/cache/
 *.log
 
 # Heavy or private assets: keep outside Git
-artifacts/datasets/
-artifacts/checkpoints/
-artifacts/energy_traces/
-artifacts/hard_negatives/
-data/
-datasets/
-checkpoints/
+/artifacts/datasets/
+/artifacts/checkpoints/
+/artifacts/energy_traces/
+/artifacts/hard_negatives/
+/data/
+/datasets/
+/checkpoints/
 *.pt
 *.pth
 *.ckpt

@@ -1,0 +1,36 @@
+backend:
+  name: auraflow
+  model_path: ${FIELDSCOPE_CHECKPOINTS_ROOT}/AuraFlow-v0.3
+  device: cuda
+  dtype: bfloat16
+  image_size: 256
+  prompt: ""
+  max_sequence_length: 256
+  local_files_only: true
+  offload_text_encoder: true
+
+probe:
+  times: [0.5]
+  num_directions: 1
+  eta: 0.03
+  difference: forward
+  graph_grid: [4, 4]
+  topk: 4
+  local_radius: 1
+  probe_batch_size: 1
+  antithetic_noise: false
+  seed: 4121
+
+tokenizer:
+  hidden_dim: 64
+  num_layers: 2
+  dropout: 0.0
+  num_classes: 2
+  segmentation_classes: 3
+
+runtime:
+  output_dir: outputs/smoke/auraflow_contract
+  cache_dir: ${FIELDSCOPE_DATASETS_ROOT}/feature_cache
+  batch_size: 1
+  num_workers: 0
+  deterministic: true

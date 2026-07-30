@@ -1,0 +1,6 @@
+name: voc2012
+task: segmentation
+archive: ${FIELDSCOPE_DATASETS_ROOT}/raw/pascal_voc_2012/VOCtrainval_11-May-2012.tar
+prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/pascal_voc_2012
+source_local: D:/datasets_raw_hub/registry/pascal_voc_2012/raw/VOCtrainval_11-May-2012.tar
+
