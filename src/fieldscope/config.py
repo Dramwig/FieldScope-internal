@@ -33,6 +33,7 @@ def _section(mapping: Mapping[str, Any], name: str) -> dict[str, Any]:
 class BackendConfig:
     name: str = "toy"
     model_path: str | None = None
+    variant: str | None = None
     device: str = "cpu"
     dtype: str = "float32"
     image_size: int = 128
@@ -46,6 +47,8 @@ class BackendConfig:
             raise ValueError(f"Unsupported backend: {self.name}")
         if self.name == "auraflow" and not self.model_path:
             raise ValueError("backend.model_path is required for the auraflow backend")
+        if self.variant is not None and not self.variant.strip():
+            raise ValueError("backend.variant must be null or a non-empty string")
         if self.dtype not in {"float32", "float16", "bfloat16"}:
             raise ValueError(f"Unsupported dtype: {self.dtype}")
         if self.image_size <= 0 or self.image_size % 16:

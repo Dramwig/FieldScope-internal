@@ -1,6 +1,7 @@
 backend:
   name: auraflow
   model_path: ${FIELDSCOPE_CHECKPOINTS_ROOT}/AuraFlow-v0.3
+  variant: fp16
   device: cuda
   dtype: bfloat16
   image_size: 512
@@ -34,4 +35,3 @@ runtime:
   batch_size: 1
   num_workers: 4
   deterministic: true
-

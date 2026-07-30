@@ -39,6 +39,7 @@ class AuraFlowBackend:
         self.pipe = AuraFlowPipeline.from_pretrained(
             config.model_path,
             torch_dtype=self._dtype,
+            variant=config.variant,
             local_files_only=config.local_files_only,
         )
         self.pipe.to(self._device)
@@ -116,6 +117,7 @@ class AuraFlowBackend:
         return {
             "backend": "auraflow",
             "model_id": self.model_id,
+            "variant": self.config.variant,
             "device": str(self.device),
             "dtype": str(self.dtype).removeprefix("torch."),
             "image_size": self.config.image_size,

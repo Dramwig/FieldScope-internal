@@ -36,3 +36,15 @@ def test_invalid_time_is_rejected() -> None:
     with pytest.raises(ValueError, match="strictly between"):
         RunConfig.from_mapping({"probe": {"times": [0.0, 0.5]}})
 
+
+def test_auraflow_variant_is_preserved() -> None:
+    config = RunConfig.from_mapping(
+        {
+            "backend": {
+                "name": "auraflow",
+                "model_path": "/models/AuraFlow-v0.3",
+                "variant": "fp16",
+            }
+        }
+    )
+    assert config.backend.variant == "fp16"
