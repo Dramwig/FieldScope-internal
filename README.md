@@ -41,7 +41,7 @@ uv pip install --python .venv\Scripts\python.exe -e . --no-deps
 
 ## 真实 backbone
 
-默认真实模型为 `fal/AuraFlow-v0.3`。权重必须放在仓库外，并通过
+默认真实模型为 `fal/AuraFlow-v0.3` 的 FP16 Diffusers variant。权重必须放在仓库外，并通过
 `FIELDSCOPE_CHECKPOINTS_ROOT` 指向：
 
 ```text
@@ -49,9 +49,12 @@ ${FIELDSCOPE_CHECKPOINTS_ROOT}/AuraFlow-v0.3
 ```
 
 ```bash
-python -m fieldscope.cli doctor --config configs/eval/auraflow_probe_smoke.yaml
+python -m fieldscope.cli doctor --config configs/eval/auraflow_contract_smoke.yaml
 bash scripts/smoke/run_auraflow_smoke.sh
 ```
+
+`auraflow_contract_smoke.yaml` 只验证真实主干加载与响应契约；正式探测使用
+`auraflow_probe_smoke.yaml` 或审计后的实验配置。
 
 ## 离线实验流程
 
@@ -74,4 +77,3 @@ python -m fieldscope.cli train-cache \
 ```
 
 大数据、权重、完整输出和 feature cache 不进入 Git。
-

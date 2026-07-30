@@ -14,7 +14,7 @@
 
 - backbone：`fal/AuraFlow-v0.3`，完全冻结；
 - clean-times：`[0.2, 0.5, 0.8]`；
-- probes：smoke `R=4`，正式 `R=8`；
+- probes：接口合约 smoke 为 `R=1` 前向差分，扩展 smoke 为 `R=4`，正式为 `R=8`；
 - difference：中心差分；
 - noise：固定 seed 的 antithetic pair；
 - graph：局部半径 1 + global top-k；
@@ -31,4 +31,3 @@
 - 无监督图不优于 VAE/velocity affinity；
 - 匹配 readout 下 `response/full` 没有稳定增益；
 - 必须解冻或 LoRA 主干才能产生信号。
-
