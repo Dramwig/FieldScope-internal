@@ -1,0 +1,26 @@
+representation_modes:
+  - z0
+  - zt
+  - velocity
+  - mismatch
+  - endpoint
+  - response
+  - full
+difference:
+  - forward
+  - central
+times:
+  - [0.5]
+  - [0.2, 0.5, 0.8]
+directions:
+  - 2
+  - 4
+  - 8
+graph_topk:
+  - 0
+  - 8
+  - 16
+conditions:
+  - ""
+  - "a neutral photograph"
+
