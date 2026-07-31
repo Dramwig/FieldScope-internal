@@ -146,6 +146,34 @@ def set_experiment_seed(seed: int, deterministic: bool) -> None:
         torch.use_deterministic_algorithms(True, warn_only=True)
 
 
+def capture_rng_state() -> dict[str, Any]:
+    """Capture every RNG that can affect cached-readout optimization."""
+
+    return {
+        "python": random.getstate(),
+        "numpy": np.random.get_state(),
+        "torch_cpu": torch.get_rng_state(),
+        "torch_cuda": torch.cuda.get_rng_state_all() if torch.cuda.is_available() else None,
+    }
+
+
+def restore_rng_state(state: Mapping[str, Any]) -> None:
+    """Restore a cached-readout RNG checkpoint exactly."""
+
+    required = {"python", "numpy", "torch_cpu", "torch_cuda"}
+    missing = required - set(state)
+    if missing:
+        raise ValueError(f"Resume checkpoint is missing RNG state: {sorted(missing)}")
+    random.setstate(state["python"])
+    np.random.set_state(state["numpy"])
+    torch.set_rng_state(state["torch_cpu"])
+    cuda_state = state["torch_cuda"]
+    if cuda_state is not None:
+        if not torch.cuda.is_available():
+            raise ValueError("Resume checkpoint contains CUDA RNG state but CUDA is unavailable")
+        torch.cuda.set_rng_state_all(cuda_state)
+
+
 def extraction_signature(
     config: RunConfig,
     *,
@@ -592,6 +620,7 @@ def train_cached_readout(
     history: list[dict[str, Any]] = []
     best_value: float | None = None
     best_epoch = 0
+    readout_batch_size = batch_size or config.runtime.batch_size
     if resume_checkpoint is not None:
         payload = torch.load(resume_checkpoint, map_location=device, weights_only=False)
         if payload.get("task") != task:
@@ -600,6 +629,20 @@ def train_cached_readout(
             raise ValueError(
                 "Resume checkpoint representation does not match requested representation"
             )
+        if int(payload.get("seed", -1)) != seed:
+            raise ValueError("Resume checkpoint seed does not match requested seed")
+        if payload.get("config") != config.to_dict():
+            raise ValueError("Resume checkpoint config does not match requested config")
+        if float(payload.get("learning_rate", float("nan"))) != learning_rate:
+            raise ValueError("Resume checkpoint learning rate does not match")
+        if float(payload.get("weight_decay", float("nan"))) != weight_decay:
+            raise ValueError("Resume checkpoint weight decay does not match")
+        if int(payload.get("batch_size", -1)) != readout_batch_size:
+            raise ValueError("Resume checkpoint batch size does not match")
+        if int(payload.get("target_epochs", -1)) != epochs:
+            raise ValueError("Resume checkpoint target epochs do not match")
+        if payload.get("code_tree_sha256") != provenance["code_tree_sha256"]:
+            raise ValueError("Resume checkpoint code tree does not match current code")
         model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
         scheduler.load_state_dict(payload["scheduler"])
@@ -607,9 +650,9 @@ def train_cached_readout(
         history = list(payload.get("history", []))
         best_value = payload.get("best_primary_metric")
         best_epoch = int(payload.get("best_epoch", 0))
+        restore_rng_state(payload.get("rng_state", {}))
 
     output_dir.mkdir(parents=True, exist_ok=True)
-    readout_batch_size = batch_size or config.runtime.batch_size
     best_path = output_dir / f"{task}_{representation}_seed{seed}_best.pt"
     last_path = output_dir / f"{task}_{representation}_seed{seed}_last.pt"
     report: dict[str, Any] | None = None
@@ -692,13 +735,20 @@ def train_cached_readout(
             "state_dim": selected.state.shape[-1],
             "response_dim": selected.response.shape[-1],
             "seed": seed,
+            "learning_rate": learning_rate,
+            "weight_decay": weight_decay,
+            "batch_size": readout_batch_size,
+            "target_epochs": epochs,
+            "rng_state": capture_rng_state(),
             **provenance,
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
         }
-        atomic_torch_save(last_path, checkpoint_payload)
         if is_best:
             atomic_torch_save(best_path, checkpoint_payload)
+        # The last checkpoint is the epoch commit marker; write it only after
+        # every companion artifact required to resume/evaluate this epoch.
+        atomic_torch_save(last_path, checkpoint_payload)
         report = {
             "status": "running" if epoch + 1 < epochs else "passed",
             "task": task,

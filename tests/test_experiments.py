@@ -2,13 +2,18 @@ import json
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 import torch
 from torch.utils.data import Dataset
 
 from fieldscope.cached_dataset import CachedFeatureDataset
 from fieldscope.config import RunConfig
-from fieldscope.experiments import extract_dataset_cache, run_readout_matrix
+from fieldscope.experiments import (
+    extract_dataset_cache,
+    run_readout_matrix,
+    train_cached_readout,
+)
 
 
 class _SmallDataset(Dataset[dict[str, Any]]):
@@ -186,3 +191,105 @@ def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> No
     assert second["status"] == "passed"
     assert len(first["runs"]) == 2
     assert "classification/full-minus-state" in first["summary"]["comparisons"]
+
+
+def _assert_nested_equal(first: Any, second: Any) -> None:
+    if isinstance(first, torch.Tensor):
+        assert isinstance(second, torch.Tensor)
+        assert torch.equal(first, second)
+    elif isinstance(first, dict):
+        assert isinstance(second, dict)
+        assert set(first) == set(second)
+        for key in first:
+            _assert_nested_equal(first[key], second[key])
+    elif isinstance(first, (list, tuple)):
+        assert isinstance(second, type(first))
+        assert len(first) == len(second)
+        for first_item, second_item in zip(first, second, strict=True):
+            _assert_nested_equal(first_item, second_item)
+    elif isinstance(first, np.ndarray):
+        assert isinstance(second, np.ndarray)
+        assert np.array_equal(first, second)
+    else:
+        assert first == second
+
+
+def test_readout_resume_matches_uninterrupted_training(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    mapping = _config(tmp_path).to_dict()
+    mapping["tokenizer"]["dropout"] = 0.25
+    config = RunConfig.from_mapping(mapping)
+    caches = {}
+    for split in ("train", "val"):
+        cache_dir = tmp_path / f"resume-cache-{split}"
+        extract_dataset_cache(
+            config,
+            dataset_name="synthetic-test",
+            dataset_root=tmp_path,
+            split=split,
+            output_dir=cache_dir,
+            limit=4,
+        )
+        caches[split] = cache_dir
+
+    common = {
+        "config": config,
+        "train_cache_dir": caches["train"],
+        "val_cache_dir": caches["val"],
+        "task": "classification",
+        "representation": "full",
+        "epochs": 3,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-4,
+        "seed": 17,
+        "batch_size": 2,
+    }
+    continuous_dir = tmp_path / "continuous"
+    continuous = train_cached_readout(output_dir=continuous_dir, **common)
+
+    import fieldscope.experiments as experiments
+
+    original_save = experiments.atomic_torch_save
+    interrupted_dir = tmp_path / "interrupted"
+
+    def interrupt_after_first_epoch(path: Path, payload: dict[str, Any]) -> None:
+        original_save(path, payload)
+        if path.name.endswith("_last.pt") and int(payload["epoch"]) == 1:
+            raise RuntimeError("simulated process loss after epoch commit")
+
+    monkeypatch.setattr(experiments, "atomic_torch_save", interrupt_after_first_epoch)
+    with pytest.raises(RuntimeError, match="simulated process loss"):
+        train_cached_readout(output_dir=interrupted_dir, **common)
+    interrupted_checkpoint = interrupted_dir / "classification_full_seed17_last.pt"
+    assert interrupted_checkpoint.is_file()
+    assert (interrupted_dir / "classification_full_seed17_best.pt").is_file()
+
+    monkeypatch.setattr(experiments, "atomic_torch_save", original_save)
+    resumed = train_cached_readout(
+        output_dir=interrupted_dir,
+        resume_checkpoint=interrupted_checkpoint,
+        **common,
+    )
+    continuous_payload = torch.load(
+        continuous["last_checkpoint"], map_location="cpu", weights_only=False
+    )
+    resumed_payload = torch.load(
+        resumed["last_checkpoint"], map_location="cpu", weights_only=False
+    )
+    for key in ("model", "optimizer", "scheduler", "rng_state"):
+        _assert_nested_equal(continuous_payload[key], resumed_payload[key])
+    assert continuous_payload["best_epoch"] == resumed_payload["best_epoch"]
+    assert (
+        continuous_payload["best_primary_metric"]
+        == resumed_payload["best_primary_metric"]
+    )
+    for first, second in zip(continuous["history"], resumed["history"], strict=True):
+        assert first["epoch"] == second["epoch"]
+        assert first["learning_rate"] == second["learning_rate"]
+        assert first["train_loss"] == second["train_loss"]
+        assert first["validation"] == second["validation"]

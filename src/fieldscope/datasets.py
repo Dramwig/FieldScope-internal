@@ -462,7 +462,8 @@ def build_vision_dataset(
         split_root = Path(root) / source_split
         image_transform = transforms.Compose(
             [
-                transforms.Resize((image_size, image_size), antialias=True),
+                transforms.Resize(image_size, antialias=True),
+                transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
             ]
         )

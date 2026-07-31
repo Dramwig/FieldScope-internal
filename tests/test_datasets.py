@@ -51,6 +51,31 @@ def test_imagenet100_subset_has_contiguous_labels(tmp_path: Path) -> None:
     assert [dataset[index]["classification"].item() for index in range(2)] == [1, 0]
 
 
+
+
+def test_imagenet_resize_preserves_aspect_ratio_before_center_crop(
+    tmp_path: Path,
+) -> None:
+    directory = tmp_path / "val" / "n0001"
+    directory.mkdir(parents=True)
+    image = np.zeros((20, 40, 3), dtype=np.uint8)
+    image[:, :10, 0] = 255
+    image[:, 30:, 2] = 255
+    Image.fromarray(image).save(directory / "wide.png")
+
+    sample = build_vision_dataset(
+        "imagenet100",
+        tmp_path,
+        "test",
+        image_size=20,
+        class_names=["n0001"],
+    )[0]["image"]
+    assert sample.shape == (3, 20, 20)
+    # Equal-aspect resize makes the 20-pixel center crop exclude both outer stripes.
+    assert float(sample[0].max()) == 0.0
+    assert float(sample[2].max()) == 0.0
+
+
 def test_nyuv2_directory_dataset_uses_explicit_manifest(tmp_path: Path) -> None:
     (tmp_path / "images").mkdir()
     (tmp_path / "depth").mkdir()
