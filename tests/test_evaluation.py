@@ -15,7 +15,11 @@ def test_task_meters_report_perfect_predictions() -> None:
         torch.tensor([[5.0, 0.0], [0.0, 5.0]]),
         torch.tensor([0, 1]),
     )
-    assert classification.compute() == {"top1": 1.0, "top5": 1.0}
+    classification_report = classification.compute()
+    assert classification_report["top1"] == 1.0
+    assert classification_report["top5"] == 1.0
+    assert classification_report["macro_top1"] == 1.0
+    assert classification_report["per_class_top1"] == {"0": 1.0, "1": 1.0}
 
     segmentation = SegmentationMeter(num_classes=2)
     segmentation.update(

@@ -7,7 +7,7 @@ import math
 import random
 from collections.abc import Mapping
 from pathlib import Path
-from statistics import mean, stdev
+from statistics import mean, median, stdev
 from typing import Any
 
 _T_975 = {
@@ -57,6 +57,9 @@ def t_interval_summary(values: list[float]) -> dict[str, Any]:
             "mean": average,
             "sample_std": None,
             "ci95": None,
+            "minimum": values[0],
+            "median": values[0],
+            "maximum": values[0],
         }
     sample_std = stdev(values)
     critical = _T_975.get(count - 1, 1.96)
@@ -66,6 +69,9 @@ def t_interval_summary(values: list[float]) -> dict[str, Any]:
         "mean": average,
         "sample_std": sample_std,
         "ci95": [average - half_width, average + half_width],
+        "minimum": min(values),
+        "median": median(values),
+        "maximum": max(values),
     }
 
 
@@ -81,14 +87,40 @@ def paired_t_interval(
     differences = [candidate[seed] - reference[seed] for seed in seeds]
     summary = t_interval_summary(differences)
     interval = summary["ci95"]
+    observed = abs(mean(differences))
+    permutations = 1 << len(differences)
+    as_extreme = 0
+    for mask in range(permutations):
+        permuted = [
+            value if mask & (1 << index) else -value
+            for index, value in enumerate(differences)
+        ]
+        if abs(mean(permuted)) >= observed - 1e-15:
+            as_extreme += 1
     return {
         "seeds": seeds,
         "differences": differences,
         **summary,
+        "paired_sign_flip_pvalue": as_extreme / permutations,
         "ci95_excludes_zero": bool(
             interval is not None and (interval[0] > 0 or interval[1] < 0)
         ),
     }
+
+
+def holm_adjusted_pvalues(pvalues: Mapping[str, float]) -> dict[str, float]:
+    """Return monotone Holm family-wise adjusted p-values."""
+
+    if any(not 0.0 <= value <= 1.0 for value in pvalues.values()):
+        raise ValueError("p-values must lie in [0, 1]")
+    ordered = sorted(pvalues.items(), key=lambda item: item[1])
+    count = len(ordered)
+    adjusted: dict[str, float] = {}
+    running = 0.0
+    for rank, (name, value) in enumerate(ordered):
+        running = max(running, (count - rank) * value)
+        adjusted[name] = min(1.0, running)
+    return adjusted
 
 
 def bootstrap_mean_interval(
@@ -165,6 +197,15 @@ def summarize_run_reports(
                 comparisons[f"{task}/{representation}-minus-{reference}"] = (
                     paired_t_interval(seed_values, reference_values)
                 )
+        adjusted = holm_adjusted_pvalues(
+            {
+                name: comparison["paired_sign_flip_pvalue"]
+                for name, comparison in comparisons.items()
+            }
+        )
+        for name, value in adjusted.items():
+            comparisons[name]["holm_adjusted_pvalue"] = value
+            comparisons[name]["holm_reject_alpha_0_05"] = value < 0.05
     return {
         "status": "passed",
         "metric": metric,

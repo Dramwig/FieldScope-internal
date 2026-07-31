@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from statistics import median
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -76,6 +78,8 @@ class ClassificationMeter:
     correct1: int = 0
     correct5: int = 0
     count: int = 0
+    class_correct1: dict[int, int] = field(default_factory=dict)
+    class_count: dict[int, int] = field(default_factory=dict)
 
     def update(self, logits: torch.Tensor, targets: torch.Tensor) -> None:
         targets = targets.long()
@@ -84,12 +88,39 @@ class ClassificationMeter:
         self.correct1 += int(matches[:, :1].any(dim=1).sum().item())
         self.correct5 += int(matches.any(dim=1).sum().item())
         self.count += targets.numel()
+        correct = matches[:, :1].any(dim=1)
+        for label in targets.unique().tolist():
+            class_mask = targets == label
+            self.class_correct1[label] = self.class_correct1.get(label, 0) + int(
+                correct[class_mask].sum().item()
+            )
+            self.class_count[label] = self.class_count.get(label, 0) + int(
+                class_mask.sum().item()
+            )
 
-    def compute(self) -> dict[str, float]:
+    def compute(self) -> dict[str, Any]:
         denominator = max(1, self.count)
+        per_class = {
+            str(label): self.class_correct1.get(label, 0) / count
+            for label, count in sorted(self.class_count.items())
+            if count > 0
+        }
         return {
             "top1": self.correct1 / denominator,
             "top5": self.correct5 / denominator,
+            "macro_top1": (
+                sum(per_class.values()) / len(per_class)
+                if per_class
+                else float("nan")
+            ),
+            "minimum_class_top1": min(per_class.values(), default=float("nan")),
+            "median_class_top1": (
+                median(per_class.values())
+                if per_class
+                else float("nan")
+            ),
+            "maximum_class_top1": max(per_class.values(), default=float("nan")),
+            "per_class_top1": per_class,
         }
 
 

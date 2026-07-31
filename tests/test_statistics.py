@@ -5,6 +5,7 @@ import pytest
 
 from fieldscope.statistics import (
     bootstrap_mean_interval,
+    holm_adjusted_pvalues,
     paired_t_interval,
     summarize_run_reports,
     t_interval_summary,
@@ -24,9 +25,14 @@ def test_t_interval_and_paired_difference() -> None:
     assert paired["mean"] == 2.0
     assert paired["ci95"] == [2.0, 2.0]
     assert paired["ci95_excludes_zero"] is True
+    assert paired["paired_sign_flip_pvalue"] == 0.25
     bootstrap = bootstrap_mean_interval([1.0, 2.0, 3.0], seed=5, resamples=200)
     assert bootstrap["mean"] == 2.0
     assert bootstrap["ci95"][0] <= 2.0 <= bootstrap["ci95"][1]
+    assert holm_adjusted_pvalues({"a": 0.01, "b": 0.04}) == {
+        "a": 0.02,
+        "b": 0.04,
+    }
 
 
 def test_summarize_run_reports_pairs_representations(tmp_path: Path) -> None:
@@ -55,3 +61,4 @@ def test_summarize_run_reports_pairs_representations(tmp_path: Path) -> None:
     )
     comparison = report["comparisons"]["classification/full-minus-state"]
     assert comparison["mean"] == pytest.approx(0.1)
+    assert comparison["holm_adjusted_pvalue"] == 0.25
