@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 import random
 import subprocess
@@ -872,8 +873,22 @@ def train_cached_readout(
                 tuple(predictions[task].shape[-2:]),
             )
             loss, _ = multitask_loss(predictions, loss_targets)
+            if not bool(torch.isfinite(loss.detach()).item()):
+                raise ValueError(
+                    "Non-finite training loss "
+                    f"task={task} representation={representation} seed={seed} "
+                    f"epoch={epoch + 1}"
+                )
             loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+            gradient_norm = torch.nn.utils.clip_grad_norm_(
+                model.parameters(), max_norm=1.0
+            )
+            if not math.isfinite(float(gradient_norm.detach().item())):
+                raise ValueError(
+                    "Non-finite gradient norm "
+                    f"task={task} representation={representation} seed={seed} "
+                    f"epoch={epoch + 1}"
+                )
             optimizer.step()
             batch_size = features.state.shape[0]
             total_loss += float(loss.detach().item()) * batch_size
@@ -903,6 +918,12 @@ def train_cached_readout(
         }
         history.append(entry)
         value, maximize = _primary_metric(task, validation)
+        if not math.isfinite(value):
+            raise ValueError(
+                "Non-finite validation primary metric "
+                f"task={task} representation={representation} seed={seed} "
+                f"epoch={epoch + 1}"
+            )
         is_best = best_value is None or (
             value > best_value if maximize else value < best_value
         )

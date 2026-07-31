@@ -214,6 +214,29 @@ def _config(tmp_path: Path) -> RunConfig:
     )
 
 
+def _classification_caches(
+    tmp_path: Path, monkeypatch: Any, prefix: str
+) -> tuple[RunConfig, dict[str, Path]]:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    config = _config(tmp_path)
+    caches = {}
+    for split in ("train", "val"):
+        cache_dir = tmp_path / f"{prefix}-cache-{split}"
+        extract_dataset_cache(
+            config,
+            dataset_name="synthetic-test",
+            dataset_root=tmp_path,
+            split=split,
+            output_dir=cache_dir,
+            limit=4,
+        )
+        caches[split] = cache_dir
+    return config, caches
+
+
 def test_extract_dataset_cache_resumes_verified_shards(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
@@ -502,6 +525,108 @@ def test_readout_resume_matches_uninterrupted_training(
         assert first["learning_rate"] == second["learning_rate"]
         assert first["train_loss"] == second["train_loss"]
         assert first["validation"] == second["validation"]
+
+
+def test_readout_rejects_nonfinite_training_loss_before_checkpoint(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    config, caches = _classification_caches(tmp_path, monkeypatch, "nonfinite-loss")
+
+    def nonfinite_loss(*args: Any, **kwargs: Any) -> tuple[torch.Tensor, dict[str, Any]]:
+        loss = torch.tensor(float("nan"), requires_grad=True)
+        return loss, {"classification": loss}
+
+    monkeypatch.setattr(experiments, "multitask_loss", nonfinite_loss)
+    output_dir = tmp_path / "nonfinite-loss"
+    with pytest.raises(ValueError, match="Non-finite training loss"):
+        train_cached_readout(
+            config,
+            train_cache_dir=caches["train"],
+            val_cache_dir=caches["val"],
+            output_dir=output_dir,
+            task="classification",
+            representation="full",
+            epochs=1,
+            learning_rate=1e-3,
+            weight_decay=1e-4,
+            seed=17,
+            batch_size=2,
+        )
+    assert not list(output_dir.glob("*.pt"))
+
+
+def test_readout_rejects_nonfinite_validation_metric_before_checkpoint(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    config, caches = _classification_caches(
+        tmp_path, monkeypatch, "nonfinite-validation"
+    )
+    monkeypatch.setattr(
+        experiments,
+        "evaluate_cached_readout",
+        lambda *args, **kwargs: {
+            "loss": 0.0,
+            "num_samples": 4,
+            "metrics": {"top1": float("nan")},
+        },
+    )
+    output_dir = tmp_path / "nonfinite-validation"
+    with pytest.raises(ValueError, match="Non-finite validation primary metric"):
+        train_cached_readout(
+            config,
+            train_cache_dir=caches["train"],
+            val_cache_dir=caches["val"],
+            output_dir=output_dir,
+            task="classification",
+            representation="full",
+            epochs=1,
+            learning_rate=1e-3,
+            weight_decay=1e-4,
+            seed=17,
+            batch_size=2,
+        )
+    assert not list(output_dir.glob("*.pt"))
+
+
+def test_readout_rejects_nonfinite_gradient_before_optimizer_step(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    config, caches = _classification_caches(
+        tmp_path, monkeypatch, "nonfinite-gradient"
+    )
+
+    def nonfinite_gradient_loss(
+        predictions: dict[str, torch.Tensor],
+        targets: dict[str, torch.Tensor],
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        finite_value_with_nan_gradient = torch.sqrt(
+            predictions["classification"].sum() * 0.0
+        )
+        return finite_value_with_nan_gradient, {
+            "classification": finite_value_with_nan_gradient
+        }
+
+    monkeypatch.setattr(
+        experiments,
+        "multitask_loss",
+        nonfinite_gradient_loss,
+    )
+    output_dir = tmp_path / "nonfinite-gradient"
+    with pytest.raises(ValueError, match="Non-finite gradient norm"):
+        train_cached_readout(
+            config,
+            train_cache_dir=caches["train"],
+            val_cache_dir=caches["val"],
+            output_dir=output_dir,
+            task="classification",
+            representation="full",
+            epochs=1,
+            learning_rate=1e-3,
+            weight_decay=1e-4,
+            seed=17,
+            batch_size=2,
+        )
+    assert not list(output_dir.glob("*.pt"))
 
 
 def test_sparse_readout_cache_rejects_unsupervised_diagnosis(
