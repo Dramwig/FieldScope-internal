@@ -23,7 +23,18 @@ def test_extractor_produces_complete_feature_contract() -> None:
     assert features.state.shape == (2, 16, 14)
     assert features.response.shape == (2, 16, 64)
     assert features.affinity.shape == (2, 16, 16)
-    assert set(features.baselines) == {"z0", "zt", "velocity", "mismatch", "endpoint"}
+    assert set(features.baselines) == {
+        "z0",
+        "zt",
+        "velocity",
+        "mismatch",
+        "endpoint",
+        "dit_hidden",
+    }
+    assert set(features.graphs) == {
+        "dit_attention",
+        "dit_attention_adjacency",
+    }
     assert features.metadata["noise_views"] == 2
     features.validate()
 
@@ -40,4 +51,3 @@ def test_forward_difference_path() -> None:
     )
     features = FieldResponseExtractor(backend, config).extract(torch.rand(1, 3, 32, 32))
     assert torch.isfinite(features.response).all()
-

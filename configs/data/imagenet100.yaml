@@ -1,0 +1,7 @@
+name: imagenet100
+task: classification
+selection: lexicographically_first_100_wordnet_ids
+pilot_prepared_root: D:/datasets_raw_hub/registry/imagenet_256_10pct/extracted
+pilot_manifest_sha256: 3c92c77c923b49c60de36c29dddb7a0f9d147dd83139e9d1572182b68535a09f
+remote_prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/imagenet100
+final_asset_status: TODO_full_training_samples_required

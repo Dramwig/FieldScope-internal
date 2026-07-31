@@ -95,7 +95,11 @@ class AuraFlowBackend:
         return latents.to(dtype=self.dtype)
 
     @torch.no_grad()
-    def query_velocity(self, latents: torch.Tensor, clean_time: torch.Tensor) -> torch.Tensor:
+    def _prepare_query(
+        self,
+        latents: torch.Tensor,
+        clean_time: torch.Tensor,
+    ) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
         latents = latents.to(device=self.device, dtype=self.dtype)
         batch = latents.shape[0]
         if clean_time.ndim == 0:
@@ -106,6 +110,11 @@ class AuraFlowBackend:
         prompt_embeds = self._prompt_embeds
         if prompt_embeds.shape[0] != batch:
             prompt_embeds = prompt_embeds.expand(batch, -1, -1)
+        return latents, native_time, prompt_embeds
+
+    @torch.no_grad()
+    def query_velocity(self, latents: torch.Tensor, clean_time: torch.Tensor) -> torch.Tensor:
+        latents, native_time, prompt_embeds = self._prepare_query(latents, clean_time)
         native_velocity = self.pipe.transformer(
             latents,
             encoder_hidden_states=prompt_embeds,
@@ -113,6 +122,101 @@ class AuraFlowBackend:
             return_dict=False,
         )[0]
         return -native_velocity
+
+    @torch.no_grad()
+    def query_velocity_features(
+        self,
+        latents: torch.Tensor,
+        clean_time: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Query velocity and capture frozen final-token and attention Q/K maps."""
+
+        latents, native_time, prompt_embeds = self._prepare_query(latents, clean_time)
+        transformer = self.pipe.transformer
+        captured: dict[str, torch.Tensor] = {}
+
+        def capture_hidden(
+            _module: torch.nn.Module,
+            inputs: tuple[torch.Tensor, ...],
+        ) -> None:
+            captured["hidden"] = inputs[0]
+
+        def capture_query(
+            _module: torch.nn.Module,
+            _inputs: tuple[torch.Tensor, ...],
+            output: torch.Tensor,
+        ) -> None:
+            captured["query"] = output
+
+        def capture_key(
+            _module: torch.nn.Module,
+            _inputs: tuple[torch.Tensor, ...],
+            output: torch.Tensor,
+        ) -> None:
+            captured["key"] = output
+
+        if len(transformer.single_transformer_blocks) > 0:
+            attention = transformer.single_transformer_blocks[-1].attn
+        else:
+            attention = transformer.joint_transformer_blocks[-1].attn
+        handles = [
+            transformer.proj_out.register_forward_pre_hook(capture_hidden),
+            attention.to_q.register_forward_hook(capture_query),
+            attention.to_k.register_forward_hook(capture_key),
+        ]
+        try:
+            native_velocity = transformer(
+                latents,
+                encoder_hidden_states=prompt_embeds,
+                timestep=native_time,
+                return_dict=False,
+            )[0]
+        finally:
+            for handle in handles:
+                handle.remove()
+
+        if "hidden" not in captured:
+            raise RuntimeError("AuraFlow final hidden-token hook did not run")
+        native_height = latents.shape[-2] // transformer.config.patch_size
+        native_width = latents.shape[-1] // transformer.config.patch_size
+        image_tokens = native_height * native_width
+        hidden_tokens = captured["hidden"]
+        if hidden_tokens.shape[1] != image_tokens:
+            raise RuntimeError("AuraFlow hidden-token count does not match latent grid")
+        hidden_map = hidden_tokens.transpose(1, 2).reshape(
+            hidden_tokens.shape[0],
+            hidden_tokens.shape[2],
+            native_height,
+            native_width,
+        )
+        auxiliary = {"dit_hidden": hidden_map}
+
+        if "query" in captured and "key" in captured:
+            heads = attention.heads
+            query = captured["query"][:, -image_tokens:]
+            key = captured["key"][:, -image_tokens:]
+            head_dim = query.shape[-1] // heads
+            query = query.reshape(query.shape[0], image_tokens, heads, head_dim)
+            key = key.reshape(key.shape[0], image_tokens, heads, head_dim)
+            if attention.norm_q is not None:
+                query = attention.norm_q(query)
+            if attention.norm_k is not None:
+                key = attention.norm_k(key)
+            auxiliary["dit_attention_q"] = query.permute(0, 2, 3, 1).reshape(
+                query.shape[0],
+                heads,
+                head_dim,
+                native_height,
+                native_width,
+            )
+            auxiliary["dit_attention_k"] = key.permute(0, 2, 3, 1).reshape(
+                key.shape[0],
+                heads,
+                head_dim,
+                native_height,
+                native_width,
+            )
+        return -native_velocity, auxiliary
 
     def describe(self) -> dict[str, Any]:
         return {

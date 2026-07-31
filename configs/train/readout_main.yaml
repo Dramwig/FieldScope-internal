@@ -1,0 +1,27 @@
+optimizer: adamw
+learning_rate: 0.001
+weight_decay: 0.0001
+scheduler: cosine
+gradient_clip_norm: 1.0
+checkpoint_selection: validation_primary_metric
+seeds: [4121, 7319, 104729]
+representations:
+  - z0
+  - zt
+  - velocity
+  - mismatch
+  - endpoint
+  - state
+  - response_local
+  - state_graph
+  - response
+  - full
+  - dit_hidden_local
+  - dit_hidden_attention
+task_epochs:
+  cifar10: 50
+  imagenet100: 90
+  voc2012: 80
+  ade20k: 80
+  nyuv2: 80
+status: planned_hyperparameters_freeze_after_signal_gate

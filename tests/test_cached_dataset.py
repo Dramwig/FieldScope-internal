@@ -78,6 +78,18 @@ def test_feature_batch_ops_and_baselines(tmp_path: Path) -> None:
     baseline, mode = select_representation(features, "velocity")
     assert mode == "state"
     assert baseline.state.shape[-1] == 4
+    hidden, mode = select_representation(features, "dit_hidden_local")
+    assert mode == "state"
+    assert hidden.state.shape[-1] == 8
+    hidden_attention, mode = select_representation(
+        features,
+        "dit_hidden_attention",
+    )
+    assert mode == "state_graph"
+    assert torch.equal(
+        hidden_attention.adjacency,
+        features.graphs["dit_attention_adjacency"],
+    )
 
 
 def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
@@ -98,4 +110,15 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
     )
     assert report["status"] == "passed"
     assert Path(report["checkpoint"]).is_file()
-
+    resumed = train_cache(
+        config,
+        cache_dir=cache_dir,
+        val_cache_dir=cache_dir,
+        task="classification",
+        representation="full",
+        epochs=1,
+        learning_rate=1e-3,
+        resume_checkpoint=Path(report["last_checkpoint"]),
+    )
+    assert resumed["status"] == "passed"
+    assert resumed["validation"]["num_samples"] == 3

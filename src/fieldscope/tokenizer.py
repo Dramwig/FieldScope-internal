@@ -77,8 +77,16 @@ class FieldTokenizer(nn.Module):
         mode: str = "full",
     ):
         super().__init__()
-        if mode not in {"full", "state", "response"}:
-            raise ValueError("mode must be full, state, or response")
+        if mode not in {
+            "full",
+            "state",
+            "response",
+            "response_local",
+            "state_graph",
+        }:
+            raise ValueError(
+                "mode must be full, state, response, response_local, or state_graph"
+            )
         self.mode = mode
         self.state_projection = nn.Linear(state_dim, hidden_dim)
         self.response_projection = nn.Linear(response_dim, hidden_dim)
@@ -91,9 +99,9 @@ class FieldTokenizer(nn.Module):
 
     def forward(self, features: FieldFeatures) -> TokenizerOutput:
         features.validate()
-        if self.mode == "state":
+        if self.mode in {"state", "state_graph"}:
             nodes = self.state_projection(features.state)
-        elif self.mode == "response":
+        elif self.mode in {"response", "response_local"}:
             nodes = self.response_projection(features.response)
         else:
             nodes = self.state_projection(features.state) + self.response_projection(
@@ -103,7 +111,7 @@ class FieldTokenizer(nn.Module):
             features.grid_size, nodes.shape[-1], nodes.device, nodes.dtype
         )
         nodes = nodes + position.unsqueeze(0)
-        if self.mode == "state":
+        if self.mode in {"state", "response_local"}:
             adjacency = fixed_grid_adjacency(
                 features.grid_size,
                 nodes.shape[0],

@@ -1,0 +1,22 @@
+times:
+  - [0.2]
+  - [0.5]
+  - [0.8]
+  - [0.2, 0.5, 0.8]
+directions: [1, 2, 4, 8]
+difference: [forward, central]
+probe_type: [structured, random, spatially_shuffled]
+representations:
+  - state
+  - response_local
+  - state_graph
+  - response
+  - full
+  - dit_hidden_local
+  - dit_hidden_attention
+graph_topk: [0, 8, 16, 32]
+graph_local_radius: [0, 1, 2]
+causal_controls: [response_shuffled_across_images, random_flow]
+conditions: ["", "a neutral photograph", "an unrelated scene"]
+backbone_adaptation: [frozen, lora_diagnostic_only]
+status: planned_not_all_modes_implemented

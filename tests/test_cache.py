@@ -28,6 +28,9 @@ def test_feature_cache_round_trip(tmp_path: Path) -> None:
     )
     restored, targets, restored_manifest = load_features(path)
     assert torch.equal(restored.state, features.state.cpu())
+    assert torch.equal(
+        restored.graphs["dit_attention"],
+        features.graphs["dit_attention"].cpu(),
+    )
     assert targets["classification"].item() == 1
     assert restored_manifest["fingerprint"] == manifest["fingerprint"]
-

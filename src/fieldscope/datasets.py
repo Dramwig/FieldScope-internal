@@ -1,11 +1,13 @@
-"""Synthetic smoke data and thin torchvision dataset adapters."""
+"""Synthetic data and auditable adapters for real vision benchmarks."""
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import torch
+from PIL import Image
 from torch.utils.data import Dataset
 
 
@@ -104,3 +106,157 @@ def build_torchvision_dataset(
         )
     raise ValueError(f"Unsupported dataset: {name}")
 
+
+class TaskDataset(Dataset[dict[str, Any]]):
+    """Normalize tuple-style datasets to the FieldScope sample contract."""
+
+    def __init__(self, dataset: Dataset[Any], task: str, sample_prefix: str):
+        self.dataset = dataset
+        self.task = task
+        self.sample_prefix = sample_prefix
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        image, target = self.dataset[index]
+        return {
+            "image": image,
+            self.task: target,
+            "sample_id": f"{self.sample_prefix}-{index:08d}",
+        }
+
+
+class ClassSubsetDataset(Dataset[dict[str, Any]]):
+    """Deterministic class subset with contiguous labels."""
+
+    def __init__(
+        self,
+        dataset: Any,
+        class_names: list[str],
+        *,
+        sample_prefix: str,
+    ):
+        available = {name: index for index, name in enumerate(dataset.classes)}
+        missing = sorted(set(class_names) - set(available))
+        if missing:
+            raise ValueError(f"Unknown ImageFolder classes: {missing[:5]}")
+        source_to_target = {
+            available[name]: target for target, name in enumerate(class_names)
+        }
+        self.samples = [
+            (path, source_to_target[label])
+            for path, label in dataset.samples
+            if label in source_to_target
+        ]
+        self.loader = dataset.loader
+        self.transform = dataset.transform
+        self.classes = list(class_names)
+        self.sample_prefix = sample_prefix
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        path, target = self.samples[index]
+        image = self.loader(path)
+        if self.transform is not None:
+            image = self.transform(image)
+        return {
+            "image": image,
+            "classification": torch.tensor(target, dtype=torch.long),
+            "sample_id": f"{self.sample_prefix}-{index:08d}",
+        }
+
+
+class NYUv2DirectoryDataset(Dataset[dict[str, Any]]):
+    """Prepared NYUv2 RGB/depth pairs with an explicit split manifest.
+
+    The manifest is a JSON list with ``id``, ``image`` and ``depth`` paths,
+    relative to ``root``. Depth arrays are stored in meters as ``.npy``.
+    """
+
+    def __init__(self, root: str | Path, split: str, image_size: int):
+        import json
+
+        from torchvision.transforms import InterpolationMode
+        from torchvision.transforms import functional as TF
+
+        self.root = Path(root)
+        manifest_path = self.root / f"{split}.json"
+        if not manifest_path.is_file():
+            raise FileNotFoundError(manifest_path)
+        self.samples = json.loads(manifest_path.read_text(encoding="utf-8"))
+        self.image_size = image_size
+        self._interpolation = InterpolationMode.BILINEAR
+        self._tf = TF
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        sample = self.samples[index]
+        image = Image.open(self.root / sample["image"]).convert("RGB")
+        image = self._tf.resize(
+            image,
+            [self.image_size, self.image_size],
+            interpolation=self._interpolation,
+            antialias=True,
+        )
+        image_tensor = self._tf.to_tensor(image)
+        depth = torch.from_numpy(
+            np.load(self.root / sample["depth"]).astype(np.float32, copy=False)
+        ).unsqueeze(0)
+        depth = torch.nn.functional.interpolate(
+            depth.unsqueeze(0),
+            size=(self.image_size, self.image_size),
+            mode="nearest",
+        ).squeeze(0)
+        return {
+            "image": image_tensor,
+            "depth": depth,
+            "sample_id": str(sample["id"]),
+        }
+
+
+def build_vision_dataset(
+    name: str,
+    root: str | Path,
+    split: str,
+    image_size: int,
+    *,
+    class_names: list[str] | None = None,
+) -> Dataset[dict[str, Any]]:
+    """Build a benchmark dataset with explicit task names and sample IDs."""
+
+    if name in {"cifar10", "voc2012"}:
+        task = "classification" if name == "cifar10" else "segmentation"
+        return TaskDataset(
+            build_torchvision_dataset(name, root, split, image_size, download=False),
+            task,
+            f"{name}-{split}",
+        )
+    if name in {"imagenet", "imagenet100"}:
+        from torchvision import datasets, transforms
+
+        split_root = Path(root) / split
+        image_transform = transforms.Compose(
+            [
+                transforms.Resize((image_size, image_size), antialias=True),
+                transforms.ToTensor(),
+            ]
+        )
+        dataset = datasets.ImageFolder(split_root, transform=image_transform)
+        selected = class_names
+        if selected is None and name == "imagenet100":
+            selected = sorted(dataset.classes)[:100]
+        if selected is not None:
+            return ClassSubsetDataset(
+                dataset,
+                selected,
+                sample_prefix=f"{name}-{split}",
+            )
+        return TaskDataset(dataset, "classification", f"{name}-{split}")
+    if name == "nyuv2":
+        return NYUv2DirectoryDataset(root, split, image_size)
+    raise ValueError(f"Unsupported dataset: {name}")

@@ -68,3 +68,4 @@ def test_feature_transfer_can_normalize_readout_dtype() -> None:
     assert normalized.state.dtype == torch.float32
     assert normalized.response.dtype == torch.float32
     assert all(value.dtype == torch.float32 for value in normalized.baselines.values())
+    assert all(value.dtype == torch.float32 for value in normalized.graphs.values())

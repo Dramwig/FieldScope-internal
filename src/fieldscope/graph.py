@@ -24,6 +24,38 @@ def cosine_affinity(features: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
     return torch.bmm(normalized, normalized.transpose(1, 2)).to(dtype=features.dtype)
 
 
+def pooled_attention_affinity(
+    query: torch.Tensor,
+    key: torch.Tensor,
+    grid_size: tuple[int, int],
+) -> torch.Tensor:
+    """Pool native multi-head Q/K maps and return a symmetric attention graph."""
+
+    if query.ndim != 5 or query.shape != key.shape:
+        raise ValueError("query and key must have shape [B,heads,D,H,W]")
+    batch, heads, head_dim, height, width = query.shape
+    pooled_query = F.adaptive_avg_pool2d(
+        query.reshape(batch, heads * head_dim, height, width),
+        grid_size,
+    )
+    pooled_key = F.adaptive_avg_pool2d(
+        key.reshape(batch, heads * head_dim, height, width),
+        grid_size,
+    )
+    patches = grid_size[0] * grid_size[1]
+    pooled_query = pooled_query.reshape(batch, heads, head_dim, patches).transpose(
+        2, 3
+    )
+    pooled_key = pooled_key.reshape(batch, heads, head_dim, patches).transpose(2, 3)
+    logits = torch.einsum(
+        "bhpd,bhqd->bhpq",
+        pooled_query.float(),
+        pooled_key.float(),
+    ) / head_dim**0.5
+    attention = logits.softmax(dim=-1).mean(dim=1)
+    return 0.5 * (attention + attention.transpose(1, 2))
+
+
 def _local_mask(
     grid_size: tuple[int, int],
     radius: int,

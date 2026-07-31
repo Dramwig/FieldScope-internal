@@ -8,7 +8,12 @@ import torch
 
 from fieldscope.config import ProbeConfig
 from fieldscope.contracts import FieldBackend, FieldFeatures
-from fieldscope.graph import cosine_affinity, patch_pool, sparsify_affinity
+from fieldscope.graph import (
+    cosine_affinity,
+    patch_pool,
+    pooled_attention_affinity,
+    sparsify_affinity,
+)
 from fieldscope.path import endpoint_estimate, rectified_state, rectified_tangent
 from fieldscope.probes import generate_structured_probes
 
@@ -76,6 +81,7 @@ class FieldResponseExtractor:
         view_states: list[torch.Tensor] = []
         view_responses: list[torch.Tensor] = []
         view_affinities: list[torch.Tensor] = []
+        view_graphs: dict[str, list[torch.Tensor]] = {}
         view_baselines: dict[str, list[torch.Tensor]] = {
             "z0": [],
             "zt": [],
@@ -89,6 +95,9 @@ class FieldResponseExtractor:
             time_states: list[torch.Tensor] = []
             time_responses: list[torch.Tensor] = []
             time_affinities: list[torch.Tensor] = []
+            time_graphs: dict[str, list[torch.Tensor]] = {
+                name: [] for name in view_graphs
+            }
             time_baselines: dict[str, list[torch.Tensor]] = {
                 name: [] for name in view_baselines
             }
@@ -101,7 +110,16 @@ class FieldResponseExtractor:
                     dtype=z0.dtype,
                 )
                 state = rectified_state(z0, path_noise, clean_time)
-                velocity = self.backend.query_velocity(state, clean_time)
+                feature_query = getattr(
+                    self.backend,
+                    "query_velocity_features",
+                    None,
+                )
+                if callable(feature_query):
+                    velocity, auxiliary = feature_query(state, clean_time)
+                else:
+                    velocity = self.backend.query_velocity(state, clean_time)
+                    auxiliary = {}
                 mismatch = velocity - tangent
                 endpoint = endpoint_estimate(state, velocity, clean_time)
                 endpoint_residual = endpoint - z0
@@ -128,6 +146,24 @@ class FieldResponseExtractor:
                 time_states.append(pooled_state)
                 time_responses.append(pooled_response)
                 time_affinities.append(cosine_affinity(pooled_response))
+                if "dit_hidden" in auxiliary:
+                    time_baselines.setdefault("dit_hidden", []).append(
+                        patch_pool(
+                            auxiliary["dit_hidden"],
+                            self.config.graph_grid,
+                        )
+                    )
+                if {
+                    "dit_attention_q",
+                    "dit_attention_k",
+                }.issubset(auxiliary):
+                    time_graphs.setdefault("dit_attention", []).append(
+                        pooled_attention_affinity(
+                            auxiliary["dit_attention_q"],
+                            auxiliary["dit_attention_k"],
+                            self.config.graph_grid,
+                        )
+                    )
                 for name, tensor in {
                     "z0": z0,
                     "zt": state,
@@ -141,7 +177,13 @@ class FieldResponseExtractor:
             view_responses.append(torch.cat(time_responses, dim=-1))
             view_affinities.append(torch.stack(time_affinities, dim=0).mean(dim=0))
             for name, tensors in time_baselines.items():
-                view_baselines[name].append(torch.stack(tensors, dim=0).mean(dim=0))
+                view_baselines.setdefault(name, []).append(
+                    torch.stack(tensors, dim=0).mean(dim=0)
+                )
+            for name, tensors in time_graphs.items():
+                view_graphs.setdefault(name, []).append(
+                    torch.stack(tensors, dim=0).mean(dim=0)
+                )
 
         state_features = torch.stack(view_states, dim=0).mean(dim=0)
         response_features = torch.cat(view_responses, dim=-1)
@@ -156,6 +198,17 @@ class FieldResponseExtractor:
             name: torch.stack(tensors, dim=0).mean(dim=0)
             for name, tensors in view_baselines.items()
         }
+        graphs = {
+            name: torch.stack(tensors, dim=0).mean(dim=0)
+            for name, tensors in view_graphs.items()
+        }
+        if "dit_attention" in graphs:
+            graphs["dit_attention_adjacency"] = sparsify_affinity(
+                graphs["dit_attention"],
+                self.config.graph_grid,
+                self.config.topk,
+                self.config.local_radius,
+            )
         features = FieldFeatures(
             state=state_features,
             response=response_features,
@@ -163,6 +216,7 @@ class FieldResponseExtractor:
             adjacency=adjacency,
             grid_size=self.config.graph_grid,
             baselines=baselines,
+            graphs=graphs,
             metadata={
                 "backend": self.backend.describe(),
                 "probe": asdict(self.config),

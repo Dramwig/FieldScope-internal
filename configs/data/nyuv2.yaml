@@ -1,0 +1,5 @@
+name: nyuv2
+task: depth
+prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/nyuv2
+format: explicit_json_manifest_with_rgb_and_depth_npy
+asset_status: TODO_acquire_verify_and_record_official_split

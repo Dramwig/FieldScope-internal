@@ -68,6 +68,22 @@ class ToyFieldBackend:
         )
         return torch.tanh(coupled + (time - 0.5) * 0.4) + 0.05 * latents.square()
 
+    def query_velocity_features(
+        self,
+        latents: torch.Tensor,
+        clean_time: torch.Tensor,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Expose analytic hidden/Q/K maps for baseline-contract tests."""
+
+        velocity = self.query_velocity(latents, clean_time)
+        hidden = torch.cat([latents.to(velocity), velocity], dim=1)
+        normalized = F.normalize(hidden.float(), dim=1).to(dtype=hidden.dtype)
+        return velocity, {
+            "dit_hidden": hidden,
+            "dit_attention_q": normalized.unsqueeze(1),
+            "dit_attention_k": normalized.unsqueeze(1),
+        }
+
     def describe(self) -> dict[str, Any]:
         return {
             "backend": "toy",
@@ -76,4 +92,3 @@ class ToyFieldBackend:
             "dtype": str(self.dtype).removeprefix("torch."),
             "time_convention": "clean_time: 0=noise, 1=image",
         }
-

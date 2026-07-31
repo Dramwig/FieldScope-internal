@@ -7,7 +7,6 @@ import importlib.metadata
 import json
 import os
 import platform
-import random
 import shutil
 import sys
 from pathlib import Path
@@ -16,38 +15,32 @@ from typing import Any
 import numpy as np
 import torch
 from PIL import Image
-from torch.utils.data import DataLoader, Subset
+from torch.utils.data import DataLoader
 
 from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
-from fieldscope.cached_dataset import CachedFeatureDataset, collate_cached
 from fieldscope.config import RunConfig, load_config
-from fieldscope.datasets import SyntheticShapesDataset, build_torchvision_dataset
+from fieldscope.datasets import SyntheticShapesDataset
 from fieldscope.diagnostics import graph_diagnostics
-from fieldscope.feature_ops import select_representation
+from fieldscope.experiments import (
+    atomic_json_dump,
+    diagnose_segmentation_cache,
+    evaluate_checkpoint,
+    extract_dataset_cache,
+    set_experiment_seed,
+    train_cached_readout,
+)
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
 from fieldscope.response import FieldResponseExtractor
 
 
 def _json_dump(path: Path, payload: dict[str, Any]) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(
-        json.dumps(payload, indent=2, ensure_ascii=False, default=str) + "\n",
-        encoding="utf-8",
-    )
+    atomic_json_dump(path, payload)
 
 
 def _set_seed(seed: int, deterministic: bool) -> None:
-    if deterministic:
-        os.environ.setdefault("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-    if deterministic:
-        torch.use_deterministic_algorithms(True, warn_only=True)
+    set_experiment_seed(seed, deterministic)
 
 
 def _package_version(name: str) -> str | None:
@@ -212,61 +205,21 @@ def extract_dataset(
     split: str,
     output_dir: Path,
     limit: int | None,
+    offset: int = 0,
+    resume: bool = False,
+    class_names: list[str] | None = None,
 ) -> dict[str, Any]:
-    dataset = build_torchvision_dataset(
-        dataset_name,
-        dataset_root,
-        split,
-        config.backend.image_size,
-        download=False,
+    return extract_dataset_cache(
+        config,
+        dataset_name=dataset_name,
+        dataset_root=dataset_root,
+        split=split,
+        output_dir=output_dir,
+        limit=limit,
+        offset=offset,
+        resume=resume,
+        class_names=class_names,
     )
-    if limit is not None:
-        dataset = Subset(dataset, range(min(limit, len(dataset))))
-    loader = DataLoader(
-        dataset,
-        batch_size=config.runtime.batch_size,
-        shuffle=False,
-        num_workers=config.runtime.num_workers,
-    )
-    backend = build_backend(config.backend)
-    extractor = FieldResponseExtractor(backend, config.probe)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    shards: list[dict[str, Any]] = []
-    sample_offset = 0
-    for shard_index, (images, target) in enumerate(loader):
-        features = extractor.extract(images)
-        target_name = "classification" if dataset_name == "cifar10" else "segmentation"
-        path = output_dir / f"shard-{shard_index:06d}.pt"
-        sample_ids = [
-            f"{dataset_name}-{split}-{index:08d}"
-            for index in range(sample_offset, sample_offset + images.shape[0])
-        ]
-        manifest = save_features(
-            path,
-            features,
-            targets={target_name: target},
-            sample_ids=sample_ids,
-        )
-        shards.append(
-            {
-                "path": path.name,
-                "num_samples": images.shape[0],
-                "fingerprint": manifest["fingerprint"],
-            }
-        )
-        sample_offset += images.shape[0]
-    report = {
-        "format_version": 1,
-        "dataset": dataset_name,
-        "split": split,
-        "source_root": str(dataset_root.resolve()),
-        "num_samples": sample_offset,
-        "backend": backend.describe(),
-        "config": config.to_dict(),
-        "shards": shards,
-    }
-    _json_dump(output_dir / "dataset_manifest.json", report)
-    return report
 
 
 def train_cache(
@@ -277,81 +230,25 @@ def train_cache(
     representation: str,
     epochs: int,
     learning_rate: float,
+    val_cache_dir: Path | None = None,
+    output_dir: Path | None = None,
+    weight_decay: float = 1e-4,
+    seed: int | None = None,
+    resume_checkpoint: Path | None = None,
 ) -> dict[str, Any]:
-    _set_seed(config.probe.seed, config.runtime.deterministic)
-    dataset = CachedFeatureDataset(cache_dir)
-    loader = DataLoader(
-        dataset,
-        batch_size=config.runtime.batch_size,
-        shuffle=True,
-        num_workers=0,
-        collate_fn=collate_cached,
+    return train_cached_readout(
+        config,
+        train_cache_dir=cache_dir,
+        val_cache_dir=val_cache_dir or cache_dir,
+        output_dir=output_dir or Path(config.runtime.output_dir),
+        task=task,
+        representation=representation,
+        epochs=epochs,
+        learning_rate=learning_rate,
+        weight_decay=weight_decay,
+        seed=config.probe.seed if seed is None else seed,
+        resume_checkpoint=resume_checkpoint,
     )
-    first = dataset[0]
-    selected, mode = select_representation(first["features"], representation)
-    device = torch.device(config.backend.device)
-    model = FieldScopeModel(
-        selected.state.shape[-1],
-        selected.response.shape[-1],
-        config.tokenizer,
-        mode=mode,
-    ).to(device)
-    optimizer = torch.optim.AdamW(model.parameters(), lr=learning_rate)
-    history: list[dict[str, float]] = []
-    for epoch in range(epochs):
-        model.train()
-        total_loss = 0.0
-        batches = 0
-        for cached_batch in loader:
-            features, _ = select_representation(
-                cached_batch["features"].to(device, dtype=torch.float32), representation
-            )
-            targets = {
-                name: tensor.to(device) for name, tensor in cached_batch["targets"].items()
-            }
-            if task not in targets:
-                raise ValueError(f"Requested task {task!r} is absent from cache")
-            if task == "segmentation":
-                output_size = tuple(targets[task].shape[-2:])
-            elif task in {"depth", "normals"}:
-                output_size = tuple(targets[task].shape[-2:])
-            else:
-                output_size = features.grid_size
-            optimizer.zero_grad(set_to_none=True)
-            predictions = model(features, output_size=output_size)
-            loss, _ = multitask_loss(
-                predictions,
-                {task: targets[task]},
-            )
-            loss.backward()
-            optimizer.step()
-            total_loss += float(loss.detach().item())
-            batches += 1
-        history.append({"epoch": epoch + 1, "loss": total_loss / max(1, batches)})
-    output_dir = Path(config.runtime.output_dir)
-    output_dir.mkdir(parents=True, exist_ok=True)
-    checkpoint = output_dir / f"{task}_{representation}_readout.pt"
-    torch.save(
-        {
-            "model": model.state_dict(),
-            "config": config.to_dict(),
-            "task": task,
-            "representation": representation,
-            "history": history,
-        },
-        checkpoint,
-    )
-    report = {
-        "status": "passed",
-        "task": task,
-        "representation": representation,
-        "epochs": epochs,
-        "num_samples": len(dataset),
-        "history": history,
-        "checkpoint": str(checkpoint),
-    }
-    _json_dump(output_dir / f"{task}_{representation}_train_report.json", report)
-    return report
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -375,17 +272,30 @@ def _build_parser() -> argparse.ArgumentParser:
         "extract-dataset", help="Precompute sharded features for a real dataset"
     )
     dataset_parser.add_argument("--config", required=True, type=Path)
-    dataset_parser.add_argument("--dataset", required=True, choices=["cifar10", "voc2012"])
+    dataset_parser.add_argument(
+        "--dataset",
+        required=True,
+        choices=["cifar10", "voc2012", "imagenet", "imagenet100", "nyuv2"],
+    )
     dataset_parser.add_argument("--root", required=True, type=Path)
     dataset_parser.add_argument("--split", required=True)
     dataset_parser.add_argument("--output", required=True, type=Path)
     dataset_parser.add_argument("--limit", type=int)
+    dataset_parser.add_argument("--offset", type=int, default=0)
+    dataset_parser.add_argument("--resume", action="store_true")
+    dataset_parser.add_argument(
+        "--classes-file",
+        type=Path,
+        help="One ImageNet synset per line; order defines contiguous labels",
+    )
 
     train_parser = subparsers.add_parser(
         "train-cache", help="Train a lightweight readout from cached features"
     )
     train_parser.add_argument("--config", required=True, type=Path)
     train_parser.add_argument("--cache-dir", required=True, type=Path)
+    train_parser.add_argument("--val-cache-dir", type=Path)
+    train_parser.add_argument("--output-dir", type=Path)
     train_parser.add_argument(
         "--task",
         required=True,
@@ -398,6 +308,10 @@ def _build_parser() -> argparse.ArgumentParser:
             "full",
             "state",
             "response",
+            "response_local",
+            "state_graph",
+            "dit_hidden_local",
+            "dit_hidden_attention",
             "z0",
             "zt",
             "velocity",
@@ -407,10 +321,28 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     train_parser.add_argument("--epochs", type=int, default=10)
     train_parser.add_argument("--learning-rate", type=float, default=1e-3)
+    train_parser.add_argument("--weight-decay", type=float, default=1e-4)
+    train_parser.add_argument("--seed", type=int)
+    train_parser.add_argument("--resume", type=Path)
+
+    evaluate_parser = subparsers.add_parser(
+        "evaluate-cache", help="Evaluate a saved readout on a cached split"
+    )
+    evaluate_parser.add_argument("--config", required=True, type=Path)
+    evaluate_parser.add_argument("--checkpoint", required=True, type=Path)
+    evaluate_parser.add_argument("--cache-dir", required=True, type=Path)
+    evaluate_parser.add_argument("--output", required=True, type=Path)
 
     diagnose_parser = subparsers.add_parser("diagnose", help="Diagnose a feature cache")
     diagnose_parser.add_argument("--cache", required=True, type=Path)
     diagnose_parser.add_argument("--output", type=Path)
+
+    segmentation_parser = subparsers.add_parser(
+        "diagnose-segmentation",
+        help="Measure unsupervised graph alignment with segmentation labels",
+    )
+    segmentation_parser.add_argument("--cache-dir", required=True, type=Path)
+    segmentation_parser.add_argument("--output", required=True, type=Path)
 
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
@@ -434,6 +366,13 @@ def main(argv: list[str] | None = None) -> int:
             load_config(args.config), list(args.image), args.output
         )
     elif args.command == "extract-dataset":
+        class_names = None
+        if args.classes_file:
+            class_names = [
+                line.strip()
+                for line in args.classes_file.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
         report = extract_dataset(
             load_config(args.config),
             dataset_name=args.dataset,
@@ -441,6 +380,9 @@ def main(argv: list[str] | None = None) -> int:
             split=args.split,
             output_dir=args.output,
             limit=args.limit,
+            offset=args.offset,
+            resume=args.resume,
+            class_names=class_names,
         )
     elif args.command == "train-cache":
         if args.epochs < 1:
@@ -452,12 +394,27 @@ def main(argv: list[str] | None = None) -> int:
             representation=args.representation,
             epochs=args.epochs,
             learning_rate=args.learning_rate,
+            val_cache_dir=args.val_cache_dir,
+            output_dir=args.output_dir,
+            weight_decay=args.weight_decay,
+            seed=args.seed,
+            resume_checkpoint=args.resume,
         )
+    elif args.command == "evaluate-cache":
+        report = evaluate_checkpoint(
+            load_config(args.config),
+            checkpoint=args.checkpoint,
+            cache_dir=args.cache_dir,
+        )
+        _json_dump(args.output, report)
     elif args.command == "diagnose":
         features, _, manifest = load_features(args.cache)
         report = {"manifest": manifest, "diagnostics": graph_diagnostics(features)}
         if args.output:
             _json_dump(args.output, report)
+    elif args.command == "diagnose-segmentation":
+        report = diagnose_segmentation_cache(args.cache_dir)
+        _json_dump(args.output, report)
     elif args.command == "inspect-cache":
         _, _, report = load_features(args.cache)
     else:

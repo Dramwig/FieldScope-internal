@@ -44,6 +44,7 @@ class FieldFeatures:
     adjacency: torch.Tensor
     grid_size: tuple[int, int]
     baselines: dict[str, torch.Tensor] = field(default_factory=dict)
+    graphs: dict[str, torch.Tensor] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def validate(self) -> None:
@@ -61,7 +62,17 @@ class FieldFeatures:
         for name, tensor in self.baselines.items():
             if tensor.shape[:2] != (batch, patches):
                 raise ValueError(f"Baseline {name!r} does not match batch/patch dimensions")
-        tensors = [self.state, self.response, self.affinity, self.adjacency]
+        for name, tensor in self.graphs.items():
+            if tensor.shape != (batch, patches, patches):
+                raise ValueError(f"Graph {name!r} does not match batch/patch dimensions")
+        tensors = [
+            self.state,
+            self.response,
+            self.affinity,
+            self.adjacency,
+            *self.baselines.values(),
+            *self.graphs.values(),
+        ]
         if not all(torch.isfinite(tensor).all() for tensor in tensors):
             raise ValueError("FieldFeatures contains non-finite values")
 
@@ -81,6 +92,10 @@ class FieldFeatures:
                 name: value.to(device=device, dtype=dtype)
                 for name, value in self.baselines.items()
             },
+            graphs={
+                name: value.to(device=device, dtype=dtype)
+                for name, value in self.graphs.items()
+            },
             metadata=dict(self.metadata),
         )
 
@@ -92,5 +107,6 @@ class FieldFeatures:
             adjacency=self.adjacency.detach().cpu(),
             grid_size=self.grid_size,
             baselines={name: value.detach().cpu() for name, value in self.baselines.items()},
+            graphs={name: value.detach().cpu() for name, value in self.graphs.items()},
             metadata=dict(self.metadata),
         )
