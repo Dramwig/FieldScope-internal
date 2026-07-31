@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import math
+import random
 from collections.abc import Mapping
 from pathlib import Path
 from statistics import mean, stdev
@@ -87,6 +88,35 @@ def paired_t_interval(
         "ci95_excludes_zero": bool(
             interval is not None and (interval[0] > 0 or interval[1] < 0)
         ),
+    }
+
+
+def bootstrap_mean_interval(
+    values: list[float],
+    *,
+    seed: int = 4121,
+    resamples: int = 2000,
+) -> dict[str, Any]:
+    """Return a deterministic percentile bootstrap interval for the mean."""
+
+    if not values or any(not math.isfinite(value) for value in values):
+        raise ValueError("values must be a non-empty finite list")
+    if resamples < 100:
+        raise ValueError("resamples must be at least 100")
+    if len(values) == 1:
+        return {"mean": values[0], "ci95": None, "resamples": resamples}
+    generator = random.Random(seed)
+    sample_count = len(values)
+    estimates = sorted(
+        mean(generator.choices(values, k=sample_count))
+        for _ in range(resamples)
+    )
+    lower = estimates[round(0.025 * (resamples - 1))]
+    upper = estimates[round(0.975 * (resamples - 1))]
+    return {
+        "mean": mean(values),
+        "ci95": [lower, upper],
+        "resamples": resamples,
     }
 
 

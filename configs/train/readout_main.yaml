@@ -8,6 +8,7 @@ seeds: [4121, 7319, 104729]
 representations:
   - z0
   - zt
+  - trajectory
   - velocity
   - mismatch
   - endpoint

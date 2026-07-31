@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import random
+import subprocess
 import time
 from collections.abc import Mapping
 from pathlib import Path
@@ -36,7 +37,74 @@ from fieldscope.graph import cosine_affinity
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
 from fieldscope.response import FieldResponseExtractor
-from fieldscope.statistics import summarize_run_reports
+from fieldscope.statistics import bootstrap_mean_interval, summarize_run_reports
+
+_REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
+
+
+def git_revision() -> str | None:
+    try:
+        result = subprocess.run(
+            ["git", "-C", str(_REPOSITORY_ROOT), "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return result.stdout.strip() or None
+
+
+def code_provenance() -> dict[str, Any]:
+    digest = hashlib.sha256()
+    source_root = _REPOSITORY_ROOT / "src" / "fieldscope"
+    for path in sorted(source_root.rglob("*.py")):
+        digest.update(path.relative_to(_REPOSITORY_ROOT).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(path.read_bytes())
+        digest.update(b"\0")
+    try:
+        status = subprocess.run(
+            ["git", "-C", str(_REPOSITORY_ROOT), "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        ).stdout
+        dirty: bool | None = bool(status.strip())
+    except (OSError, subprocess.SubprocessError):
+        dirty = None
+    return {
+        "code_revision": git_revision(),
+        "code_dirty": dirty,
+        "code_tree_sha256": digest.hexdigest(),
+    }
+
+
+def file_sha256(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for block in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(block)
+    return digest.hexdigest()
+
+
+def _verified_cached_shard(output_dir: Path, shard: Mapping[str, Any]) -> bool:
+    path = output_dir / str(shard["path"])
+    if not path.is_file() or path.stat().st_size != int(shard.get("bytes", -1)):
+        return False
+    expected_sha256 = shard.get("sha256")
+    if expected_sha256 is not None:
+        return file_sha256(path) == expected_sha256
+    try:
+        _, _, manifest = load_features(path)
+    except (OSError, RuntimeError, ValueError):
+        return False
+    return (
+        manifest.get("fingerprint") == shard.get("fingerprint")
+        and int(manifest.get("num_samples", -1)) == int(shard.get("num_samples", -2))
+    )
 
 
 def atomic_json_dump(path: Path, payload: Mapping[str, Any]) -> None:
@@ -85,6 +153,7 @@ def extraction_signature(
     class_names: list[str] | None,
     offset: int,
     stop: int,
+    code_tree_sha256: str,
 ) -> str:
     payload = {
         "config": config.to_dict(),
@@ -94,6 +163,7 @@ def extraction_signature(
         "class_names": class_names,
         "offset": offset,
         "stop": stop,
+        "code_tree_sha256": code_tree_sha256,
     }
     encoded = json.dumps(
         payload, sort_keys=True, ensure_ascii=False, default=str
@@ -125,6 +195,7 @@ def extract_dataset_cache(
     """Extract deterministic shards and checkpoint the manifest after every shard."""
 
     total_started = time.perf_counter()
+    provenance = code_provenance()
     if offset < 0 or (limit is not None and limit < 1):
         raise ValueError("offset must be non-negative and limit must be positive")
     dataset = build_vision_dataset(
@@ -155,6 +226,7 @@ def extract_dataset_cache(
         class_names=class_names,
         offset=offset,
         stop=stop,
+        code_tree_sha256=provenance["code_tree_sha256"],
     )
     if manifest_path.exists():
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -164,6 +236,25 @@ def extract_dataset_cache(
             )
         if existing.get("extraction_signature") != signature:
             raise ValueError("Existing cache was produced by a different extraction")
+        if (
+            existing.get("complete") is True
+            and int(existing.get("num_samples", -1)) == len(selected_indices)
+            and sum(
+                int(shard.get("num_samples", 0))
+                for shard in existing.get("shards", [])
+            )
+            == len(selected_indices)
+            and all(
+                _verified_cached_shard(output_dir, shard)
+                for shard in existing.get("shards", [])
+            )
+        ):
+            return {
+                **existing,
+                "resume_status": "already_complete",
+            }
+        if existing.get("complete") is True:
+            raise ValueError("Completed cache failed shard integrity verification")
 
     backend_started = time.perf_counter()
     backend = build_backend(config.backend)
@@ -213,6 +304,7 @@ def extract_dataset_cache(
             extraction_seconds += shard_seconds
             written_samples += images.shape[0]
         shard_bytes = path.stat().st_size
+        shard_sha256 = file_sha256(path)
         cache_bytes += shard_bytes
         shard = {
             "path": path.name,
@@ -223,11 +315,13 @@ def extract_dataset_cache(
             "status": status,
             "seconds": shard_seconds,
             "bytes": shard_bytes,
+            "sha256": shard_sha256,
         }
         shards.append(shard)
         sample_count += images.shape[0]
         report = {
-            "format_version": 2,
+            "status": "passed" if sample_count == len(selected_indices) else "running",
+            "format_version": 3,
             "dataset": dataset_name,
             "split": split,
             "source_root": str(dataset_root.resolve()),
@@ -239,6 +333,7 @@ def extract_dataset_cache(
             "backend": backend.describe(),
             "config": config.to_dict(),
             "class_names": class_names,
+            **provenance,
             "shards": shards,
             "runtime": {
                 "backend_initialization_seconds": backend_seconds,
@@ -403,6 +498,7 @@ def train_cached_readout(
 ) -> dict[str, Any]:
     if epochs < 1:
         raise ValueError("epochs must be positive")
+    provenance = code_provenance()
     set_experiment_seed(seed, config.runtime.deterministic)
     train_dataset = _cached_dataset(train_cache_dir, representation, seed)
     val_dataset = _cached_dataset(val_cache_dir, representation, seed)
@@ -519,6 +615,7 @@ def train_cached_readout(
             "state_dim": selected.state.shape[-1],
             "response_dim": selected.response.shape[-1],
             "seed": seed,
+            **provenance,
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
         }
@@ -530,6 +627,7 @@ def train_cached_readout(
             "task": task,
             "representation": representation,
             "seed": seed,
+            **provenance,
             "epochs": epochs,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
@@ -566,6 +664,7 @@ def train_cached_readout(
             "task": task,
             "representation": representation,
             "seed": seed,
+            **provenance,
             "epochs": epochs,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
@@ -619,6 +718,7 @@ def evaluate_checkpoint(
         "task": payload["task"],
         "representation": payload["representation"],
         "seed": payload["seed"],
+        **code_provenance(),
         "evaluation": evaluation,
     }
 
@@ -627,7 +727,9 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
     dataset = CachedFeatureDataset(cache_dir)
     shuffled_dataset = ShuffledResponseCachedDataset(cache_dir, seed=4121)
     totals: dict[str, dict[str, float]] = {}
-    counts: dict[str, int] = {}
+    counts: dict[str, dict[str, int]] = {}
+    values: dict[str, dict[str, list[float]]] = {}
+    per_sample: list[dict[str, Any]] = []
     for index in range(len(dataset)):
         sample = dataset[index]
         features = sample["features"]
@@ -651,6 +753,10 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
             },
         }
         target = targets["segmentation"].unsqueeze(0)
+        sample_report: dict[str, Any] = {
+            "sample_id": sample["sample_id"],
+            "representations": {},
+        }
         for name, affinity in representations.items():
             metrics = graph_segmentation_metrics(
                 affinity,
@@ -660,24 +766,45 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
             accumulator = totals.setdefault(
                 name, {metric_name: 0.0 for metric_name in metrics}
             )
-            finite = all(np.isfinite(value) for value in metrics.values())
-            if not finite:
-                continue
+            metric_counts = counts.setdefault(
+                name, {metric_name: 0 for metric_name in metrics}
+            )
+            metric_values = values.setdefault(
+                name, {metric_name: [] for metric_name in metrics}
+            )
+            sample_report["representations"][name] = metrics
             for metric_name, value in metrics.items():
+                if not np.isfinite(value):
+                    continue
                 accumulator[metric_name] += value
-            counts[name] = counts.get(name, 0) + 1
+                metric_counts[metric_name] += 1
+                metric_values[metric_name].append(value)
+        per_sample.append(sample_report)
     return {
         "status": "passed",
+        **code_provenance(),
         "cache_dir": str(cache_dir),
         "num_samples": len(dataset),
         "representations": {
             name: {
-                metric_name: value / max(1, counts.get(name, 0))
-                for metric_name, value in metrics.items()
+                "means": {
+                    metric_name: value
+                    / max(1, counts.get(name, {}).get(metric_name, 0))
+                    for metric_name, value in metrics.items()
+                },
+                "bootstrap": {
+                    metric_name: bootstrap_mean_interval(
+                        metric_values,
+                        seed=4121,
+                    )
+                    for metric_name, metric_values in values[name].items()
+                    if metric_values
+                },
+                "valid_samples": counts.get(name, {}),
             }
             for name, metrics in totals.items()
         },
-        "valid_samples": counts,
+        "per_sample": per_sample,
     }
 
 
@@ -780,6 +907,7 @@ def run_readout_matrix(
     )
     report = {
         "status": "passed",
+        **code_provenance(),
         "task": task,
         "metric": metric,
         "representations": representations,

@@ -41,6 +41,8 @@ class BackendConfig:
     max_sequence_length: int = 256
     local_files_only: bool = True
     offload_text_encoder: bool = True
+    random_transformer: bool = False
+    random_transformer_seed: int = 104729
 
     def validate(self) -> None:
         if self.name not in {"toy", "auraflow"}:
@@ -53,6 +55,10 @@ class BackendConfig:
             raise ValueError(f"Unsupported dtype: {self.dtype}")
         if self.image_size <= 0 or self.image_size % 16:
             raise ValueError("backend.image_size must be a positive multiple of 16")
+        if self.random_transformer and self.name != "auraflow":
+            raise ValueError("backend.random_transformer is only supported by auraflow")
+        if self.random_transformer_seed < 0:
+            raise ValueError("backend.random_transformer_seed must be non-negative")
 
 
 @dataclass(frozen=True)

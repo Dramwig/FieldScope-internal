@@ -186,9 +186,14 @@ class FieldResponseExtractor:
             view_responses.append(torch.cat(time_responses, dim=-1))
             view_affinities.append(torch.stack(time_affinities, dim=0).mean(dim=0))
             for name, tensors in time_baselines.items():
+                if not tensors:
+                    continue
                 view_baselines.setdefault(name, []).append(
                     torch.stack(tensors, dim=0).mean(dim=0)
                 )
+            view_baselines.setdefault("trajectory", []).append(
+                torch.cat(time_baselines["zt"], dim=-1)
+            )
             for name, tensors in time_graphs.items():
                 view_graphs.setdefault(name, []).append(
                     torch.stack(tensors, dim=0).mean(dim=0)

@@ -10,6 +10,8 @@ from fieldscope.datasets import (
     NYUv2DirectoryDataset,
     SyntheticShapesDataset,
     build_vision_dataset,
+    fraction_holdout_indices,
+    stratified_fraction_holdout_indices,
     stratified_holdout_indices,
 )
 
@@ -34,14 +36,14 @@ def test_synthetic_dataset_is_deterministic_and_complete() -> None:
 
 def test_imagenet100_subset_has_contiguous_labels(tmp_path: Path) -> None:
     for class_name, value in (("n0002", 64), ("n0001", 192)):
-        directory = tmp_path / "train" / class_name
+        directory = tmp_path / "val" / class_name
         directory.mkdir(parents=True)
         Image.new("RGB", (8, 8), color=(value, 0, 0)).save(directory / "sample.png")
 
     dataset = build_vision_dataset(
         "imagenet100",
         tmp_path,
-        "train",
+        "test",
         image_size=16,
         class_names=["n0002", "n0001"],
     )
@@ -86,6 +88,24 @@ def test_stratified_holdout_is_deterministic_and_balanced() -> None:
     assert len(validation) == 4
     assert [targets[index] for index in validation].count(0) == 2
     assert [targets[index] for index in validation].count(1) == 2
+
+    fraction_training, fraction_validation = (
+        stratified_fraction_holdout_indices(
+            targets,
+            fraction=0.2,
+            seed=4121,
+        )
+    )
+    assert len(fraction_training) == 16
+    assert len(fraction_validation) == 4
+    unstratified_training, unstratified_validation = fraction_holdout_indices(
+        20,
+        fraction=0.2,
+        seed=4121,
+    )
+    assert len(unstratified_training) == 16
+    assert len(unstratified_validation) == 4
+    assert not set(unstratified_training) & set(unstratified_validation)
 
 
 def test_ade20k_directory_dataset_remaps_labels(tmp_path: Path) -> None:

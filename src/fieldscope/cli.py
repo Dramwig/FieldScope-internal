@@ -363,6 +363,7 @@ def _build_parser() -> argparse.ArgumentParser:
             "full_shuffled",
             "z0",
             "zt",
+            "trajectory",
             "velocity",
             "mismatch",
             "endpoint",

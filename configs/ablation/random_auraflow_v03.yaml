@@ -1,0 +1,42 @@
+backend:
+  name: auraflow
+  model_path: ${FIELDSCOPE_CHECKPOINTS_ROOT}/AuraFlow-v0.3
+  variant: fp16
+  device: cuda
+  dtype: bfloat16
+  image_size: 512
+  prompt: ""
+  max_sequence_length: 256
+  local_files_only: true
+  offload_text_encoder: true
+  random_transformer: true
+  random_transformer_seed: 104729
+
+probe:
+  times: [0.2, 0.5, 0.8]
+  num_directions: 8
+  probe_type: structured
+  eta: 0.03
+  difference: central
+  graph_grid: [16, 16]
+  topk: 16
+  local_radius: 1
+  probe_batch_size: 8
+  antithetic_noise: true
+  hidden_baseline_dim: 768
+  seed: 4121
+
+tokenizer:
+  hidden_dim: 256
+  input_dim: 768
+  num_layers: 3
+  dropout: 0.1
+  num_classes: 100
+  segmentation_classes: 21
+
+runtime:
+  output_dir: outputs/random_auraflow_v03
+  cache_dir: ${FIELDSCOPE_DATASETS_ROOT}/feature_cache/random_auraflow_v03
+  batch_size: 2
+  num_workers: 4
+  deterministic: true

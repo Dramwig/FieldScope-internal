@@ -1,6 +1,8 @@
+import json
 from pathlib import Path
 from typing import Any
 
+import pytest
 import torch
 from torch.utils.data import Dataset
 
@@ -66,10 +68,23 @@ def test_extract_dataset_cache_resumes_verified_shards(
     first = extract_dataset_cache(_config(tmp_path), **arguments)
     assert first["complete"] is True
     assert [shard["status"] for shard in first["shards"]] == ["written", "written"]
+    assert all(shard["sha256"] for shard in first["shards"])
+    assert first["code_tree_sha256"]
 
+    manifest_path = output / "dataset_manifest.json"
+    interrupted = json.loads(manifest_path.read_text(encoding="utf-8"))
+    interrupted["complete"] = False
+    manifest_path.write_text(json.dumps(interrupted), encoding="utf-8")
     resumed = extract_dataset_cache(_config(tmp_path), resume=True, **arguments)
     assert resumed["complete"] is True
     assert [shard["status"] for shard in resumed["shards"]] == ["reused", "reused"]
+    complete = extract_dataset_cache(_config(tmp_path), resume=True, **arguments)
+    assert complete["resume_status"] == "already_complete"
+
+    first_shard = output / first["shards"][0]["path"]
+    first_shard.write_bytes(first_shard.read_bytes()[:-1])
+    with pytest.raises(ValueError, match="integrity"):
+        extract_dataset_cache(_config(tmp_path), resume=True, **arguments)
 
 
 def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> None:

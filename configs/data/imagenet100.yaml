@@ -3,5 +3,9 @@ task: classification
 selection: lexicographically_first_100_wordnet_ids
 pilot_prepared_root: D:/datasets_raw_hub/registry/imagenet_256_10pct/extracted
 pilot_manifest_sha256: 3c92c77c923b49c60de36c29dddb7a0f9d147dd83139e9d1572182b68535a09f
+full_source_train: D:/datasets_raw_hub/registry/imagenet1k/raw/ILSVRC2012_img_train.tar
+full_source_val: D:/datasets_raw_hub/registry/imagenet1k/raw/ILSVRC2012_img_val.tar
+full_source_devkit: D:/datasets_raw_hub/registry/imagenet1k/raw/ILSVRC2012_devkit_t12.tar.gz
+full_local_prepared_root: D:/datasets_raw_hub/registry/imagenet100_full/prepared
 remote_prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/imagenet100
-final_asset_status: TODO_full_training_samples_required
+final_asset_status: preparing_from_full_ilsvrc2012_archives

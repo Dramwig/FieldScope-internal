@@ -4,5 +4,9 @@ archive: ${FIELDSCOPE_DATASETS_ROOT}/raw/ade20k/ADEChallengeData2016.zip
 prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/ade20k
 source_local: D:/datasets_raw_hub/registry/ade20k/raw/ADEChallengeData2016.zip
 archive_sha256: a4a2860390141240c3c05981b5c0084c1d773b2a8c39ac14209da40602cc11ea
-split_status: TODO_verify_after_preparation
+archive_bytes: 965371974
+official_image_counts:
+  training: 20210
+  validation: 2000
+split_status: verified_on_pro6000_2026_07_31
 label_mapping: source_0_to_ignore_255_and_source_1_150_to_0_149

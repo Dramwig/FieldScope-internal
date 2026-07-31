@@ -26,6 +26,7 @@ def test_extractor_produces_complete_feature_contract() -> None:
     assert set(features.baselines) == {
         "z0",
         "zt",
+        "trajectory",
         "velocity",
         "mismatch",
         "endpoint",
@@ -36,6 +37,7 @@ def test_extractor_produces_complete_feature_contract() -> None:
         "dit_attention_adjacency",
     }
     assert features.baselines["dit_hidden"].shape == (2, 16, 768)
+    assert features.baselines["trajectory"].shape == (2, 16, 8)
     assert features.metadata["noise_views"] == 2
     features.validate()
 

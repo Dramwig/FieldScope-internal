@@ -8,7 +8,7 @@ from typing import Any
 import numpy as np
 import torch
 from PIL import Image
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, Subset
 
 
 class SyntheticShapesDataset(Dataset[dict[str, torch.Tensor]]):
@@ -175,6 +175,50 @@ def stratified_holdout_indices(
         holdout.extend(shuffled[:holdout_per_class].tolist())
         training.extend(shuffled[holdout_per_class:].tolist())
     return sorted(training), sorted(holdout)
+
+
+def stratified_fraction_holdout_indices(
+    targets: list[int],
+    *,
+    fraction: float,
+    seed: int,
+) -> tuple[list[int], list[int]]:
+    """Deterministically hold out the same fraction within every class."""
+
+    if not 0.0 < fraction < 1.0:
+        raise ValueError("fraction must be strictly between zero and one")
+    generator = np.random.default_rng(seed)
+    target_array = np.asarray(targets)
+    training: list[int] = []
+    holdout: list[int] = []
+    for label in sorted(np.unique(target_array).tolist()):
+        indices = np.flatnonzero(target_array == label)
+        count = max(1, round(len(indices) * fraction))
+        if len(indices) <= count:
+            raise ValueError(f"Class {label} has too few samples for the holdout")
+        shuffled = generator.permutation(indices)
+        holdout.extend(shuffled[:count].tolist())
+        training.extend(shuffled[count:].tolist())
+    return sorted(training), sorted(holdout)
+
+
+def fraction_holdout_indices(
+    length: int,
+    *,
+    fraction: float,
+    seed: int,
+) -> tuple[list[int], list[int]]:
+    """Deterministically split an unstratified dataset into train/holdout."""
+
+    if length < 2 or not 0.0 < fraction < 1.0:
+        raise ValueError("length and fraction do not define a valid holdout")
+    generator = np.random.default_rng(seed)
+    shuffled = generator.permutation(length)
+    holdout_count = max(1, round(length * fraction))
+    return (
+        sorted(shuffled[holdout_count:].tolist()),
+        sorted(shuffled[:holdout_count].tolist()),
+    )
 
 
 class ClassSubsetDataset(Dataset[dict[str, Any]]):
@@ -373,15 +417,38 @@ def build_vision_dataset(
             f"cifar10-{split}",
         )
     if name == "voc2012":
-        return TaskDataset(
-            build_torchvision_dataset(name, root, split, image_size, download=False),
+        if split not in {"train", "val", "test"}:
+            raise ValueError("VOC 2012 split must be train, val, or test")
+        source_split = "val" if split == "test" else "train"
+        field_dataset = TaskDataset(
+            build_torchvision_dataset(
+                name,
+                root,
+                source_split,
+                image_size,
+                download=False,
+            ),
             "segmentation",
-            f"{name}-{split}",
+            f"{name}-{source_split}",
         )
+        if split in {"train", "val"}:
+            training, validation = fraction_holdout_indices(
+                len(field_dataset),
+                fraction=0.1,
+                seed=4121,
+            )
+            return Subset(
+                field_dataset,
+                training if split == "train" else validation,
+            )
+        return field_dataset
     if name in {"imagenet", "imagenet100"}:
         from torchvision import datasets, transforms
 
-        split_root = Path(root) / split
+        if split not in {"train", "val", "test"}:
+            raise ValueError("ImageNet split must be train, val, or test")
+        source_split = "val" if split == "test" else "train"
+        split_root = Path(root) / source_split
         image_transform = transforms.Compose(
             [
                 transforms.Resize((image_size, image_size), antialias=True),
@@ -393,14 +460,46 @@ def build_vision_dataset(
         if selected is None and name == "imagenet100":
             selected = sorted(dataset.classes)[:100]
         if selected is not None:
-            return ClassSubsetDataset(
+            field_dataset: Dataset[dict[str, Any]] = ClassSubsetDataset(
                 dataset,
                 selected,
-                sample_prefix=f"{name}-{split}",
+                sample_prefix=f"{name}-{source_split}",
             )
-        return TaskDataset(dataset, "classification", f"{name}-{split}")
+            targets = [target for _, target in field_dataset.samples]
+        else:
+            field_dataset = TaskDataset(
+                dataset,
+                "classification",
+                f"{name}-{source_split}",
+            )
+            targets = list(dataset.targets)
+        if split in {"train", "val"}:
+            training, validation = stratified_fraction_holdout_indices(
+                targets,
+                fraction=0.1,
+                seed=4121,
+            )
+            return Subset(
+                field_dataset,
+                training if split == "train" else validation,
+            )
+        return field_dataset
     if name == "nyuv2":
         return NYUv2DirectoryDataset(root, split, image_size)
     if name == "ade20k":
-        return ADE20KDirectoryDataset(root, split, image_size)
+        if split not in {"train", "val", "test"}:
+            raise ValueError("ADE20K split must be train, val, or test")
+        source_split = "validation" if split == "test" else "training"
+        field_dataset = ADE20KDirectoryDataset(root, source_split, image_size)
+        if split in {"train", "val"}:
+            training, validation = fraction_holdout_indices(
+                len(field_dataset),
+                fraction=0.1,
+                seed=4121,
+            )
+            return Subset(
+                field_dataset,
+                training if split == "train" else validation,
+            )
+        return field_dataset
     raise ValueError(f"Unsupported dataset: {name}")

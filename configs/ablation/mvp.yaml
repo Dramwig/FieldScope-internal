@@ -1,6 +1,7 @@
 representation_modes:
   - z0
   - zt
+  - trajectory
   - velocity
   - mismatch
   - endpoint
@@ -23,4 +24,3 @@ graph_topk:
 conditions:
   - ""
   - "a neutral photograph"
-

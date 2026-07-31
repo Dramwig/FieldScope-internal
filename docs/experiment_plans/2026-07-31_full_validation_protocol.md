@@ -48,17 +48,22 @@
 | 几何密集 | NYUv2 | 官方 train/test | AbsRel、RMSE、δ1/δ2/δ3 | 深度任务 |
 
 ImageNet-100 类集合固定为可用 ImageNet-1k train 目录中 WordNet ID
-字典序前 100 类，并逐项写入 cache manifest。现有
+字典序前 100 类，并逐项写入 cache manifest。每类 train 样本按 seed 4121
+固定抽取 10% 作为 internal validation，官方 validation 仅作最终 test。现有
 `imagenet_256_10pct` 只能用于规模门；最终 ImageNet-100 结果必须使用这些类的
 完整训练样本。ImageNet-1k、ADE20K、NYUv2 在资产版本、划分和哈希完成记录前
 保持 TODO。
+
+VOC 2012 与 ADE20K 同样从官方 training split 以 seed 4121 固定抽取 10%
+internal validation，官方 validation 仅作最终 test。NYUv2 使用官方 795/654
+划分，并从 795 张官方 train 中固定抽取 10% internal validation。
 
 ## 必做对照
 
 所有监督对照共享 tokenizer 深度、hidden width、任务头、增强、优化器、
 epoch 数和选模规则：
 
-- `z0`、`zt`、`velocity`、`mismatch`、`endpoint`；
+- `z0`、`zt`、多时间 `trajectory`、`velocity`、`mismatch`、`endpoint`；
 - `state`：场状态节点 + 固定局部图；
 - `response_local`：响应节点 + 固定局部图；
 - `state_graph`：状态节点 + 响应图；

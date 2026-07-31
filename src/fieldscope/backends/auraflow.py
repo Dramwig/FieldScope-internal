@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import gc
 from typing import Any
 
 import torch
@@ -45,6 +46,8 @@ class AuraFlowBackend:
             use_safetensors=True,
             local_files_only=config.local_files_only,
         )
+        if config.random_transformer:
+            self._replace_transformer_with_random_initialization()
         self.pipe.to(self._device)
         self.pipe.transformer.eval().requires_grad_(False)
         self.pipe.vae.eval().requires_grad_(False)
@@ -54,6 +57,26 @@ class AuraFlowBackend:
             self.pipe.text_encoder.to("cpu")
             if self._device.type == "cuda":
                 torch.cuda.empty_cache()
+
+    def _replace_transformer_with_random_initialization(self) -> None:
+        """Keep the AuraFlow architecture but discard every pretrained DiT weight."""
+
+        pretrained_transformer = self.pipe.transformer
+        transformer_class = type(pretrained_transformer)
+        transformer_config = dict(pretrained_transformer.config)
+        self.pipe.register_modules(transformer=None)
+        del pretrained_transformer
+        gc.collect()
+
+        previous_dtype = torch.get_default_dtype()
+        try:
+            torch.set_default_dtype(self._dtype)
+            with torch.random.fork_rng(devices=[]):
+                torch.manual_seed(self.config.random_transformer_seed)
+                random_transformer = transformer_class.from_config(transformer_config)
+        finally:
+            torch.set_default_dtype(previous_dtype)
+        self.pipe.register_modules(transformer=random_transformer)
 
     @property
     def device(self) -> torch.device:
@@ -244,6 +267,12 @@ class AuraFlowBackend:
             "dtype": str(self.dtype).removeprefix("torch."),
             "image_size": self.config.image_size,
             "prompt": self.config.prompt,
+            "random_transformer": self.config.random_transformer,
+            "random_transformer_seed": (
+                self.config.random_transformer_seed
+                if self.config.random_transformer
+                else None
+            ),
             "native_time": "1=noise, 0=image",
             "public_time": "clean_time: 0=noise, 1=image",
             "velocity_conversion": "public_velocity=-native_transformer_output",

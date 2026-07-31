@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from fieldscope.statistics import (
+    bootstrap_mean_interval,
     paired_t_interval,
     summarize_run_reports,
     t_interval_summary,
@@ -23,6 +24,9 @@ def test_t_interval_and_paired_difference() -> None:
     assert paired["mean"] == 2.0
     assert paired["ci95"] == [2.0, 2.0]
     assert paired["ci95_excludes_zero"] is True
+    bootstrap = bootstrap_mean_interval([1.0, 2.0, 3.0], seed=5, resamples=200)
+    assert bootstrap["mean"] == 2.0
+    assert bootstrap["ci95"][0] <= 2.0 <= bootstrap["ci95"][1]
 
 
 def test_summarize_run_reports_pairs_representations(tmp_path: Path) -> None:

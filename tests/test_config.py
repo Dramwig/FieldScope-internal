@@ -48,3 +48,23 @@ def test_auraflow_variant_is_preserved() -> None:
         }
     )
     assert config.backend.variant == "fp16"
+
+
+def test_random_transformer_is_restricted_to_auraflow() -> None:
+    with pytest.raises(ValueError, match="only supported by auraflow"):
+        RunConfig.from_mapping({"backend": {"random_transformer": True}})
+
+
+def test_random_transformer_seed_is_preserved() -> None:
+    config = RunConfig.from_mapping(
+        {
+            "backend": {
+                "name": "auraflow",
+                "model_path": "/models/AuraFlow-v0.3",
+                "random_transformer": True,
+                "random_transformer_seed": 17,
+            }
+        }
+    )
+    assert config.backend.random_transformer
+    assert config.backend.random_transformer_seed == 17
