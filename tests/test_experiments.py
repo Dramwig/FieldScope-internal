@@ -202,6 +202,50 @@ def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> No
     assert "classification/full-minus-state" in first["summary"]["comparisons"]
 
 
+def test_readout_matrix_rejects_stale_report_revision(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    config = _config(tmp_path)
+    caches = {}
+    for split in ("train", "val", "test"):
+        cache_dir = tmp_path / f"stale-cache-{split}"
+        extract_dataset_cache(
+            config,
+            dataset_name="synthetic-test",
+            dataset_root=tmp_path,
+            split=split,
+            output_dir=cache_dir,
+            limit=4,
+        )
+        caches[split] = cache_dir
+    output_dir = tmp_path / "stale-matrix"
+    arguments = {
+        "train_cache_dir": caches["train"],
+        "val_cache_dir": caches["val"],
+        "test_cache_dir": caches["test"],
+        "output_dir": output_dir,
+        "task": "classification",
+        "representations": ["state"],
+        "seeds": [3],
+        "epochs": 1,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-4,
+        "batch_size": 2,
+    }
+    run_readout_matrix(config, **arguments)
+    report_path = output_dir / "state" / "seed-3" / "classification_state_seed3_report.json"
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    report["code_revision"] = "stale-revision"
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    with pytest.raises(ValueError, match="Stale training report revision"):
+        run_readout_matrix(config, **arguments)
+
+
 def _assert_nested_equal(first: Any, second: Any) -> None:
     if isinstance(first, torch.Tensor):
         assert isinstance(second, torch.Tensor)

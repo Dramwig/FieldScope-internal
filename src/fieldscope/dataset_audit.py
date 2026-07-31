@@ -12,7 +12,7 @@ from torch.utils.data import Dataset
 from fieldscope.datasets import build_vision_dataset, dataset_sample_ids
 
 
-def _sample_ids_sha256(sample_ids: Sequence[str]) -> str:
+def sample_ids_sha256(sample_ids: Sequence[str]) -> str:
     """Hash an ID multiset without ambiguous string concatenation."""
 
     digest = hashlib.sha256()
@@ -36,7 +36,7 @@ def _split_summary(sample_ids: list[str]) -> tuple[dict[str, Any], list[str]]:
         "duplicate_count": len(sample_ids) - len(counts),
         "duplicate_id_count": len(duplicate_ids),
         "duplicate_examples": duplicate_ids[:10],
-        "sample_ids_sha256": _sample_ids_sha256(sample_ids),
+        "sample_ids_sha256": sample_ids_sha256(sample_ids),
     }
     return summary, duplicate_ids
 

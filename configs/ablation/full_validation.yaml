@@ -7,11 +7,16 @@ directions: [1, 2, 4, 8]
 difference: [forward, central]
 probe_type: [structured, gaussian, spatially_shuffled]
 representations:
+  - random_feature_local
   - state
+  - state_nograph
   - response_local
+  - response_nograph
   - state_graph
   - response
   - full
+  - full_local
+  - full_nograph
   - dit_hidden_local
   - dit_hidden_attention
 graph_topk: [0, 8, 16, 32]

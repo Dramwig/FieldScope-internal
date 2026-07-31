@@ -84,13 +84,17 @@ class FieldTokenizer(nn.Module):
         super().__init__()
         if mode not in {
             "full",
+            "full_local",
+            "full_nograph",
             "state",
+            "state_nograph",
             "response",
             "response_local",
+            "response_nograph",
             "state_graph",
         }:
             raise ValueError(
-                "mode must be full, state, response, response_local, or state_graph"
+                "unsupported tokenizer mode"
             )
         self.mode = mode
         self.state_dim = state_dim
@@ -106,13 +110,13 @@ class FieldTokenizer(nn.Module):
 
     def forward(self, features: FieldFeatures) -> TokenizerOutput:
         features.validate()
-        if self.mode in {"state", "state_graph"}:
+        if self.mode in {"state", "state_graph", "state_nograph"}:
             inputs = fixed_gaussian_sketch(
                 features.state,
                 self.input_dim,
                 seed=314159,
             )
-        elif self.mode in {"response", "response_local"}:
+        elif self.mode in {"response", "response_local", "response_nograph"}:
             inputs = fixed_gaussian_sketch(
                 features.response,
                 self.input_dim,
@@ -135,7 +139,13 @@ class FieldTokenizer(nn.Module):
             features.grid_size, nodes.shape[-1], nodes.device, nodes.dtype
         )
         nodes = nodes + position.unsqueeze(0)
-        if self.mode in {"state", "response_local"}:
+        if self.mode in {"state_nograph", "response_nograph", "full_nograph"}:
+            adjacency = torch.eye(
+                nodes.shape[1],
+                device=nodes.device,
+                dtype=nodes.dtype,
+            ).unsqueeze(0).expand(nodes.shape[0], -1, -1)
+        elif self.mode in {"state", "response_local", "full_local"}:
             adjacency = fixed_grid_adjacency(
                 features.grid_size,
                 nodes.shape[0],

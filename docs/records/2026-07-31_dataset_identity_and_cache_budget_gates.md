@@ -41,14 +41,37 @@ record is not evidence that the FieldScope method is effective.
   transfer archive to reach the exact byte count in three consecutive checks,
   runs the asset gate, and requires a same-revision `proceed` decision. The formal
   runbook then requires five consecutive GPU-free checks before extraction.
+- `fieldscope audit-full-evidence` is the formal conclusion gate. It rejects stale
+  revisions, dirty worktrees, incomplete caches, non-finite metrics, unmatched
+  readout parameter counts, missing checkpoints, or missing representation/seed
+  cells. A candidate must beat the strongest per-seed static/hidden control, its
+  no-graph/fixed-local controls, and its shuffled-response control on ImageNet-100
+  plus at least two dense tasks. VOC structure additionally requires paired-image
+  bootstrap intervals above zero against every registered control. At this
+  stage the only verdicts are `main_tasks_supported_pending_causal_audits`,
+  `limited_or_negative`, and `incomplete`; the main-task audit never emits the
+  final strong-claim verdict before the registered causal controls run.
+- Formal cache manifests now carry the SHA-256 of the exact source sample-ID
+  multiset. The conclusion gate matches those hashes against same-revision split
+  audits, verifies all cache-shard contents, exact readout budgets, checkpoint
+  hashes, and the registered AuraFlow FP16 weights, component configs, model index,
+  scheduler, and tokenizer hashes. The separate causal
+  gate is the only component allowed to emit `supports_core_hypothesis`.
+- The formal disk gate excludes CIFAR-10 after promotion because CIFAR is a
+  signal-only task, budgets the four registered main tasks, five full VOC dense
+  caches (main plus causal/condition variants), and reserves an additional
+  13 GiB for 240 best/last checkpoints and machine-readable reports.
+- The formal supervised matrix includes a deterministic sample-ID random-feature
+  control with the same tokenizer and active task head; its randomness is derived
+  from the readout seed and never consumes labels or image content.
 
 ## Local validation facts
 
 - `ruff check src tests scripts`: passed.
-- `python -m pytest`: 63 tests passed after the runbook, exact-count gates, and
-  dense-target budget correction.
-- Bash syntax checks passed for the signal gate, dataset extraction helper, and
-  formal full-validation runbook.
+- `python -m pytest`: 75 tests passed after the formal evidence, causal runbook,
+  checkpoint-lineage, exact-count, and dense-target budget checks.
+- Bash syntax checks passed for the signal gate, full-validation waiter,
+  formal full-validation runbook, and final causal-validation runbook.
 - Toy end-to-end smoke: passed, including exact cache reload.
 - Local ImageNet-100 prepared asset: 100 classes, 129,395 train images, 5,000
   official validation images, and 134,600 transfer-archive members.

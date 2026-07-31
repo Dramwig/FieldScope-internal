@@ -67,12 +67,18 @@ def select_representation(
 
     if representation in {
         "full",
+        "full_local",
+        "full_nograph",
         "state",
+        "state_nograph",
         "response",
         "response_local",
+        "response_nograph",
         "state_graph",
     }:
         return features, representation
+    if representation == "random_feature_local":
+        return features, "state"
     if representation == "response_shuffled":
         return features, "response"
     if representation == "full_shuffled":

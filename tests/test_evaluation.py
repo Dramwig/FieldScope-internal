@@ -5,6 +5,8 @@ from fieldscope.evaluation import (
     ClassificationMeter,
     DepthMeter,
     SegmentationMeter,
+    average_precision,
+    best_binary_f1,
     graph_segmentation_metrics,
 )
 
@@ -55,3 +57,10 @@ def test_graph_segmentation_metrics_detect_perfect_region_graph() -> None:
     assert metrics["boundary_average_precision"] == pytest.approx(1.0)
     assert metrics["boundary_best_f1"] == pytest.approx(1.0)
     assert metrics["foreground_spectral_iou"] == pytest.approx(1.0)
+
+
+def test_threshold_metrics_do_not_break_score_ties_by_index() -> None:
+    scores = torch.zeros(4)
+    labels = torch.tensor([1, 0, 1, 0], dtype=torch.bool)
+    assert average_precision(scores, labels) == pytest.approx(0.5)
+    assert best_binary_f1(scores, labels) == pytest.approx(2 / 3)

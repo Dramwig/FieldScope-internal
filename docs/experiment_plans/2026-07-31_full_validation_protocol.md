@@ -75,6 +75,8 @@ internal validation，官方 validation 仅作最终 test。NYUv2 使用官方 7
 epoch 数和选模规则：
 
 - `z0`、`zt`、多时间 `trajectory`、`velocity`、`mismatch`、`endpoint`；
+- `random_feature_local`：按 sample ID 与训练 seed 固定生成的 768 维随机
+  patch 特征 + 固定局部图，用于排除任务头仅凭容量拟合的解释；
 - `state`：场状态节点 + 固定局部图；
 - `response_local`：响应节点 + 固定局部图；
 - `state_graph`：状态节点 + 响应图；
@@ -139,3 +141,20 @@ epoch 数和选模规则：
 
 任何资源缩减、数据缺失或协议偏离都写入 `docs/records/`，并在结果表标明，
 不得静默替换最终设置。
+
+## 实现澄清：关系图归因对照
+
+正式矩阵加入参数量匹配的 identity-adjacency（无跨 patch 消息传递）与固定图像网格
+对照：`state_nograph`、`response_nograph`、`full_nograph`、`response_local` 和
+`full_local`。`response` 或 `full` 只有在同一 seed、同一任务和同一训练预算下，
+同时稳定超过对应的无图版本与固定局部图版本，才能计为“响应诱导关系图”带来的证据；
+仅超过静态 latent、velocity 或 DiT hidden 对照不足以完成图结构归因。
+
+## 实现澄清：最终因果与条件结论门
+
+主任务审计最多输出 `main_tasks_supported_pending_causal_audits`，不得直接输出核心假设
+成立。只有在完整 VOC 2012 test 的 paired-image 审计中，空文本、预训练、结构化 probe
+的 response 同时以 bootstrap 95% 区间下界大于零超过随机 Flow 与空间打乱 probe，且
+在固定的 `a neutral photograph` 和 `an unrelated scene` 两种条件下继续超过
+response-shuffled、state、DiT hidden 与 DiT attention，联合审计才可输出
+`supports_core_hypothesis`。否则报告因果归因失败或证据不完整，不得以主任务增益替代。

@@ -32,6 +32,10 @@ verify_revision() {
 verify_revision
 mkdir -p "$preflight_root" "$cache_root"
 
+"$python_bin" -m fieldscope.cli audit-backbone-assets \
+  --config configs/model/auraflow_v03.yaml \
+  --output "$preflight_root/auraflow_backbone_asset.json"
+
 if [[ ! -f "$decision" ]]; then
   echo "missing signal-gate decision: $decision" >&2
   exit 5
@@ -90,7 +94,7 @@ done
 
 target_split_arguments=()
 target_payload_arguments=()
-for dataset in cifar10 voc2012 imagenet100 ade20k nyuv2; do
+for dataset in voc2012 imagenet100 ade20k nyuv2; do
   while IFS= read -r target; do
     target_split_arguments+=(--target-split "$target")
   done < <(
@@ -132,6 +136,7 @@ import sys
 print(json.load(open(sys.argv[1], encoding="utf-8"))["projected_total_bytes"])
 PY
 )"
+checkpoint_and_report_budget_bytes=13958643712
 voc_test_count="$(
   "$python_bin" - "$preflight_root/voc2012_split_audit.json" <<'PY'
 import json
@@ -143,10 +148,14 @@ PY
 
 "$python_bin" -m fieldscope.cli plan-cache-budget \
   --measurement-cache "$signal_cache_root/voc2012_test" \
-  --target-split "voc2012_dense_test=$voc_test_count" \
+  --target-split "voc2012_dense_main=$voc_test_count" \
+  --target-split "voc2012_dense_random_flow=$voc_test_count" \
+  --target-split "voc2012_dense_spatially_shuffled_probe=$voc_test_count" \
+  --target-split "voc2012_dense_neutral_prompt=$voc_test_count" \
+  --target-split "voc2012_dense_unrelated_prompt=$voc_test_count" \
   --filesystem-path "$cache_root" \
   --storage-policy dense \
-  --additional-required-bytes "$sparse_projected_bytes" \
+  --additional-required-bytes "$((sparse_projected_bytes + checkpoint_and_report_budget_bytes))" \
   --reserve-gib 10 \
   --safety-factor 1.15 \
   --output "$preflight_root/combined_cache_budget.json"
@@ -197,11 +206,35 @@ echo "$(date --iso-8601=seconds) extracting full dense VOC diagnostic cache"
   --cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/${cache_tag}_dense/voc2012_test" \
   --output "outputs/full_validation/$cache_tag/voc2012_unsupervised.json"
 
-for dataset in cifar10 imagenet100 voc2012 ade20k nyuv2; do
+for dataset in imagenet100 voc2012 ade20k nyuv2; do
   echo "$(date --iso-8601=seconds) extracting full sparse cache dataset=$dataset"
   bash "scripts/eval/run_${dataset}_extract.sh"
   echo "$(date --iso-8601=seconds) training full readout matrix dataset=$dataset"
   bash "scripts/train/train_${dataset}_readout.sh"
 done
 
-echo "$(date --iso-8601=seconds) full validation matrices completed"
+"$python_bin" -m fieldscope.cli audit-full-evidence \
+  --imagenet100-matrix "outputs/full_validation/$cache_tag/imagenet100/matrix_report.json" \
+  --voc2012-matrix "outputs/full_validation/$cache_tag/voc2012/matrix_report.json" \
+  --ade20k-matrix "outputs/full_validation/$cache_tag/ade20k/matrix_report.json" \
+  --nyuv2-matrix "outputs/full_validation/$cache_tag/nyuv2/matrix_report.json" \
+  --voc-unsupervised "outputs/full_validation/$cache_tag/voc2012_unsupervised.json" \
+  --backbone-asset "$preflight_root/auraflow_backbone_asset.json" \
+  --imagenet100-split-audit "$preflight_root/imagenet100_split_audit.json" \
+  --voc2012-split-audit "$preflight_root/voc2012_split_audit.json" \
+  --ade20k-split-audit "$preflight_root/ade20k_split_audit.json" \
+  --nyuv2-split-audit "$preflight_root/nyuv2_split_audit.json" \
+  --output "outputs/full_validation/$cache_tag/evidence_decision.json"
+
+verdict="$(
+  "$python_bin" - "outputs/full_validation/$cache_tag/evidence_decision.json" <<'PY'
+import json
+import sys
+
+print(json.load(open(sys.argv[1], encoding="utf-8"))["verdict"])
+PY
+)"
+echo "$(date --iso-8601=seconds) full validation evidence verdict=$verdict"
+if [[ "$verdict" == "main_tasks_supported_pending_causal_audits" ]]; then
+  exec bash scripts/eval/run_causal_validation_after_main.sh
+fi

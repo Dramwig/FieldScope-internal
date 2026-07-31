@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from collections import OrderedDict
 from pathlib import Path
@@ -169,6 +170,59 @@ class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
             "features": features,
             "targets": receiver["targets"],
             "sample_id": receiver["sample_id"],
+        }
+
+
+class RandomFeatureCachedDataset(Dataset[dict[str, Any]]):
+    """Replace visual evidence with deterministic sample-ID random patch features."""
+
+    def __init__(
+        self,
+        cache_dir: str | Path,
+        seed: int,
+        *,
+        memory_cache_bytes: int = 0,
+    ):
+        self.dataset = CachedFeatureDataset(
+            cache_dir,
+            memory_cache_bytes=memory_cache_bytes,
+        )
+        self.seed = seed
+        self.shard_ranges = self.dataset.shard_ranges
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        sample = self.dataset[index]
+        source = sample["features"]
+        sample_id = str(sample["sample_id"])
+        encoded = f"{self.seed}\0{sample_id}".encode()
+        random_seed = int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big")
+        generator = torch.Generator(device="cpu").manual_seed(random_seed)
+        random_features = torch.randn(
+            (1, source.state.shape[1], 768),
+            generator=generator,
+            dtype=torch.float32,
+        )
+        features = FieldFeatures(
+            state=random_features,
+            response=source.response.float(),
+            affinity=source.affinity.float(),
+            adjacency=source.adjacency.float(),
+            grid_size=source.grid_size,
+            baselines=source.baselines,
+            graphs=source.graphs,
+            metadata={
+                **source.metadata,
+                "random_feature_policy": "sample_id_sha256_seeded_v1",
+            },
+        )
+        features.validate()
+        return {
+            "features": features,
+            "targets": sample["targets"],
+            "sample_id": sample_id,
         }
 
 

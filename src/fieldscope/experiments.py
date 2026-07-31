@@ -21,12 +21,14 @@ from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
 from fieldscope.cached_dataset import (
     CachedFeatureDataset,
+    RandomFeatureCachedDataset,
     ShardShuffleSampler,
     ShuffledResponseCachedDataset,
     collate_cached,
     shared_memory_cache_stats,
 )
 from fieldscope.config import RunConfig
+from fieldscope.dataset_audit import sample_ids_sha256
 from fieldscope.datasets import build_vision_dataset
 from fieldscope.evaluation import (
     ClassificationMeter,
@@ -90,6 +92,52 @@ def file_sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(block)
     return digest.hexdigest()
+
+
+def cache_identity(cache_dir: Path) -> dict[str, Any]:
+    """Return the immutable manifest identity consumed by a readout run."""
+
+    resolved = cache_dir.resolve()
+    manifest_path = resolved / "dataset_manifest.json"
+    if not manifest_path.is_file():
+        raise FileNotFoundError(f"Missing cache manifest: {manifest_path}")
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if manifest.get("complete") is not True:
+        raise ValueError(f"Cache manifest is incomplete: {manifest_path}")
+    return {
+        "path": str(resolved),
+        "manifest_sha256": file_sha256(manifest_path),
+        "extraction_signature": manifest.get("extraction_signature"),
+        "dataset": manifest.get("dataset"),
+        "split": manifest.get("split"),
+        "num_samples": manifest.get("num_samples"),
+        "sample_ids_sha256": manifest.get("sample_ids_sha256"),
+        "storage_policy": manifest.get("storage_policy", "dense"),
+        "code_revision": manifest.get("code_revision"),
+        "code_tree_sha256": manifest.get("code_tree_sha256"),
+    }
+
+
+def _json_compatible(value: Any) -> Any:
+    return json.loads(json.dumps(value, ensure_ascii=False, default=str))
+
+
+def _require_report_contract(
+    payload: Mapping[str, Any],
+    expected: Mapping[str, Any],
+    *,
+    report_path: Path,
+    kind: str,
+) -> None:
+    for name, value in expected.items():
+        if payload.get(name) != value:
+            if name == "code_revision":
+                raise ValueError(f"Stale {kind} report revision: {report_path}")
+            if name == "code_tree_sha256":
+                raise ValueError(f"Stale {kind} report code tree: {report_path}")
+            raise ValueError(
+                f"Incompatible {kind} report {name}: {report_path}"
+            )
 
 
 def _verified_cached_shard(output_dir: Path, shard: Mapping[str, Any]) -> bool:
@@ -300,6 +348,7 @@ def extract_dataset_cache(
         torch.cuda.reset_peak_memory_stats(backend.device)
     extractor = FieldResponseExtractor(backend, config.probe)
     shards: list[dict[str, Any]] = []
+    cache_sample_ids: list[str] = []
     sample_count = 0
     written_samples = 0
     extraction_seconds = 0.0
@@ -392,6 +441,7 @@ def extract_dataset_cache(
             "sha256": shard_sha256,
         }
         shards.append(shard)
+        cache_sample_ids.extend(sample_ids)
         sample_count += local_end - local_start
         report = {
             "status": "passed" if sample_count == len(selected_indices) else "running",
@@ -402,6 +452,7 @@ def extract_dataset_cache(
             "offset": offset,
             "requested_stop": stop,
             "num_samples": sample_count,
+            "sample_ids_sha256": sample_ids_sha256(cache_sample_ids),
             "complete": sample_count == len(selected_indices),
             "extraction_signature": signature,
             "backend": backend.describe(),
@@ -454,6 +505,15 @@ def _task_output_size(
     return grid_size
 
 
+def _task_trainable_parameters(model: FieldScopeModel, task: str) -> int:
+    prefixes = ("tokenizer.", f"heads.{task}.")
+    return sum(
+        parameter.numel()
+        for name, parameter in model.named_parameters()
+        if parameter.requires_grad and name.startswith(prefixes)
+    )
+
+
 def _cached_dataset(
     cache_dir: Path,
     representation: str,
@@ -463,6 +523,12 @@ def _cached_dataset(
     memory_cache_bytes = int(memory_cache_gib * 1024**3)
     if representation in {"response_shuffled", "full_shuffled"}:
         return ShuffledResponseCachedDataset(
+            cache_dir,
+            seed,
+            memory_cache_bytes=memory_cache_bytes,
+        )
+    if representation == "random_feature_local":
+        return RandomFeatureCachedDataset(
             cache_dir,
             seed,
             memory_cache_bytes=memory_cache_bytes,
@@ -552,6 +618,7 @@ def evaluate_cached_readout(
         predictions = model(
             features,
             output_size=_task_output_size(task, targets, features.grid_size),
+            task=task,
         )
         loss, _ = multitask_loss(predictions, {task: targets[task]})
         batch_size = features.state.shape[0]
@@ -595,6 +662,9 @@ def train_cached_readout(
         raise ValueError("epochs must be positive")
     run_started = time.perf_counter()
     provenance = code_provenance()
+    report_config = _json_compatible(config.to_dict())
+    train_cache = cache_identity(train_cache_dir)
+    validation_cache = cache_identity(val_cache_dir)
     set_experiment_seed(seed, config.runtime.deterministic)
     train_dataset = _cached_dataset(
         train_cache_dir,
@@ -617,10 +687,15 @@ def train_cached_readout(
         config.tokenizer,
         mode=mode,
     ).to(device)
+    for head_name, head in model.heads.named_children():
+        if head_name != task:
+            head.requires_grad_(False)
     if device.type == "cuda":
         torch.cuda.reset_peak_memory_stats(device)
     optimizer = torch.optim.AdamW(
-        model.parameters(), lr=learning_rate, weight_decay=weight_decay
+        (parameter for parameter in model.parameters() if parameter.requires_grad),
+        lr=learning_rate,
+        weight_decay=weight_decay,
     )
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=max(1, epochs)
@@ -650,8 +725,16 @@ def train_cached_readout(
             raise ValueError("Resume checkpoint batch size does not match")
         if int(payload.get("target_epochs", -1)) != epochs:
             raise ValueError("Resume checkpoint target epochs do not match")
+        if payload.get("code_revision") != provenance["code_revision"]:
+            raise ValueError("Resume checkpoint revision does not match current code")
         if payload.get("code_tree_sha256") != provenance["code_tree_sha256"]:
             raise ValueError("Resume checkpoint code tree does not match current code")
+        if payload.get("code_dirty") != provenance["code_dirty"]:
+            raise ValueError("Resume checkpoint worktree state does not match current code")
+        if payload.get("train_cache") != train_cache:
+            raise ValueError("Resume checkpoint train cache does not match")
+        if payload.get("validation_cache") != validation_cache:
+            raise ValueError("Resume checkpoint validation cache does not match")
         model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
         scheduler.load_state_dict(payload["scheduler"])
@@ -692,6 +775,7 @@ def train_cached_readout(
             predictions = model(
                 features,
                 output_size=_task_output_size(task, targets, features.grid_size),
+                task=task,
             )
             loss, _ = multitask_loss(predictions, {task: targets[task]})
             loss.backward()
@@ -748,6 +832,8 @@ def train_cached_readout(
             "weight_decay": weight_decay,
             "batch_size": readout_batch_size,
             "target_epochs": epochs,
+            "train_cache": train_cache,
+            "validation_cache": validation_cache,
             "rng_state": capture_rng_state(),
             **provenance,
             "best_epoch": best_epoch,
@@ -764,14 +850,15 @@ def train_cached_readout(
             "representation": representation,
             "seed": seed,
             **provenance,
+            "config": report_config,
             "epochs": epochs,
+            "learning_rate": learning_rate,
+            "weight_decay": weight_decay,
+            "train_cache": train_cache,
+            "validation_cache": validation_cache,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
-            "trainable_parameters": sum(
-                parameter.numel()
-                for parameter in model.parameters()
-                if parameter.requires_grad
-            ),
+            "trainable_parameters": _task_trainable_parameters(model, task),
             "batch_size": readout_batch_size,
             "readout_memory_cache": shared_memory_cache_stats(),
             "runtime": {
@@ -791,6 +878,7 @@ def train_cached_readout(
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
             "best_checkpoint": str(best_path),
+            "best_checkpoint_sha256": file_sha256(best_path),
             "last_checkpoint": str(last_path),
             "history": history,
         }
@@ -815,14 +903,15 @@ def train_cached_readout(
             "representation": representation,
             "seed": seed,
             **provenance,
+            "config": report_config,
             "epochs": epochs,
+            "learning_rate": learning_rate,
+            "weight_decay": weight_decay,
+            "train_cache": train_cache,
+            "validation_cache": validation_cache,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
-            "trainable_parameters": sum(
-                parameter.numel()
-                for parameter in model.parameters()
-                if parameter.requires_grad
-            ),
+            "trainable_parameters": _task_trainable_parameters(model, task),
             "batch_size": readout_batch_size,
             "readout_memory_cache": shared_memory_cache_stats(),
             "runtime": {
@@ -842,6 +931,7 @@ def train_cached_readout(
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
             "best_checkpoint": str(best_path),
+            "best_checkpoint_sha256": file_sha256(best_path),
             "last_checkpoint": str(resume_checkpoint),
             "history": history,
             "validation": validation,
@@ -857,7 +947,18 @@ def evaluate_checkpoint(
     batch_size: int | None = None,
 ) -> dict[str, Any]:
     device = torch.device(config.backend.device)
+    provenance = code_provenance()
+    test_cache = cache_identity(cache_dir)
+    checkpoint_sha256 = file_sha256(checkpoint)
     payload = torch.load(checkpoint, map_location=device, weights_only=False)
+    if payload.get("code_revision") != provenance["code_revision"]:
+        raise ValueError("Checkpoint revision does not match current code")
+    if payload.get("code_tree_sha256") != provenance["code_tree_sha256"]:
+        raise ValueError("Checkpoint code tree does not match current code")
+    if payload.get("code_dirty") != provenance["code_dirty"]:
+        raise ValueError("Checkpoint worktree state does not match current code")
+    if payload.get("config") != config.to_dict():
+        raise ValueError("Checkpoint config does not match evaluation config")
     checkpoint_config = RunConfig.from_mapping(payload["config"])
     model = FieldScopeModel(
         payload["state_dim"],
@@ -865,6 +966,9 @@ def evaluate_checkpoint(
         checkpoint_config.tokenizer,
         mode=payload["mode"],
     ).to(device)
+    for head_name, head in model.heads.named_children():
+        if head_name != payload["task"]:
+            head.requires_grad_(False)
     model.load_state_dict(payload["model"])
     evaluation = evaluate_cached_readout(
         model,
@@ -879,10 +983,14 @@ def evaluate_checkpoint(
     return {
         "status": "passed",
         "checkpoint": str(checkpoint),
+        "checkpoint_sha256": checkpoint_sha256,
         "task": payload["task"],
         "representation": payload["representation"],
         "seed": payload["seed"],
-        **code_provenance(),
+        **provenance,
+        "config": _json_compatible(payload["config"]),
+        "batch_size": batch_size or checkpoint_config.runtime.batch_size,
+        "test_cache": test_cache,
         "evaluation": evaluation,
     }
 
@@ -1006,6 +1114,12 @@ def run_readout_matrix(
     test_reports: list[Path] = []
     runs: list[dict[str, Any]] = []
     matrix_path = output_dir / "matrix_report.json"
+    provenance = code_provenance()
+    config_payload = _json_compatible(config.to_dict())
+    readout_batch_size = batch_size or config.runtime.batch_size
+    train_cache = cache_identity(train_cache_dir)
+    validation_cache = cache_identity(val_cache_dir)
+    test_cache = cache_identity(test_cache_dir)
     for representation in representations:
         for seed in seeds:
             run_dir = output_dir / representation / f"seed-{seed}"
@@ -1016,6 +1130,26 @@ def run_readout_matrix(
             if training_report_path.is_file():
                 training_report = json.loads(
                     training_report_path.read_text(encoding="utf-8")
+                )
+                _require_report_contract(
+                    training_report,
+                    {
+                        "task": task,
+                        "representation": representation,
+                        "seed": seed,
+                        "code_revision": provenance["code_revision"],
+                        "code_dirty": provenance["code_dirty"],
+                        "code_tree_sha256": provenance["code_tree_sha256"],
+                        "config": config_payload,
+                        "epochs": epochs,
+                        "learning_rate": learning_rate,
+                        "weight_decay": weight_decay,
+                        "batch_size": readout_batch_size,
+                        "train_cache": train_cache,
+                        "validation_cache": validation_cache,
+                    },
+                    report_path=training_report_path,
+                    kind="training",
                 )
             else:
                 training_report = {}
@@ -1037,9 +1171,34 @@ def run_readout_matrix(
                     batch_size=batch_size,
                 )
             best_checkpoint = Path(training_report["best_checkpoint"])
+            if not best_checkpoint.is_file():
+                raise FileNotFoundError(f"Missing best checkpoint: {best_checkpoint}")
+            best_checkpoint_sha256 = file_sha256(best_checkpoint)
+            if training_report.get("best_checkpoint_sha256") != best_checkpoint_sha256:
+                raise ValueError(
+                    f"Best checkpoint SHA-256 mismatch: {best_checkpoint}"
+                )
             test_report_path = run_dir / f"{task}_{representation}_seed{seed}_test.json"
             if test_report_path.is_file():
                 test_report = json.loads(test_report_path.read_text(encoding="utf-8"))
+                _require_report_contract(
+                    test_report,
+                    {
+                        "task": task,
+                        "representation": representation,
+                        "seed": seed,
+                        "code_revision": provenance["code_revision"],
+                        "code_dirty": provenance["code_dirty"],
+                        "code_tree_sha256": provenance["code_tree_sha256"],
+                        "config": config_payload,
+                        "batch_size": readout_batch_size,
+                        "test_cache": test_cache,
+                        "checkpoint": str(best_checkpoint),
+                        "checkpoint_sha256": best_checkpoint_sha256,
+                    },
+                    report_path=test_report_path,
+                    kind="test",
+                )
             else:
                 test_report = evaluate_checkpoint(
                     config,
@@ -1055,6 +1214,7 @@ def run_readout_matrix(
                     "seed": seed,
                     "training_report": str(training_report_path),
                     "best_checkpoint": str(best_checkpoint),
+                    "best_checkpoint_sha256": best_checkpoint_sha256,
                     "test_report": str(test_report_path),
                     "test_metric": test_report["evaluation"]["metrics"][metric],
                 }
@@ -1081,10 +1241,16 @@ def run_readout_matrix(
         "representations": representations,
         "seeds": seeds,
         "epochs": epochs,
-        "batch_size": batch_size,
+        "learning_rate": learning_rate,
+        "weight_decay": weight_decay,
+        "batch_size": readout_batch_size,
+        "config": config_payload,
         "train_cache_dir": str(train_cache_dir),
         "val_cache_dir": str(val_cache_dir),
         "test_cache_dir": str(test_cache_dir),
+        "train_cache": train_cache,
+        "validation_cache": validation_cache,
+        "test_cache": test_cache,
         "runs": runs,
         "summary": summary,
     }

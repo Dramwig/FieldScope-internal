@@ -77,7 +77,30 @@ class MultiTaskHeads(nn.Module):
         tokens: TokenizerOutput,
         grid_size: tuple[int, int],
         output_size: tuple[int, int],
+        task: str | None = None,
     ) -> dict[str, torch.Tensor]:
+        if task == "classification":
+            return {"classification": self.classification(tokens.global_token)}
+        if task == "segmentation":
+            return {
+                "segmentation": self.segmentation(tokens.dense, grid_size, output_size)
+            }
+        if task == "depth":
+            return {
+                "depth": F.softplus(
+                    self.depth(tokens.dense, grid_size, output_size)
+                ).clamp_min(1e-6)
+            }
+        if task == "normals":
+            return {
+                "normals": F.normalize(
+                    self.normals(tokens.dense, grid_size, output_size),
+                    dim=1,
+                    eps=1e-6,
+                )
+            }
+        if task is not None:
+            raise ValueError(f"unsupported task head: {task}")
         normals = self.normals(tokens.dense, grid_size, output_size)
         normals = F.normalize(normals, dim=1, eps=1e-6)
         depth = F.softplus(

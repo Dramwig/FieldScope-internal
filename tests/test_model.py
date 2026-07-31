@@ -57,6 +57,24 @@ def test_multitask_model_shapes_and_backward() -> None:
     assert all(parameter.grad is not None for parameter in model.parameters())
 
 
+def test_model_can_execute_only_the_requested_task_head() -> None:
+    features = _features()
+    model = FieldScopeModel(
+        features.state.shape[-1],
+        features.response.shape[-1],
+        TokenizerConfig(
+            hidden_dim=16,
+            input_dim=16,
+            num_layers=1,
+            num_classes=4,
+            segmentation_classes=3,
+        ),
+    )
+    predictions = model(features, output_size=(16, 16), task="classification")
+    assert set(predictions) == {"classification"}
+    assert predictions["classification"].shape == (2, 4)
+
+
 def test_consistency_losses() -> None:
     value = torch.randn(2, 4, 4)
     assert graph_stability_loss(value, value).item() == 0
@@ -83,7 +101,18 @@ def test_readout_parameter_count_is_representation_matched() -> None:
         segmentation_classes=3,
     )
     counts = []
-    for representation in ("z0", "response", "full", "dit_hidden_attention"):
+    for representation in (
+        "z0",
+        "random_feature_local",
+        "state_nograph",
+        "response_nograph",
+        "response_local",
+        "response",
+        "full_nograph",
+        "full_local",
+        "full",
+        "dit_hidden_attention",
+    ):
         selected, mode = select_representation(features, representation)
         model = FieldScopeModel(
             selected.state.shape[-1],

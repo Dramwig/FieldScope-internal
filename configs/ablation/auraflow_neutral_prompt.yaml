@@ -1,0 +1,42 @@
+backend:
+  name: auraflow
+  model_path: "${FIELDSCOPE_CHECKPOINTS_ROOT}/AuraFlow-v0.3"
+  variant: fp16
+  device: cuda
+  dtype: bfloat16
+  image_size: 512
+  prompt: "a neutral photograph"
+  max_sequence_length: 256
+  local_files_only: true
+  offload_text_encoder: true
+
+probe:
+  times: [0.2, 0.5, 0.8]
+  num_directions: 8
+  probe_type: structured
+  eta: 0.03
+  difference: central
+  graph_grid: [16, 16]
+  topk: 16
+  local_radius: 1
+  probe_batch_size: 8
+  antithetic_noise: true
+  hidden_baseline_dim: 768
+  seed: 4121
+
+tokenizer:
+  hidden_dim: 256
+  input_dim: 768
+  num_layers: 3
+  dropout: 0.1
+  num_classes: 100
+  segmentation_classes: 21
+
+runtime:
+  output_dir: outputs/causal/neutral_prompt
+  cache_dir: "${FIELDSCOPE_DATASETS_ROOT}/feature_cache/causal/neutral_prompt"
+  batch_size: 2
+  cache_shard_size: 64
+  readout_memory_cache_gib: 0
+  num_workers: 0
+  deterministic: true

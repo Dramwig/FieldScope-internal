@@ -7,6 +7,7 @@ checkpoint_selection: validation_primary_metric
 augmentation: none_fixed_single_view_cache
 seeds: [4121, 7319, 104729]
 representations:
+  - random_feature_local
   - z0
   - zt
   - trajectory
@@ -14,10 +15,14 @@ representations:
   - mismatch
   - endpoint
   - state
+  - state_nograph
   - response_local
+  - response_nograph
   - state_graph
   - response
   - full
+  - full_local
+  - full_nograph
   - dit_hidden_local
   - dit_hidden_attention
   - response_shuffled

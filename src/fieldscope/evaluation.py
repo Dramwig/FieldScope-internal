@@ -244,11 +244,18 @@ def average_precision(scores: torch.Tensor, labels: torch.Tensor) -> float:
     if positives == 0:
         return float("nan")
     order = torch.argsort(scores, descending=True)
+    sorted_scores = scores[order]
     sorted_labels = labels[order].float()
-    precision = sorted_labels.cumsum(0) / torch.arange(
-        1, sorted_labels.numel() + 1, dtype=torch.float32
-    )
-    return float((precision * sorted_labels).sum().item() / positives)
+    true_positive = sorted_labels.cumsum(0)
+    threshold_ends = torch.ones_like(sorted_scores, dtype=torch.bool)
+    threshold_ends[:-1] = sorted_scores[:-1] != sorted_scores[1:]
+    end_indices = torch.nonzero(threshold_ends, as_tuple=False).flatten()
+    grouped_true_positive = true_positive[end_indices]
+    grouped_predicted_positive = end_indices.to(torch.float32) + 1
+    precision = grouped_true_positive / grouped_predicted_positive
+    recall = grouped_true_positive / positives
+    previous_recall = torch.cat([torch.zeros(1), recall[:-1]])
+    return float(((recall - previous_recall) * precision).sum().item())
 
 
 def best_binary_f1(scores: torch.Tensor, labels: torch.Tensor) -> float:
@@ -261,9 +268,14 @@ def best_binary_f1(scores: torch.Tensor, labels: torch.Tensor) -> float:
     if positives == 0:
         return float("nan")
     order = torch.argsort(scores, descending=True)
+    sorted_scores = scores[order]
     sorted_labels = labels[order].float()
     true_positive = sorted_labels.cumsum(0)
-    predicted_positive = torch.arange(1, labels.numel() + 1, dtype=torch.float32)
+    threshold_ends = torch.ones_like(sorted_scores, dtype=torch.bool)
+    threshold_ends[:-1] = sorted_scores[:-1] != sorted_scores[1:]
+    end_indices = torch.nonzero(threshold_ends, as_tuple=False).flatten()
+    true_positive = true_positive[end_indices]
+    predicted_positive = end_indices.to(torch.float32) + 1
     precision = true_positive / predicted_positive
     recall = true_positive / positives
     f1 = 2 * precision * recall / (precision + recall).clamp_min(1e-8)

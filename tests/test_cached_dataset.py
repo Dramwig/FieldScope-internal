@@ -8,6 +8,7 @@ from fieldscope.backends.toy import ToyFieldBackend
 from fieldscope.cache import save_features
 from fieldscope.cached_dataset import (
     CachedFeatureDataset,
+    RandomFeatureCachedDataset,
     ShardShuffleSampler,
     ShuffledResponseCachedDataset,
     collate_cached,
@@ -55,6 +56,8 @@ def _write_cache(tmp_path: Path) -> tuple[Path, RunConfig]:
                 "dataset": "synthetic",
                 "split": "train",
                 "num_samples": 3,
+                "complete": True,
+                "storage_policy": "dense",
                 "shards": shards,
             }
         ),
@@ -139,6 +142,16 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
     )
     assert resumed["status"] == "passed"
     assert resumed["validation"]["num_samples"] == 3
+
+
+def test_random_feature_control_is_sample_id_deterministic(tmp_path: Path) -> None:
+    cache_dir, _ = _write_cache(tmp_path)
+    first = RandomFeatureCachedDataset(cache_dir, seed=17)
+    second = RandomFeatureCachedDataset(cache_dir, seed=17)
+    different = RandomFeatureCachedDataset(cache_dir, seed=19)
+    assert torch.equal(first[0]["features"].state, second[0]["features"].state)
+    assert not torch.equal(first[0]["features"].state, different[0]["features"].state)
+    assert first[0]["features"].state.shape[-1] == 768
 
 
 def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:

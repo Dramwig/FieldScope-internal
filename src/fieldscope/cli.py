@@ -19,12 +19,14 @@ import torch
 from PIL import Image
 from torch.utils.data import DataLoader
 
+from fieldscope.assets import audit_backbone_assets
 from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
 from fieldscope.config import RunConfig, load_config
 from fieldscope.dataset_audit import audit_dataset_splits
 from fieldscope.datasets import SyntheticShapesDataset
 from fieldscope.diagnostics import graph_diagnostics
+from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
 from fieldscope.experiments import (
     atomic_json_dump,
     diagnose_segmentation_cache,
@@ -362,10 +364,15 @@ def _build_parser() -> argparse.ArgumentParser:
         "--representation",
         default="full",
         choices=[
+            "random_feature_local",
             "full",
+            "full_local",
+            "full_nograph",
             "state",
+            "state_nograph",
             "response",
             "response_local",
+            "response_nograph",
             "state_graph",
             "dit_hidden_local",
             "dit_hidden_attention",
@@ -511,6 +518,47 @@ def _build_parser() -> argparse.ArgumentParser:
         help="One ImageNet synset per line; order defines contiguous labels",
     )
     split_audit_parser.add_argument("--output", required=True, type=Path)
+
+    evidence_parser = subparsers.add_parser(
+        "audit-full-evidence",
+        help="Apply the pre-registered cross-task FieldScope conclusion gate",
+    )
+    for dataset in ("imagenet100", "voc2012", "ade20k", "nyuv2"):
+        evidence_parser.add_argument(
+            f"--{dataset}-matrix",
+            required=True,
+            type=Path,
+        )
+    evidence_parser.add_argument("--voc-unsupervised", required=True, type=Path)
+    evidence_parser.add_argument("--backbone-asset", required=True, type=Path)
+    for dataset in ("imagenet100", "voc2012", "ade20k", "nyuv2"):
+        evidence_parser.add_argument(
+            f"--{dataset}-split-audit",
+            required=True,
+            type=Path,
+        )
+    evidence_parser.add_argument("--output", required=True, type=Path)
+
+    asset_parser = subparsers.add_parser(
+        "audit-backbone-assets",
+        help="Verify the exact AuraFlow FP16 weight files used by formal runs",
+    )
+    asset_parser.add_argument("--config", required=True, type=Path)
+    asset_parser.add_argument("--output", required=True, type=Path)
+
+    causal_parser = subparsers.add_parser(
+        "audit-causal-evidence",
+        help="Apply the final causal and condition conclusion gate",
+    )
+    causal_parser.add_argument("--main-evidence", required=True, type=Path)
+    for variant in (
+        "random-flow",
+        "spatially-shuffled-probe",
+        "neutral-prompt",
+        "unrelated-prompt",
+    ):
+        causal_parser.add_argument(f"--{variant}", required=True, type=Path)
+    causal_parser.add_argument("--output", required=True, type=Path)
 
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
@@ -703,6 +751,44 @@ def main(argv: list[str] | None = None) -> int:
         )
         _json_dump(args.output, report)
         if report["status"] != "passed":
+            exit_code = 2
+    elif args.command == "audit-full-evidence":
+        report = audit_full_evidence(
+            matrix_paths={
+                "imagenet100": args.imagenet100_matrix,
+                "voc2012": args.voc2012_matrix,
+                "ade20k": args.ade20k_matrix,
+                "nyuv2": args.nyuv2_matrix,
+            },
+            voc_unsupervised_path=args.voc_unsupervised,
+            backbone_asset_path=args.backbone_asset,
+            split_audit_paths={
+                "imagenet100": args.imagenet100_split_audit,
+                "voc2012": args.voc2012_split_audit,
+                "ade20k": args.ade20k_split_audit,
+                "nyuv2": args.nyuv2_split_audit,
+            },
+        )
+        _json_dump(args.output, report)
+        if report["verdict"] == "incomplete":
+            exit_code = 2
+    elif args.command == "audit-backbone-assets":
+        report = audit_backbone_assets(load_config(args.config))
+        _json_dump(args.output, report)
+        if report["status"] != "passed":
+            exit_code = 2
+    elif args.command == "audit-causal-evidence":
+        report = audit_causal_evidence(
+            main_evidence_path=args.main_evidence,
+            causal_report_paths={
+                "random_flow": args.random_flow,
+                "spatially_shuffled_probe": args.spatially_shuffled_probe,
+                "neutral_prompt": args.neutral_prompt,
+                "unrelated_prompt": args.unrelated_prompt,
+            },
+        )
+        _json_dump(args.output, report)
+        if report["verdict"] == "incomplete":
             exit_code = 2
     elif args.command == "inspect-cache":
         _, _, report = load_features(args.cache)

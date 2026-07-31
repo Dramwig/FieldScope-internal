@@ -40,8 +40,10 @@ if [[ -n "$segmentation_classes" ]]; then
   arguments+=(--segmentation-classes "$segmentation_classes")
 fi
 for representation in \
-  z0 zt trajectory velocity mismatch endpoint \
-  state response_local state_graph response full \
+  random_feature_local z0 zt trajectory velocity mismatch endpoint \
+  state state_nograph state_graph \
+  response_nograph response_local response \
+  full_nograph full_local full \
   dit_hidden_local dit_hidden_attention response_shuffled full_shuffled; do
   arguments+=(--representation "$representation")
 done
