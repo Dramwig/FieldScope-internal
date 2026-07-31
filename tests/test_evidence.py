@@ -9,7 +9,18 @@ import pytest
 import torch
 
 from fieldscope.cached_dataset import cached_control_contract_for_cache
+from fieldscope.config import RunConfig
 from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
+from fieldscope.readout_runtime_gate import (
+    EQUIVALENCE_RULE,
+    GATE_REPRESENTATION,
+    MAX_CUDA_RESERVED_FRACTION,
+    MIN_FREE_RAM_RESERVE_BYTES,
+    MIN_SPEEDUP_FRACTION,
+    formal_readout_workload_envelope,
+    readout_execution_contract_sha256,
+    readout_runtime_profile_identity,
+)
 
 SEEDS = [4121, 7319, 104729]
 REPRESENTATIONS = [
@@ -142,9 +153,7 @@ def _cache(
     prompt: str = "",
     random_transformer: bool = False,
 ) -> Path:
-    suffix = hashlib.sha256(
-        f"{probe_type}|{prompt}|{random_transformer}".encode()
-    ).hexdigest()[:8]
+    suffix = hashlib.sha256(f"{probe_type}|{prompt}|{random_transformer}".encode()).hexdigest()[:8]
     cache = root / f"{dataset}-{split}-{storage_policy}-{suffix}"
     cache.mkdir(parents=True)
     shard = cache / "shard-00000.pt"
@@ -270,10 +279,115 @@ def _value(
     return controls
 
 
+def _formal_config_mapping() -> dict[str, Any]:
+    return {
+        "backend": {
+            "name": "auraflow",
+            "model_path": "/formal/AuraFlow-v0.3",
+            "variant": "fp16",
+            "device": "cuda",
+            "dtype": "bfloat16",
+            "image_size": 512,
+        },
+        "probe": {
+            "times": [0.2, 0.5, 0.8],
+            "num_directions": 8,
+            "graph_grid": [16, 16],
+            "topk": 16,
+            "probe_batch_size": 8,
+            "seed": 4121,
+        },
+        "tokenizer": {
+            "hidden_dim": 256,
+            "input_dim": 768,
+            "num_layers": 3,
+            "dropout": 0.1,
+            "num_classes": 100,
+            "segmentation_classes": 21,
+        },
+        "runtime": {
+            "batch_size": 2,
+            "cache_shard_size": 64,
+            "readout_memory_cache_gib": 160,
+            "num_workers": 0,
+            "deterministic": True,
+        },
+    }
+
+
+def _readout_profile(
+    root: Path,
+    provenance: dict[str, Any],
+    config_mapping: dict[str, Any],
+) -> tuple[Path, dict[str, Any]]:
+    config = RunConfig.from_mapping(config_mapping)
+    path = root / "readout_runtime_profile.json"
+    payload = {
+        "schema_version": 1,
+        "status": "passed",
+        **provenance,
+        "evidence_scope": "readout_seed_parallel_exactness_and_throughput_only",
+        "method_effectiveness_conclusion": None,
+        "equivalence_rule": EQUIVALENCE_RULE,
+        "readout_execution_contract_sha256": readout_execution_contract_sha256(config),
+        "formal_workload_envelope": formal_readout_workload_envelope(config),
+        "registered_seed_workers": [1, 2, 3],
+        "registered_seeds": SEEDS,
+        "task": "classification",
+        "representation": GATE_REPRESENTATION,
+        "epochs": 20,
+        "batch_size": 128,
+        "minimum_speedup_fraction": MIN_SPEEDUP_FRACTION,
+        "maximum_cuda_reserved_fraction": MAX_CUDA_RESERVED_FRACTION,
+        "minimum_free_ram_reserve_bytes": MIN_FREE_RAM_RESERVE_BYTES,
+        "available_ram_bytes": 700 * 1024**3,
+        "candidates": [
+            {
+                "seed_workers": 1,
+                "status": "completed",
+                "eligible": True,
+                "equivalence": {"exact": True, "runs": {}},
+                "memory_safe": True,
+                "memory_measurement_complete": True,
+                "elapsed_seconds": 1.0,
+                "speedup_fraction_vs_serial": 0.0,
+                "cuda_reserved_fraction_upper_bound": 0.1,
+                "available_ram_bytes": 700 * 1024**3,
+                "worker_cache_budget_bytes": 160 * 1024**3,
+                "required_ram_with_reserve_bytes": 224 * 1024**3,
+                "concurrent_cuda_peak_reserved_upper_bound_bytes": 1,
+                "cuda_total_memory_bytes": 10,
+                "per_seed_cuda_peak_reserved_bytes": [1, 1, 1],
+            },
+            {
+                "seed_workers": 2,
+                "status": "failed",
+                "eligible": False,
+                "equivalence": {"exact": False, "runs": {}},
+            },
+            {
+                "seed_workers": 3,
+                "status": "failed",
+                "eligible": False,
+                "equivalence": {"exact": False, "runs": {}},
+            },
+        ],
+        "selected_profile": {
+            "seed_workers": 1,
+            "elapsed_seconds": 1.0,
+            "speedup_fraction_vs_serial": 0.0,
+            "cuda_reserved_fraction_upper_bound": 0.1,
+        },
+    }
+    _write_json(path, payload)
+    return path, readout_runtime_profile_identity(path)
+
+
 def _matrix(
     root: Path,
     dataset: str,
     provenance: dict[str, Any],
+    readout_runtime_profile: dict[str, Any],
     *,
     passing: bool,
 ) -> Path:
@@ -285,7 +399,7 @@ def _matrix(
     }
     runs = []
     matrix_root = root / "matrices" / dataset
-    config = {"formal": dataset}
+    config = _formal_config_mapping()
     cache_identities = {
         split: {
             "path": str(cache.resolve()),
@@ -312,9 +426,7 @@ def _matrix(
     for representation in REPRESENTATIONS:
         for seed_index, seed in enumerate(SEEDS):
             control_contracts = {
-                split: cached_control_contract_for_cache(
-                    cache_dirs[split], representation, seed
-                )
+                split: cached_control_contract_for_cache(cache_dirs[split], representation, seed)
                 for split in ("train", "val", "test")
             }
             run_root = matrix_root / representation / f"seed-{seed}"
@@ -401,6 +513,7 @@ def _matrix(
             "train_cache": cache_identities["train"],
             "validation_cache": cache_identities["val"],
             "test_cache": cache_identities["test"],
+            "readout_runtime_profile": readout_runtime_profile,
             "runs": runs,
         },
     )
@@ -457,13 +570,24 @@ def _evidence_inputs(
     monkeypatch: pytest.MonkeyPatch,
     *,
     passing: bool,
-) -> tuple[dict[str, Path], Path, Path, dict[str, Path], dict[str, Any]]:
+) -> tuple[
+    dict[str, Path],
+    Path,
+    Path,
+    dict[str, Path],
+    dict[str, Any],
+    Path,
+]:
     provenance = {
         "code_revision": "formal-revision",
         "code_dirty": False,
         "code_tree_sha256": "formal-tree",
     }
     monkeypatch.setattr("fieldscope.evidence.code_provenance", lambda: provenance)
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate.code_provenance",
+        lambda: provenance,
+    )
     monkeypatch.setattr("fieldscope.evidence.load_features", _mock_load_features)
     monkeypatch.setattr(
         "fieldscope.evidence.bootstrap_mean_interval",
@@ -473,8 +597,20 @@ def _evidence_inputs(
             "resamples": 2000,
         },
     )
+    readout_profile, readout_profile_identity = _readout_profile(
+        tmp_path,
+        provenance,
+        _formal_config_mapping(),
+    )
     matrices = {
-        dataset: _matrix(tmp_path, dataset, provenance, passing=passing) for dataset in TASKS
+        dataset: _matrix(
+            tmp_path,
+            dataset,
+            provenance,
+            readout_profile_identity,
+            passing=passing,
+        )
+        for dataset in TASKS
     }
     unsupervised = _unsupervised(tmp_path, provenance, passing=passing)
     backbone_asset = tmp_path / "backbone_asset.json"
@@ -504,9 +640,7 @@ def _evidence_inputs(
                 "splits": {
                     split: {
                         "count": count,
-                        "sample_ids_sha256": matrix_report[
-                            cache_keys[split]
-                        ]["sample_ids_sha256"],
+                        "sample_ids_sha256": matrix_report[cache_keys[split]]["sample_ids_sha256"],
                     }
                     for split, count in zip(
                         ("train", "val", "test"),
@@ -517,14 +651,21 @@ def _evidence_inputs(
             },
         )
         split_audits[dataset] = split_path
-    return matrices, unsupervised, backbone_asset, split_audits, provenance
+    return (
+        matrices,
+        unsupervised,
+        backbone_asset,
+        split_audits,
+        provenance,
+        readout_profile,
+    )
 
 
 def test_full_evidence_supports_only_complete_cross_task_result(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, _ = _evidence_inputs(
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
         tmp_path,
         monkeypatch,
         passing=True,
@@ -534,6 +675,7 @@ def test_full_evidence_supports_only_complete_cross_task_result(
         voc_unsupervised_path=unsupervised,
         backbone_asset_path=backbone_asset,
         split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
     )
     assert report["status"] == "passed"
     assert report["verdict"] == "main_tasks_supported_pending_causal_audits"
@@ -550,7 +692,7 @@ def test_full_evidence_reports_limited_or_negative_without_cross_task_gain(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, _ = _evidence_inputs(
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
         tmp_path,
         monkeypatch,
         passing=False,
@@ -560,6 +702,7 @@ def test_full_evidence_reports_limited_or_negative_without_cross_task_gain(
         voc_unsupervised_path=unsupervised,
         backbone_asset_path=backbone_asset,
         split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
     )
     assert report["status"] == "failed"
     assert report["verdict"] == "limited_or_negative"
@@ -570,7 +713,7 @@ def test_full_evidence_is_incomplete_for_stale_or_nonfinite_run(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, _ = _evidence_inputs(
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
         tmp_path,
         monkeypatch,
         passing=True,
@@ -583,6 +726,7 @@ def test_full_evidence_is_incomplete_for_stale_or_nonfinite_run(
         voc_unsupervised_path=unsupervised,
         backbone_asset_path=backbone_asset,
         split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
     )
     assert report["status"] == "incomplete"
     assert report["verdict"] == "incomplete"
@@ -593,23 +737,38 @@ def test_full_evidence_rejects_tampered_response_shuffle_contract(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, _ = _evidence_inputs(
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
         tmp_path,
         monkeypatch,
         passing=True,
     )
     matrix = json.loads(matrices["imagenet100"].read_text(encoding="utf-8"))
-    shuffled = next(
-        run
-        for run in matrix["runs"]
-        if run["representation"] == "response_shuffled"
-    )
+    shuffled = next(run for run in matrix["runs"] if run["representation"] == "response_shuffled")
     training_path = Path(shuffled["training_report"])
     training = json.loads(training_path.read_text(encoding="utf-8"))
-    training["train_control_contract"]["response_shuffle"][
-        "donor_permutation_sha256"
-    ] = "0" * 64
+    training["train_control_contract"]["response_shuffle"]["donor_permutation_sha256"] = "0" * 64
     training_path.write_text(json.dumps(training), encoding="utf-8")
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
+    )
+    assert report["status"] == "incomplete"
+    assert report["verdict"] == "incomplete"
+    assert any("training control contract mismatch" in problem for problem in report["problems"])
+
+
+def test_full_evidence_requires_readout_runtime_profile(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _, _ = _evidence_inputs(
+        tmp_path,
+        monkeypatch,
+        passing=True,
+    )
     report = audit_full_evidence(
         matrix_paths=matrices,
         voc_unsupervised_path=unsupervised,
@@ -617,8 +776,52 @@ def test_full_evidence_rejects_tampered_response_shuffle_contract(
         split_audit_paths=split_audits,
     )
     assert report["status"] == "incomplete"
-    assert report["verdict"] == "incomplete"
-    assert any("training control contract mismatch" in problem for problem in report["problems"])
+    assert "formal evidence audit requires a readout runtime profile" in report["problems"]
+
+
+def test_full_evidence_rejects_stale_readout_runtime_profile(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
+        tmp_path, monkeypatch, passing=True
+    )
+    payload = json.loads(readout_profile.read_text(encoding="utf-8"))
+    payload["code_revision"] = "stale"
+    _write_json(readout_profile, payload)
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
+    )
+    assert report["status"] == "incomplete"
+    assert any("invalid readout runtime profile" in problem for problem in report["problems"])
+
+
+def test_full_evidence_rejects_matrix_readout_profile_identity_mismatch(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
+        tmp_path, monkeypatch, passing=True
+    )
+    payload = json.loads(readout_profile.read_text(encoding="utf-8"))
+    payload["candidates"][0]["elapsed_seconds"] = 2.0
+    payload["selected_profile"]["elapsed_seconds"] = 2.0
+    _write_json(readout_profile, payload)
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
+    )
+    assert report["status"] == "incomplete"
+    assert any(
+        "matrix readout runtime profile mismatch" in problem for problem in report["problems"]
+    )
 
 
 def _causal_report(
@@ -686,16 +889,20 @@ def test_causal_evidence_is_the_only_strong_claim_gate(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, provenance = _evidence_inputs(
-        tmp_path,
-        monkeypatch,
-        passing=True,
-    )
+    (
+        matrices,
+        unsupervised,
+        backbone_asset,
+        split_audits,
+        provenance,
+        readout_profile,
+    ) = _evidence_inputs(tmp_path, monkeypatch, passing=True)
     main = audit_full_evidence(
         matrix_paths=matrices,
         voc_unsupervised_path=unsupervised,
         backbone_asset_path=backbone_asset,
         split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
     )
     main_path = tmp_path / "main_evidence.json"
     _write_json(main_path, main)
@@ -746,11 +953,14 @@ def test_causal_evidence_rejects_failed_random_flow_attribution(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, provenance = _evidence_inputs(
-        tmp_path,
-        monkeypatch,
-        passing=True,
-    )
+    (
+        matrices,
+        unsupervised,
+        backbone_asset,
+        split_audits,
+        provenance,
+        readout_profile,
+    ) = _evidence_inputs(tmp_path, monkeypatch, passing=True)
     main_path = tmp_path / "main_evidence.json"
     _write_json(
         main_path,
@@ -759,6 +969,7 @@ def test_causal_evidence_rejects_failed_random_flow_attribution(
             voc_unsupervised_path=unsupervised,
             backbone_asset_path=backbone_asset,
             split_audit_paths=split_audits,
+            readout_runtime_profile_path=readout_profile,
         ),
     )
     causal_reports = {
@@ -804,11 +1015,14 @@ def test_causal_evidence_finishes_registered_controls_after_negative_main_result
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, provenance = _evidence_inputs(
-        tmp_path,
-        monkeypatch,
-        passing=False,
-    )
+    (
+        matrices,
+        unsupervised,
+        backbone_asset,
+        split_audits,
+        provenance,
+        readout_profile,
+    ) = _evidence_inputs(tmp_path, monkeypatch, passing=False)
     main_path = tmp_path / "main_evidence.json"
     _write_json(
         main_path,
@@ -817,6 +1031,7 @@ def test_causal_evidence_finishes_registered_controls_after_negative_main_result
             voc_unsupervised_path=unsupervised,
             backbone_asset_path=backbone_asset,
             split_audit_paths=split_audits,
+            readout_runtime_profile_path=readout_profile,
         ),
     )
     causal_reports = {
@@ -864,11 +1079,14 @@ def test_causal_evidence_marks_nonfinite_metrics_incomplete(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    matrices, unsupervised, backbone_asset, split_audits, provenance = _evidence_inputs(
-        tmp_path,
-        monkeypatch,
-        passing=True,
-    )
+    (
+        matrices,
+        unsupervised,
+        backbone_asset,
+        split_audits,
+        provenance,
+        readout_profile,
+    ) = _evidence_inputs(tmp_path, monkeypatch, passing=True)
     main_path = tmp_path / "main_evidence.json"
     _write_json(
         main_path,
@@ -877,6 +1095,7 @@ def test_causal_evidence_marks_nonfinite_metrics_incomplete(
             voc_unsupervised_path=unsupervised,
             backbone_asset_path=backbone_asset,
             split_audit_paths=split_audits,
+            readout_runtime_profile_path=readout_profile,
         ),
     )
     causal_reports = {

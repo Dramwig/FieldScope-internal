@@ -12,9 +12,13 @@ import torch
 
 from fieldscope.cache import load_features
 from fieldscope.cached_dataset import cached_control_contract_for_cache
-from fieldscope.config import runtime_profile_identity
+from fieldscope.config import RunConfig, runtime_profile_identity
 from fieldscope.dataset_audit import sample_ids_sha256
 from fieldscope.experiments import cache_identity, code_provenance, file_sha256
+from fieldscope.readout_runtime_gate import (
+    load_readout_runtime_gate_report,
+    readout_runtime_profile_identity,
+)
 from fieldscope.runtime_gate import (
     MAX_MEMORY_FRACTION,
     MIN_SPEEDUP_FRACTION,
@@ -170,8 +174,7 @@ def _validate_runtime_profile(
         problems.append("runtime profile memory threshold mismatch")
     warmup = payload.get("warmup", {})
     if (
-        warmup.get("profile")
-        != {"image_batch_size": 2, "probe_batch_size": 8}
+        warmup.get("profile") != {"image_batch_size": 2, "probe_batch_size": 8}
         or warmup.get("num_images") != 2
         or warmup.get("status") != "completed"
     ):
@@ -202,9 +205,11 @@ def _validate_runtime_profile(
             problems.append("runtime profile candidate order mismatch")
         baseline_seconds = candidates[0].get("seconds_per_image")
         eligible: list[Mapping[str, Any]] = []
-        if not isinstance(baseline_seconds, (int, float)) or not math.isfinite(
-            baseline_seconds
-        ) or baseline_seconds <= 0:
+        if (
+            not isinstance(baseline_seconds, (int, float))
+            or not math.isfinite(baseline_seconds)
+            or baseline_seconds <= 0
+        ):
             problems.append("runtime profile baseline timing is invalid")
         else:
             baseline_feature_sha256 = candidates[0].get("feature_sha256")
@@ -212,9 +217,7 @@ def _validate_runtime_profile(
                 seconds = candidate.get("seconds_per_image")
                 completed = candidate.get("status") == "completed"
                 timing_valid = bool(
-                    isinstance(seconds, (int, float))
-                    and math.isfinite(seconds)
-                    and seconds > 0
+                    isinstance(seconds, (int, float)) and math.isfinite(seconds) and seconds > 0
                 )
                 exact = candidate.get("equivalence", {}).get("exact") is True
                 if exact and candidate.get("feature_sha256") != baseline_feature_sha256:
@@ -222,12 +225,12 @@ def _validate_runtime_profile(
                         f"runtime profile exact candidate hash mismatch candidate={index}"
                     )
                 fields = candidate.get("equivalence", {}).get("fields", {})
-                if exact and fields and not all(
-                    field.get("exact") is True for field in fields.values()
+                if (
+                    exact
+                    and fields
+                    and not all(field.get("exact") is True for field in fields.values())
                 ):
-                    problems.append(
-                        f"runtime profile exact field mismatch candidate={index}"
-                    )
+                    problems.append(f"runtime profile exact field mismatch candidate={index}")
                 fraction = candidate.get("cuda_peak_reserved_fraction")
                 memory_safe = bool(
                     completed
@@ -235,11 +238,7 @@ def _validate_runtime_profile(
                     and math.isfinite(fraction)
                     and fraction <= MAX_MEMORY_FRACTION
                 )
-                speedup = (
-                    baseline_seconds / seconds - 1.0
-                    if completed and timing_valid
-                    else None
-                )
+                speedup = baseline_seconds / seconds - 1.0 if completed and timing_valid else None
                 expected_eligible = bool(
                     completed
                     and timing_valid
@@ -412,9 +411,7 @@ def _validate_cache_manifest(
         metadata = shard_manifest.get("metadata", {})
         if metadata.get("backend") != manifest.get("backend"):
             problems.append(f"cache shard backend metadata mismatch {shard_path}")
-        if _json_compatible(metadata.get("probe")) != manifest.get("config", {}).get(
-            "probe"
-        ):
+        if _json_compatible(metadata.get("probe")) != manifest.get("config", {}).get("probe"):
             problems.append(f"cache shard probe metadata mismatch {shard_path}")
         if tuple(features.grid_size) != (16, 16):
             problems.append(f"cache shard grid mismatch {shard_path}")
@@ -450,9 +447,7 @@ def _validate_cache_manifest(
             if tuple(targets[expected_target].shape) != expected_shape:
                 problems.append(f"cache shard target shape mismatch {shard_path}")
         sample_ids = shard_manifest.get("sample_ids")
-        if not isinstance(sample_ids, list) or len(sample_ids) != int(
-            shard.get("num_samples", 0)
-        ):
+        if not isinstance(sample_ids, list) or len(sample_ids) != int(shard.get("num_samples", 0)):
             problems.append(f"cache shard sample IDs mismatch {shard_path}")
         else:
             shard_sample_ids.extend(str(sample_id) for sample_id in sample_ids)
@@ -482,8 +477,7 @@ def _validate_cache_manifest(
         or Path(str(backend.get("model_id", ""))).name != "AuraFlow-v0.3"
         or backend.get("native_time") != "1=noise, 0=image"
         or backend.get("public_time") != "clean_time: 0=noise, 1=image"
-        or backend.get("velocity_conversion")
-        != "public_velocity=-native_transformer_output"
+        or backend.get("velocity_conversion") != "public_velocity=-native_transformer_output"
     ):
         problems.append(f"cache backend runtime contract mismatch {cache_dir}")
     config = manifest.get("config", {})
@@ -508,10 +502,7 @@ def _validate_cache_manifest(
         or backend_config.get("local_files_only") is not True
         or backend_config.get("offload_text_encoder") is not True
         or backend_config.get("random_transformer") is not expected_random_transformer
-        or (
-            expected_random_transformer
-            and backend_config.get("random_transformer_seed") != 104729
-        )
+        or (expected_random_transformer and backend_config.get("random_transformer_seed") != 104729)
     ):
         problems.append(f"cache backend config mismatch {cache_dir}")
     if probe.get("times") != [0.2, 0.5, 0.8]:
@@ -593,9 +584,7 @@ def _validate_matrix(
     seen: set[tuple[str, int]] = set()
     cache_dirs = {
         "train": _resolve_report_path(str(report.get("train_cache_dir", "")), repository_root),
-        "validation": _resolve_report_path(
-            str(report.get("val_cache_dir", "")), repository_root
-        ),
+        "validation": _resolve_report_path(str(report.get("val_cache_dir", "")), repository_root),
         "test": _resolve_report_path(str(report.get("test_cache_dir", "")), repository_root),
     }
     expected_control_contracts: dict[tuple[str, int, str], dict[str, Any]] = {}
@@ -608,11 +597,10 @@ def _validate_matrix(
         key = (representation, seed, split)
         if key in expected_control_contracts:
             return expected_control_contracts[key]
-        contract = cached_control_contract_for_cache(
-            cache_dirs[split], representation, seed
-        )
+        contract = cached_control_contract_for_cache(cache_dirs[split], representation, seed)
         expected_control_contracts[key] = contract
         return contract
+
     for run in report.get("runs", []):
         representation = str(run.get("representation"))
         seed = int(run.get("seed", -1))
@@ -668,9 +656,9 @@ def _validate_matrix(
                     representation, seed, "train"
                 ):
                     problems.append(f"training control contract mismatch {source}")
-                if payload.get(
-                    "validation_control_contract"
-                ) != expected_control_contract(representation, seed, "validation"):
+                if payload.get("validation_control_contract") != expected_control_contract(
+                    representation, seed, "validation"
+                ):
                     problems.append(f"validation control contract mismatch {source}")
                 try:
                     parameter_counts.add(int(payload["trainable_parameters"]))
@@ -1066,14 +1054,10 @@ def audit_causal_evidence(
                 for sample_id in sorted(sample_ids):
                     try:
                         main_value = float(
-                            loaded["empty_prompt"][sample_id]["representations"][
-                                "response"
-                            ][metric]
+                            loaded["empty_prompt"][sample_id]["representations"]["response"][metric]
                         )
                         control_value = float(
-                            loaded[variant][sample_id]["representations"]["response"][
-                                metric
-                            ]
+                            loaded[variant][sample_id]["representations"]["response"][metric]
                         )
                     except (KeyError, TypeError, ValueError):
                         problems.append(f"missing causal metric {variant}/{metric}")
@@ -1098,23 +1082,17 @@ def audit_causal_evidence(
                     for sample_id in sorted(sample_ids):
                         try:
                             response_value = float(
-                                loaded[condition][sample_id]["representations"][
-                                    "response"
-                                ][metric]
+                                loaded[condition][sample_id]["representations"]["response"][metric]
                             )
                             control_value = float(
-                                loaded[condition][sample_id]["representations"][control][
-                                    metric
-                                ]
+                                loaded[condition][sample_id]["representations"][control][metric]
                             )
                         except (KeyError, TypeError, ValueError):
                             problems.append(
                                 f"missing condition metric {condition}/{control}/{metric}"
                             )
                             break
-                        if not math.isfinite(response_value) or not math.isfinite(
-                            control_value
-                        ):
+                        if not math.isfinite(response_value) or not math.isfinite(control_value):
                             problems.append(
                                 f"non-finite condition metric {condition}/{control}/{metric}"
                             )
@@ -1124,9 +1102,7 @@ def audit_causal_evidence(
                         continue
                     summary = bootstrap_mean_interval(differences, seed=4121, resamples=2000)
                     interval = summary["ci95"]
-                    passed = bool(
-                        summary["mean"] > 0 and interval is not None and interval[0] > 0
-                    )
+                    passed = bool(summary["mean"] > 0 and interval is not None and interval[0] > 0)
                     comparisons[f"{condition}/response-minus-{control}/{metric}"] = {
                         **summary,
                         "num_images": len(differences),
@@ -1172,6 +1148,7 @@ def audit_full_evidence(
     backbone_asset_path: Path,
     split_audit_paths: Mapping[str, Path],
     runtime_profile_path: Path | None = None,
+    readout_runtime_profile_path: Path | None = None,
 ) -> dict[str, Any]:
     """Audit complete formal evidence without converting smoke tests into claims."""
 
@@ -1187,14 +1164,34 @@ def audit_full_evidence(
         )
         problems.extend(runtime_problems)
         expected_runtime_profile = runtime_profile.get("identity")
+    readout_runtime_profile: dict[str, Any] = {}
+    expected_readout_runtime_profile: Mapping[str, Any] | None = None
+    if readout_runtime_profile_path is None:
+        problems.append("formal evidence audit requires a readout runtime profile")
+    else:
+        try:
+            imagenet_matrix_path = matrix_paths.get("imagenet100")
+            if imagenet_matrix_path is None:
+                raise ValueError("missing imagenet100 matrix path")
+            profile_report = load_readout_runtime_gate_report(
+                RunConfig.from_mapping(_read_json(imagenet_matrix_path)["config"]),
+                readout_runtime_profile_path,
+            )
+            identity = readout_runtime_profile_identity(readout_runtime_profile_path)
+            readout_runtime_profile = {
+                "path": str(readout_runtime_profile_path),
+                "identity": identity,
+                "report": profile_report,
+            }
+            expected_readout_runtime_profile = identity
+        except (KeyError, OSError, TypeError, ValueError) as error:
+            problems.append(f"invalid readout runtime profile: {error}")
     if provenance.get("code_dirty") is not False:
         problems.append("formal evidence audit requires a clean code worktree")
     if set(matrix_paths) != set(_TASKS):
         problems.append("matrix_paths must contain imagenet100, voc2012, ade20k, and nyuv2")
     if set(split_audit_paths) != set(_TASKS):
-        problems.append(
-            "split_audit_paths must contain imagenet100, voc2012, ade20k, and nyuv2"
-        )
+        problems.append("split_audit_paths must contain imagenet100, voc2012, ade20k, and nyuv2")
     backbone_asset: dict[str, Any] = {"path": str(backbone_asset_path)}
     if not backbone_asset_path.is_file():
         problems.append(f"missing {backbone_asset_path}")
@@ -1254,6 +1251,8 @@ def audit_full_evidence(
         problems.extend(task_problems)
         if path.is_file() and dataset in expected_split_hashes:
             matrix = _read_json(path)
+            if matrix.get("readout_runtime_profile") != expected_readout_runtime_profile:
+                problems.append(f"matrix readout runtime profile mismatch {dataset}")
             for split, cache_key in (
                 ("train", "train_cache"),
                 ("val", "validation_cache"),
@@ -1262,9 +1261,7 @@ def audit_full_evidence(
                 actual_hash = matrix.get(cache_key, {}).get("sample_ids_sha256")
                 expected_hash = expected_split_hashes[dataset][split]
                 if not expected_hash or actual_hash != expected_hash:
-                    problems.append(
-                        f"cache sample-ID hash mismatch {dataset}/{split}"
-                    )
+                    problems.append(f"cache sample-ID hash mismatch {dataset}/{split}")
     unsupervised, unsupervised_problems = _unsupervised_checks(
         voc_unsupervised_path,
         provenance,
@@ -1301,6 +1298,7 @@ def audit_full_evidence(
         "backbone_asset": backbone_asset,
         "split_audits": split_audits,
         "runtime_profile": runtime_profile,
+        "readout_runtime_profile": readout_runtime_profile,
         "unsupervised": unsupervised,
         "supervised": supervised,
         "decision_rule": {

@@ -19,6 +19,7 @@ reference="$5"
 num_classes="${6:-}"
 segmentation_classes="${7:-}"
 : "${FIELDSCOPE_DATASETS_ROOT:?Set FIELDSCOPE_DATASETS_ROOT}"
+: "${FIELDSCOPE_READOUT_RUNTIME_PROFILE:?Set FIELDSCOPE_READOUT_RUNTIME_PROFILE}"
 
 arguments=(
   --config "$config"
@@ -32,6 +33,7 @@ arguments=(
   --learning-rate 0.001
   --weight-decay 0.0001
   --reference "$reference"
+  --readout-runtime-profile "$FIELDSCOPE_READOUT_RUNTIME_PROFILE"
 )
 if [[ -n "$num_classes" ]]; then
   arguments+=(--num-classes "$num_classes")

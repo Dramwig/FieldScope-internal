@@ -18,6 +18,7 @@ from fieldscope.experiments import (
     evaluate_checkpoint,
     extract_dataset_cache,
     run_readout_matrix,
+    run_readout_matrix_seed_parallel,
     train_cached_readout,
 )
 
@@ -36,12 +37,14 @@ class _SmallDataset(Dataset[dict[str, Any]]):
 
 def test_dense_loss_targets_use_patch_grid_without_filling_invalid_depth() -> None:
     segmentation = torch.tensor(
-        [[
-            [0, 0, 1, 1],
-            [0, 0, 1, 1],
-            [2, 2, 3, 3],
-            [2, 2, 3, 3],
-        ]]
+        [
+            [
+                [0, 0, 1, 1],
+                [0, 0, 1, 1],
+                [2, 2, 3, 3],
+                [2, 2, 3, 3],
+            ]
+        ]
     )
     segmentation_target = _task_loss_targets(
         "segmentation",
@@ -53,9 +56,7 @@ def test_dense_loss_targets_use_patch_grid_without_filling_invalid_depth() -> No
         torch.tensor([[[0, 1], [2, 3]]]),
     )
 
-    depth = torch.tensor(
-        [[[[1.0, 0.0], [3.0, float("nan")]]]]
-    )
+    depth = torch.tensor([[[[1.0, 0.0], [3.0, float("nan")]]]])
     depth_target = _task_loss_targets(
         "depth",
         {"depth": depth},
@@ -132,9 +133,7 @@ def test_dense_readout_trains_on_patch_grid_and_scores_full_resolution(
         targets: dict[str, torch.Tensor],
         **kwargs: Any,
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-        loss_shapes.append(
-            (tuple(predictions[task].shape), tuple(targets[task].shape))
-        )
+        loss_shapes.append((tuple(predictions[task].shape), tuple(targets[task].shape)))
         return original_loss(predictions, targets, **kwargs)
 
     def tracked_update(
@@ -175,11 +174,7 @@ def test_dense_readout_trains_on_patch_grid_and_scores_full_resolution(
         and target_shape == (1, *target_channels, 16, 16)
         for prediction_shape, target_shape in loss_shapes
     )
-    expected_metric_shape = (
-        (1, 512, 512)
-        if task == "segmentation"
-        else (1, 1, 512, 512)
-    )
+    expected_metric_shape = (1, 512, 512) if task == "segmentation" else (1, 1, 512, 512)
     assert metric_shapes == [(expected_metric_shape, expected_metric_shape)]
     validation = report["history"][0]["validation"]
     assert validation["num_samples"] == 1
@@ -238,9 +233,7 @@ def _classification_caches(
     return config, caches
 
 
-def test_extract_dataset_cache_resumes_verified_shards(
-    tmp_path: Path, monkeypatch: Any
-) -> None:
+def test_extract_dataset_cache_resumes_verified_shards(tmp_path: Path, monkeypatch: Any) -> None:
     monkeypatch.setattr(
         "fieldscope.experiments.build_vision_dataset",
         lambda *args, **kwargs: _SmallDataset(),
@@ -382,6 +375,93 @@ def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> No
     assert "classification/full-minus-state" in first["summary"]["comparisons"]
 
 
+def test_seed_parallel_matrix_matches_serial_checkpoints(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    mapping = _config(tmp_path).to_dict()
+    mapping["tokenizer"]["dropout"] = 0.25
+    config = RunConfig.from_mapping(mapping)
+    caches = {}
+    for split in ("train", "val", "test"):
+        cache_dir = tmp_path / f"parallel-cache-{split}"
+        extract_dataset_cache(
+            config,
+            dataset_name="synthetic-test",
+            dataset_root=tmp_path,
+            split=split,
+            output_dir=cache_dir,
+            limit=4,
+        )
+        caches[split] = cache_dir
+    common = {
+        "train_cache_dir": caches["train"],
+        "val_cache_dir": caches["val"],
+        "test_cache_dir": caches["test"],
+        "task": "classification",
+        "representations": ["full"],
+        "seeds": [3, 5, 7],
+        "epochs": 2,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-4,
+        "batch_size": 2,
+        "reference": "full",
+    }
+    serial_root = tmp_path / "serial-matrix"
+    parallel_root = tmp_path / "parallel-matrix"
+    serial = run_readout_matrix(config, output_dir=serial_root, **common)
+    runtime_profile = {
+        "sha256": "runtime-profile",
+        "selected_profile": {"seed_workers": 3},
+    }
+    parallel = run_readout_matrix_seed_parallel(
+        config,
+        output_dir=parallel_root,
+        seed_workers=3,
+        readout_runtime_profile=runtime_profile,
+        **common,
+    )
+    assert serial["status"] == parallel["status"] == "passed"
+    assert parallel["readout_runtime_profile"] == runtime_profile
+    assert not list(parallel_root.glob(".matrix_report.seed-*.json"))
+    persisted = json.loads((parallel_root / "matrix_report.json").read_text(encoding="utf-8"))
+    assert persisted["readout_runtime_profile"] == runtime_profile
+    serial_metrics = {
+        (run["representation"], run["seed"]): run["test_metric"] for run in serial["runs"]
+    }
+    parallel_metrics = {
+        (run["representation"], run["seed"]): run["test_metric"] for run in parallel["runs"]
+    }
+    assert serial_metrics == parallel_metrics
+    for seed in common["seeds"]:
+        relative = Path("full") / f"seed-{seed}"
+        serial_dir = serial_root / relative
+        parallel_dir = parallel_root / relative
+        for suffix in ("best.pt", "last.pt"):
+            serial_checkpoint = torch.load(
+                serial_dir / f"classification_full_seed{seed}_{suffix}",
+                map_location="cpu",
+                weights_only=False,
+            )
+            parallel_checkpoint = torch.load(
+                parallel_dir / f"classification_full_seed{seed}_{suffix}",
+                map_location="cpu",
+                weights_only=False,
+            )
+            for key in ("model", "optimizer", "scheduler", "rng_state"):
+                _assert_nested_equal(serial_checkpoint[key], parallel_checkpoint[key])
+            for key in ("epoch", "best_epoch", "best_primary_metric"):
+                assert serial_checkpoint[key] == parallel_checkpoint[key]
+            for serial_epoch, parallel_epoch in zip(
+                serial_checkpoint["history"],
+                parallel_checkpoint["history"],
+                strict=True,
+            ):
+                for key in ("epoch", "learning_rate", "train_loss", "validation"):
+                    _assert_nested_equal(serial_epoch[key], parallel_epoch[key])
+
+
 def test_readout_matrix_rejects_stale_report_revision(
     tmp_path: Path,
     monkeypatch: Any,
@@ -447,9 +527,7 @@ def _assert_nested_equal(first: Any, second: Any) -> None:
         assert first == second
 
 
-def test_readout_resume_matches_uninterrupted_training(
-    tmp_path: Path, monkeypatch: Any
-) -> None:
+def test_readout_resume_matches_uninterrupted_training(tmp_path: Path, monkeypatch: Any) -> None:
     monkeypatch.setattr(
         "fieldscope.experiments.build_vision_dataset",
         lambda *args, **kwargs: _SmallDataset(),
@@ -511,16 +589,11 @@ def test_readout_resume_matches_uninterrupted_training(
     continuous_payload = torch.load(
         continuous["last_checkpoint"], map_location="cpu", weights_only=False
     )
-    resumed_payload = torch.load(
-        resumed["last_checkpoint"], map_location="cpu", weights_only=False
-    )
+    resumed_payload = torch.load(resumed["last_checkpoint"], map_location="cpu", weights_only=False)
     for key in ("model", "optimizer", "scheduler", "rng_state"):
         _assert_nested_equal(continuous_payload[key], resumed_payload[key])
     assert continuous_payload["best_epoch"] == resumed_payload["best_epoch"]
-    assert (
-        continuous_payload["best_primary_metric"]
-        == resumed_payload["best_primary_metric"]
-    )
+    assert continuous_payload["best_primary_metric"] == resumed_payload["best_primary_metric"]
     for first, second in zip(continuous["history"], resumed["history"], strict=True):
         assert first["epoch"] == second["epoch"]
         assert first["learning_rate"] == second["learning_rate"]
@@ -566,9 +639,7 @@ def test_readout_resume_after_final_epoch_commit_rebuilds_passed_report(
     last_checkpoint = output_dir / "classification_full_seed17_last.pt"
     original_save = experiments.atomic_torch_save
 
-    def interrupt_after_final_epoch_commit(
-        path: Path, payload: dict[str, Any]
-    ) -> None:
+    def interrupt_after_final_epoch_commit(path: Path, payload: dict[str, Any]) -> None:
         original_save(path, payload)
         if path == last_checkpoint and int(payload["epoch"]) == 2:
             raise RuntimeError("simulated process loss after final epoch commit")
@@ -631,9 +702,7 @@ def test_readout_rejects_nonfinite_training_loss_before_checkpoint(
 def test_readout_rejects_nonfinite_validation_metric_before_checkpoint(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
-    config, caches = _classification_caches(
-        tmp_path, monkeypatch, "nonfinite-validation"
-    )
+    config, caches = _classification_caches(tmp_path, monkeypatch, "nonfinite-validation")
     monkeypatch.setattr(
         experiments,
         "evaluate_cached_readout",
@@ -664,20 +733,14 @@ def test_readout_rejects_nonfinite_validation_metric_before_checkpoint(
 def test_readout_rejects_nonfinite_gradient_before_optimizer_step(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
-    config, caches = _classification_caches(
-        tmp_path, monkeypatch, "nonfinite-gradient"
-    )
+    config, caches = _classification_caches(tmp_path, monkeypatch, "nonfinite-gradient")
 
     def nonfinite_gradient_loss(
         predictions: dict[str, torch.Tensor],
         targets: dict[str, torch.Tensor],
     ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
-        finite_value_with_nan_gradient = torch.sqrt(
-            predictions["classification"].sum() * 0.0
-        )
-        return finite_value_with_nan_gradient, {
-            "classification": finite_value_with_nan_gradient
-        }
+        finite_value_with_nan_gradient = torch.sqrt(predictions["classification"].sum() * 0.0)
+        return finite_value_with_nan_gradient, {"classification": finite_value_with_nan_gradient}
 
     monkeypatch.setattr(
         experiments,

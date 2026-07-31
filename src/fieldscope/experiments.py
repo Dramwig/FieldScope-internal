@@ -10,7 +10,9 @@ import random
 import subprocess
 import time
 from collections.abc import Mapping
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
+from multiprocessing import get_context
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -139,9 +141,7 @@ def _require_report_contract(
                 raise ValueError(f"Stale {kind} report revision: {report_path}")
             if name == "code_tree_sha256":
                 raise ValueError(f"Stale {kind} report code tree: {report_path}")
-            raise ValueError(
-                f"Incompatible {kind} report {name}: {report_path}"
-            )
+            raise ValueError(f"Incompatible {kind} report {name}: {report_path}")
 
 
 def _verified_cached_shard(output_dir: Path, shard: Mapping[str, Any]) -> bool:
@@ -155,10 +155,9 @@ def _verified_cached_shard(output_dir: Path, shard: Mapping[str, Any]) -> bool:
         _, _, manifest = load_features(path)
     except (OSError, RuntimeError, ValueError):
         return False
-    return (
-        manifest.get("fingerprint") == shard.get("fingerprint")
-        and int(manifest.get("num_samples", -1)) == int(shard.get("num_samples", -2))
-    )
+    return manifest.get("fingerprint") == shard.get("fingerprint") and int(
+        manifest.get("num_samples", -1)
+    ) == int(shard.get("num_samples", -2))
 
 
 def atomic_json_dump(path: Path, payload: Mapping[str, Any]) -> None:
@@ -251,9 +250,7 @@ def extraction_signature(
         "storage_policy": storage_policy,
         "runtime_profile": runtime_profile,
     }
-    encoded = json.dumps(
-        payload, sort_keys=True, ensure_ascii=False, default=str
-    ).encode("utf-8")
+    encoded = json.dumps(payload, sort_keys=True, ensure_ascii=False, default=str).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
 
@@ -310,9 +307,7 @@ def extract_dataset_cache(
     manifest_path = output_dir / "dataset_manifest.json"
     runtime_profile_path = os.environ.get("FIELDSCOPE_RUNTIME_PROFILE")
     runtime_profile = (
-        runtime_profile_identity(runtime_profile_path)
-        if runtime_profile_path
-        else None
+        runtime_profile_identity(runtime_profile_path) if runtime_profile_path else None
     )
     if runtime_profile is not None:
         if runtime_profile.get("code_revision") != provenance["code_revision"]:
@@ -336,22 +331,16 @@ def extract_dataset_cache(
     if manifest_path.exists():
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
         if not resume:
-            raise FileExistsError(
-                f"{manifest_path} exists; pass resume=True to continue"
-            )
+            raise FileExistsError(f"{manifest_path} exists; pass resume=True to continue")
         if existing.get("extraction_signature") != signature:
             raise ValueError("Existing cache was produced by a different extraction")
         if (
             existing.get("complete") is True
             and int(existing.get("num_samples", -1)) == len(selected_indices)
-            and sum(
-                int(shard.get("num_samples", 0))
-                for shard in existing.get("shards", [])
-            )
+            and sum(int(shard.get("num_samples", 0)) for shard in existing.get("shards", []))
             == len(selected_indices)
             and all(
-                _verified_cached_shard(output_dir, shard)
-                for shard in existing.get("shards", [])
+                _verified_cached_shard(output_dir, shard) for shard in existing.get("shards", [])
             )
         ):
             return {
@@ -395,8 +384,7 @@ def extract_dataset_cache(
                 for name, value in _target_tensors(batch).items():
                     target_batches.setdefault(name, []).append(value)
             shard_targets = {
-                name: torch.cat(values, dim=0)
-                for name, values in target_batches.items()
+                name: torch.cat(values, dim=0) for name, values in target_batches.items()
             }
             _, cached_targets, cached_manifest = load_features(path)
             if cached_manifest.get("sample_ids") != sample_ids:
@@ -432,8 +420,7 @@ def extract_dataset_cache(
                 )
             features = stack_features(feature_batches)
             shard_targets = {
-                name: torch.cat(values, dim=0)
-                for name, values in target_batches.items()
+                name: torch.cat(values, dim=0) for name, values in target_batches.items()
             }
             feature_manifest = save_features(
                 path,
@@ -494,9 +481,7 @@ def extract_dataset_cache(
                 "feature_extraction_seconds": extraction_seconds,
                 "written_samples": written_samples,
                 "written_samples_per_second": (
-                    written_samples / extraction_seconds
-                    if extraction_seconds > 0
-                    else None
+                    written_samples / extraction_seconds if extraction_seconds > 0 else None
                 ),
                 "cache_bytes": cache_bytes,
                 "cuda_peak_allocated_bytes": (
@@ -533,11 +518,15 @@ def _task_loss_targets(
 ) -> dict[str, torch.Tensor]:
     target = targets[task]
     if task == "segmentation" and tuple(target.shape[-2:]) != output_size:
-        target = torch.nn.functional.interpolate(
-            target[:, None].float(),
-            size=output_size,
-            mode="nearest",
-        ).squeeze(1).to(dtype=target.dtype)
+        target = (
+            torch.nn.functional.interpolate(
+                target[:, None].float(),
+                size=output_size,
+                mode="nearest",
+            )
+            .squeeze(1)
+            .to(dtype=target.dtype)
+        )
     elif task == "depth" and tuple(target.shape[-2:]) != output_size:
         valid = torch.isfinite(target) & (target > 0)
         values = torch.where(valid, target, torch.zeros_like(target))
@@ -668,9 +657,7 @@ def evaluate_cached_readout(
     model.eval()
     for cached_batch in loader:
         features = cached_batch["features"].to(device, dtype=torch.float32)
-        targets = {
-            name: value.to(device) for name, value in cached_batch["targets"].items()
-        }
+        targets = {name: value.to(device) for name, value in cached_batch["targets"].items()}
         if task not in targets:
             raise ValueError(f"Requested task {task!r} is absent from cache")
         predictions = model(
@@ -688,19 +675,21 @@ def evaluate_cached_readout(
         total_loss += float(loss.item()) * batch_size
         total_samples += batch_size
         metric_predictions = predictions
-        if task == "segmentation" and tuple(
-            predictions[task].shape[-2:]
-        ) != tuple(targets[task].shape[-2:]):
+        if task == "segmentation" and tuple(predictions[task].shape[-2:]) != tuple(
+            targets[task].shape[-2:]
+        ):
             metric_predictions = {
                 task: torch.nn.functional.interpolate(
                     predictions[task].argmax(dim=1, keepdim=True).float(),
                     size=targets[task].shape[-2:],
                     mode="nearest",
-                ).squeeze(1).long()
+                )
+                .squeeze(1)
+                .long()
             }
-        elif task in {"depth", "normals"} and tuple(
-            predictions[task].shape[-2:]
-        ) != tuple(targets[task].shape[-2:]):
+        elif task in {"depth", "normals"} and tuple(predictions[task].shape[-2:]) != tuple(
+            targets[task].shape[-2:]
+        ):
             metric_predictions = {
                 task: torch.nn.functional.interpolate(
                     predictions[task],
@@ -784,9 +773,7 @@ def train_cached_readout(
         lr=learning_rate,
         weight_decay=weight_decay,
     )
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optimizer, T_max=max(1, epochs)
-    )
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=max(1, epochs))
     start_epoch = 0
     history: list[dict[str, Any]] = []
     best_value: float | None = None
@@ -825,9 +812,7 @@ def train_cached_readout(
         if payload.get("train_control_contract") != train_control_contract:
             raise ValueError("Resume checkpoint train control contract does not match")
         if payload.get("validation_control_contract") != validation_control_contract:
-            raise ValueError(
-                "Resume checkpoint validation control contract does not match"
-            )
+            raise ValueError("Resume checkpoint validation control contract does not match")
         model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
         scheduler.load_state_dict(payload["scheduler"])
@@ -855,10 +840,7 @@ def train_cached_readout(
         total_samples = 0
         for cached_batch in train_loader:
             features = cached_batch["features"].to(device, dtype=torch.float32)
-            targets = {
-                name: tensor.to(device)
-                for name, tensor in cached_batch["targets"].items()
-            }
+            targets = {name: tensor.to(device) for name, tensor in cached_batch["targets"].items()}
             if task not in targets:
                 raise ValueError(f"Requested task {task!r} is absent from cache")
             optimizer.zero_grad(set_to_none=True)
@@ -880,9 +862,7 @@ def train_cached_readout(
                     f"epoch={epoch + 1}"
                 )
             loss.backward()
-            gradient_norm = torch.nn.utils.clip_grad_norm_(
-                model.parameters(), max_norm=1.0
-            )
+            gradient_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             if not math.isfinite(float(gradient_norm.detach().item())):
                 raise ValueError(
                     "Non-finite gradient norm "
@@ -924,9 +904,7 @@ def train_cached_readout(
                 f"task={task} representation={representation} seed={seed} "
                 f"epoch={epoch + 1}"
             )
-        is_best = best_value is None or (
-            value > best_value if maximize else value < best_value
-        )
+        is_best = best_value is None or (value > best_value if maximize else value < best_value)
         if is_best:
             best_value = value
             best_epoch = epoch + 1
@@ -983,14 +961,10 @@ def train_cached_readout(
             "runtime": {
                 "elapsed_seconds": time.perf_counter() - run_started,
                 "cuda_peak_allocated_bytes": (
-                    torch.cuda.max_memory_allocated(device)
-                    if device.type == "cuda"
-                    else None
+                    torch.cuda.max_memory_allocated(device) if device.type == "cuda" else None
                 ),
                 "cuda_peak_reserved_bytes": (
-                    torch.cuda.max_memory_reserved(device)
-                    if device.type == "cuda"
-                    else None
+                    torch.cuda.max_memory_reserved(device) if device.type == "cuda" else None
                 ),
             },
             "best_epoch": best_epoch,
@@ -1038,14 +1012,10 @@ def train_cached_readout(
             "runtime": {
                 "elapsed_seconds": time.perf_counter() - run_started,
                 "cuda_peak_allocated_bytes": (
-                    torch.cuda.max_memory_allocated(device)
-                    if device.type == "cuda"
-                    else None
+                    torch.cuda.max_memory_allocated(device) if device.type == "cuda" else None
                 ),
                 "cuda_peak_reserved_bytes": (
-                    torch.cuda.max_memory_reserved(device)
-                    if device.type == "cuda"
-                    else None
+                    torch.cuda.max_memory_reserved(device) if device.type == "cuda" else None
                 ),
             },
             "best_epoch": best_epoch,
@@ -1142,9 +1112,7 @@ def evaluate_checkpoint(
 def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
     dataset = CachedFeatureDataset(cache_dir)
     if dataset.manifest.get("storage_policy", "dense") != "dense":
-        raise ValueError(
-            "Unsupervised graph diagnosis requires a dense-affinity cache"
-        )
+        raise ValueError("Unsupervised graph diagnosis requires a dense-affinity cache")
     shuffled_dataset = ShuffledResponseCachedDataset(cache_dir, seed=4121)
     totals: dict[str, dict[str, float]] = {}
     counts: dict[str, dict[str, int]] = {}
@@ -1158,19 +1126,14 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
             raise ValueError("Segmentation targets are required for graph diagnosis")
         representations = {
             "response": features.affinity.float(),
-            "response_shuffled": shuffled_dataset[index][
-                "features"
-            ].affinity.float(),
+            "response_shuffled": shuffled_dataset[index]["features"].affinity.float(),
             "state": cosine_affinity(features.state.float()),
             **{
                 name: graph.float()
                 for name, graph in features.graphs.items()
                 if not name.endswith("_adjacency")
             },
-            **{
-                name: cosine_affinity(value.float())
-                for name, value in features.baselines.items()
-            },
+            **{name: cosine_affinity(value.float()) for name, value in features.baselines.items()},
         }
         target = targets["segmentation"].unsqueeze(0)
         sample_report: dict[str, Any] = {
@@ -1183,15 +1146,9 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
                 target,
                 features.grid_size,
             )
-            accumulator = totals.setdefault(
-                name, {metric_name: 0.0 for metric_name in metrics}
-            )
-            metric_counts = counts.setdefault(
-                name, {metric_name: 0 for metric_name in metrics}
-            )
-            metric_values = values.setdefault(
-                name, {metric_name: [] for metric_name in metrics}
-            )
+            accumulator = totals.setdefault(name, {metric_name: 0.0 for metric_name in metrics})
+            metric_counts = counts.setdefault(name, {metric_name: 0 for metric_name in metrics})
+            metric_values = values.setdefault(name, {metric_name: [] for metric_name in metrics})
             sample_report["representations"][name] = metrics
             for metric_name, value in metrics.items():
                 if not np.isfinite(value):
@@ -1208,8 +1165,7 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
         "representations": {
             name: {
                 "means": {
-                    metric_name: value
-                    / max(1, counts.get(name, {}).get(metric_name, 0))
+                    metric_name: value / max(1, counts.get(name, {}).get(metric_name, 0))
                     for metric_name, value in metrics.items()
                 },
                 "bootstrap": {
@@ -1243,6 +1199,7 @@ def run_readout_matrix(
     weight_decay: float,
     batch_size: int,
     reference: str | None = None,
+    matrix_report_path: Path | None = None,
 ) -> dict[str, Any]:
     """Run and resume a representation/seed matrix through held-out test."""
 
@@ -1257,7 +1214,8 @@ def run_readout_matrix(
     output_dir.mkdir(parents=True, exist_ok=True)
     test_reports: list[Path] = []
     runs: list[dict[str, Any]] = []
-    matrix_path = output_dir / "matrix_report.json"
+    matrix_path = matrix_report_path or output_dir / "matrix_report.json"
+    matrix_path.parent.mkdir(parents=True, exist_ok=True)
     provenance = code_provenance()
     config_payload = _json_compatible(config.to_dict())
     readout_batch_size = batch_size or config.runtime.batch_size
@@ -1276,14 +1234,10 @@ def run_readout_matrix(
                 test_cache_dir, representation, seed
             )
             run_dir = output_dir / representation / f"seed-{seed}"
-            training_report_path = (
-                run_dir / f"{task}_{representation}_seed{seed}_report.json"
-            )
+            training_report_path = run_dir / f"{task}_{representation}_seed{seed}_report.json"
             last_checkpoint = run_dir / f"{task}_{representation}_seed{seed}_last.pt"
             if training_report_path.is_file():
-                training_report = json.loads(
-                    training_report_path.read_text(encoding="utf-8")
-                )
+                training_report = json.loads(training_report_path.read_text(encoding="utf-8"))
                 _require_report_contract(
                     training_report,
                     {
@@ -1320,9 +1274,7 @@ def run_readout_matrix(
                     learning_rate=learning_rate,
                     weight_decay=weight_decay,
                     seed=seed,
-                    resume_checkpoint=(
-                        last_checkpoint if last_checkpoint.is_file() else None
-                    ),
+                    resume_checkpoint=(last_checkpoint if last_checkpoint.is_file() else None),
                     batch_size=batch_size,
                 )
             best_checkpoint = Path(training_report["best_checkpoint"])
@@ -1330,9 +1282,7 @@ def run_readout_matrix(
                 raise FileNotFoundError(f"Missing best checkpoint: {best_checkpoint}")
             best_checkpoint_sha256 = file_sha256(best_checkpoint)
             if training_report.get("best_checkpoint_sha256") != best_checkpoint_sha256:
-                raise ValueError(
-                    f"Best checkpoint SHA-256 mismatch: {best_checkpoint}"
-                )
+                raise ValueError(f"Best checkpoint SHA-256 mismatch: {best_checkpoint}")
             test_report_path = run_dir / f"{task}_{representation}_seed{seed}_test.json"
             if test_report_path.is_file():
                 test_report = json.loads(test_report_path.read_text(encoding="utf-8"))
@@ -1411,4 +1361,122 @@ def run_readout_matrix(
         "summary": summary,
     }
     atomic_json_dump(matrix_path, report)
+    return report
+
+
+def _run_readout_seed_worker(
+    config: RunConfig,
+    arguments: dict[str, Any],
+    seed: int,
+) -> str:
+    output_dir = Path(arguments["output_dir"])
+    run_readout_matrix(
+        config,
+        seeds=[seed],
+        matrix_report_path=output_dir / f".matrix_report.seed-{seed}.json",
+        **arguments,
+    )
+    return str(seed)
+
+
+def run_readout_matrix_seed_parallel(
+    config: RunConfig,
+    *,
+    train_cache_dir: Path,
+    val_cache_dir: Path,
+    test_cache_dir: Path,
+    output_dir: Path,
+    task: str,
+    representations: list[str],
+    seeds: list[int],
+    epochs: int,
+    learning_rate: float,
+    weight_decay: float,
+    batch_size: int,
+    reference: str | None = None,
+    seed_workers: int = 1,
+    readout_runtime_profile: Mapping[str, Any] | None = None,
+) -> dict[str, Any]:
+    """Run independent seeds in spawned processes, then audit one full matrix.
+
+    Each worker owns disjoint ``representation/seed-*`` artifacts and a
+    seed-specific disposable progress report. The parent rebuilds the sole
+    formal matrix after every worker succeeds, reusing the original
+    report/checkpoint/cache-contract validation path for all cells.
+    """
+
+    if seed_workers < 1:
+        raise ValueError("seed_workers must be positive")
+    if readout_runtime_profile is not None:
+        selected_workers = int(
+            readout_runtime_profile.get("selected_profile", {}).get("seed_workers", -1)
+        )
+        if selected_workers != seed_workers:
+            raise ValueError("readout runtime profile does not match requested seed_workers")
+    if seed_workers == 1 or len(seeds) == 1:
+        report = run_readout_matrix(
+            config,
+            train_cache_dir=train_cache_dir,
+            val_cache_dir=val_cache_dir,
+            test_cache_dir=test_cache_dir,
+            output_dir=output_dir,
+            task=task,
+            representations=representations,
+            seeds=seeds,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            weight_decay=weight_decay,
+            batch_size=batch_size,
+            reference=reference,
+        )
+    else:
+        if seed_workers > len(seeds):
+            raise ValueError("seed_workers cannot exceed the number of seeds")
+        if len(set(seeds)) != len(seeds):
+            raise ValueError("parallel seed execution requires unique seeds")
+
+        arguments: dict[str, Any] = {
+            "train_cache_dir": train_cache_dir,
+            "val_cache_dir": val_cache_dir,
+            "test_cache_dir": test_cache_dir,
+            "output_dir": output_dir,
+            "task": task,
+            "representations": representations,
+            "epochs": epochs,
+            "learning_rate": learning_rate,
+            "weight_decay": weight_decay,
+            "batch_size": batch_size,
+            "reference": reference,
+        }
+        with ProcessPoolExecutor(
+            max_workers=seed_workers,
+            mp_context=get_context("spawn"),
+        ) as executor:
+            futures = [
+                executor.submit(_run_readout_seed_worker, config, arguments, seed) for seed in seeds
+            ]
+            for future in futures:
+                future.result()
+
+        for seed in seeds:
+            (output_dir / f".matrix_report.seed-{seed}.json").unlink(missing_ok=True)
+
+        report = run_readout_matrix(
+            config,
+            train_cache_dir=train_cache_dir,
+            val_cache_dir=val_cache_dir,
+            test_cache_dir=test_cache_dir,
+            output_dir=output_dir,
+            task=task,
+            representations=representations,
+            seeds=seeds,
+            epochs=epochs,
+            learning_rate=learning_rate,
+            weight_decay=weight_decay,
+            batch_size=batch_size,
+            reference=reference,
+        )
+    if readout_runtime_profile is not None:
+        report = {**report, "readout_runtime_profile": dict(readout_runtime_profile)}
+        atomic_json_dump(output_dir / "matrix_report.json", report)
     return report

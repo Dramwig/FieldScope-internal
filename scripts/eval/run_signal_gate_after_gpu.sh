@@ -12,6 +12,7 @@ config="configs/eval/auraflow_signal_gate.yaml"
 cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/signal_final512"
 output_root="outputs/signal_gate"
 runtime_profile="outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json"
+readout_runtime_profile="outputs/runtime_gate/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json"
 
 verify_revision() {
   local actual_revision
@@ -106,6 +107,14 @@ for seed in 4121 7319 104729; do
 done
 
 "$python_bin" -m fieldscope.cli run-readout-matrix "${matrix_arguments[@]}"
+
+mkdir -p "$(dirname "$readout_runtime_profile")"
+"$python_bin" -m fieldscope.cli readout-runtime-gate \
+  --config configs/model/auraflow_v03.yaml \
+  --train-cache-dir "$cache_root/cifar10_train" \
+  --val-cache-dir "$cache_root/cifar10_val" \
+  --test-cache-dir "$cache_root/cifar10_test" \
+  --output "$readout_runtime_profile"
 
 "$python_bin" -m fieldscope.cli audit-signal-gate \
   --cache-dir "$cache_root/cifar10_train" \

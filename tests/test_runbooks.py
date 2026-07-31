@@ -24,14 +24,11 @@ def test_causal_runbook_has_real_multiline_cli_arguments() -> None:
 
 
 def test_full_runbooks_continue_after_complete_negative_signal() -> None:
-    waiter = (
-        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_when_ready.sh"
-    ).read_text(encoding="utf-8")
+    waiter = (REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_when_ready.sh").read_text(
+        encoding="utf-8"
+    )
     full = (
-        REPOSITORY_ROOT
-        / "scripts"
-        / "eval"
-        / "run_full_validation_after_signal_gate.sh"
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh"
     ).read_text(encoding="utf-8")
     for script in (waiter, full):
         assert '"$verdict" == "incomplete"' in script
@@ -41,10 +38,7 @@ def test_full_runbooks_continue_after_complete_negative_signal() -> None:
 
 def test_causal_runbook_runs_after_complete_positive_or_negative_main_result() -> None:
     full = (
-        REPOSITORY_ROOT
-        / "scripts"
-        / "eval"
-        / "run_full_validation_after_signal_gate.sh"
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh"
     ).read_text(encoding="utf-8")
     causal = (
         REPOSITORY_ROOT / "scripts" / "eval" / "run_causal_validation_after_main.sh"
@@ -58,9 +52,9 @@ def test_causal_runbook_runs_after_complete_positive_or_negative_main_result() -
 
 
 def test_signal_runbook_runs_runtime_gate_before_real_cache_extraction() -> None:
-    signal = (
-        REPOSITORY_ROOT / "scripts" / "eval" / "run_signal_gate_after_gpu.sh"
-    ).read_text(encoding="utf-8")
+    signal = (REPOSITORY_ROOT / "scripts" / "eval" / "run_signal_gate_after_gpu.sh").read_text(
+        encoding="utf-8"
+    )
     runtime_gate = signal.index("runtime-gate")
     first_extract = signal.index("extract-dataset")
     assert runtime_gate < first_extract
@@ -70,14 +64,8 @@ def test_signal_runbook_runs_runtime_gate_before_real_cache_extraction() -> None
 
 def test_formal_runbooks_bind_runtime_profile_into_both_evidence_gates() -> None:
     scripts = [
-        REPOSITORY_ROOT
-        / "scripts"
-        / "eval"
-        / "run_full_validation_after_signal_gate.sh",
-        REPOSITORY_ROOT
-        / "scripts"
-        / "eval"
-        / "run_causal_validation_after_main.sh",
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh",
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_causal_validation_after_main.sh",
     ]
     for path in scripts:
         script = path.read_text(encoding="utf-8")
@@ -85,16 +73,36 @@ def test_formal_runbooks_bind_runtime_profile_into_both_evidence_gates() -> None
         assert '--runtime-profile "$runtime_profile"' in script
 
 
+def test_readout_runtime_gate_precedes_formal_readouts_and_binds_every_matrix() -> None:
+    signal = (REPOSITORY_ROOT / "scripts" / "eval" / "run_signal_gate_after_gpu.sh").read_text(
+        encoding="utf-8"
+    )
+    full = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh"
+    ).read_text(encoding="utf-8")
+    matrix = (REPOSITORY_ROOT / "scripts" / "train" / "run_readout_matrix.sh").read_text(
+        encoding="utf-8"
+    )
+    assert signal.index("run-readout-matrix") < signal.index("readout-runtime-gate")
+    assert full.index("missing readout runtime profile") < full.index(
+        "training full readout matrix"
+    )
+    assert 'export FIELDSCOPE_READOUT_RUNTIME_PROFILE="$readout_runtime_profile"' in full
+    assert (
+        ': "${FIELDSCOPE_READOUT_RUNTIME_PROFILE:?Set FIELDSCOPE_READOUT_RUNTIME_PROFILE}"'
+        in matrix
+    )
+    assert '--readout-runtime-profile "$FIELDSCOPE_READOUT_RUNTIME_PROFILE"' in matrix
+    assert full.count('--readout-runtime-profile "$readout_runtime_profile"') == 1
+    assert full.index("training full readout matrix") < full.index("audit-full-evidence")
+
+
 def test_full_runbook_reserves_conservative_checkpoint_budget() -> None:
     full = (
-        REPOSITORY_ROOT
-        / "scripts"
-        / "eval"
-        / "run_full_validation_after_signal_gate.sh"
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh"
     ).read_text(encoding="utf-8")
     assert "checkpoint_and_report_budget_bytes=21474836480" in full
     assert (
-        'additional-required-bytes '
-        '"$((sparse_projected_bytes + checkpoint_and_report_budget_bytes))"'
-        in full
+        "additional-required-bytes "
+        '"$((sparse_projected_bytes + checkpoint_and_report_budget_bytes))"' in full
     )

@@ -14,12 +14,18 @@ preflight_root="outputs/full_validation/$cache_tag/preflight"
 decision="$signal_root/promotion_decision.json"
 cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag"
 runtime_profile="${FIELDSCOPE_RUNTIME_PROFILE:-$PWD/outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
+readout_runtime_profile="${FIELDSCOPE_READOUT_RUNTIME_PROFILE:-$PWD/outputs/runtime_gate/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
 
 if [[ ! -f "$runtime_profile" ]]; then
   echo "missing runtime profile: $runtime_profile" >&2
   exit 11
 fi
 export FIELDSCOPE_RUNTIME_PROFILE="$runtime_profile"
+if [[ ! -f "$readout_runtime_profile" ]]; then
+  echo "missing readout runtime profile: $readout_runtime_profile" >&2
+  exit 12
+fi
+export FIELDSCOPE_READOUT_RUNTIME_PROFILE="$readout_runtime_profile"
 
 verify_revision() {
   local actual_revision
@@ -238,6 +244,7 @@ done
   --voc-unsupervised "outputs/full_validation/$cache_tag/voc2012_unsupervised.json" \
   --backbone-asset "$preflight_root/auraflow_backbone_asset.json" \
   --runtime-profile "$runtime_profile" \
+  --readout-runtime-profile "$readout_runtime_profile" \
   --imagenet100-split-audit "$preflight_root/imagenet100_split_audit.json" \
   --voc2012-split-audit "$preflight_root/voc2012_split_audit.json" \
   --ade20k-split-audit "$preflight_root/ade20k_split_audit.json" \

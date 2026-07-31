@@ -32,13 +32,18 @@ from fieldscope.experiments import (
     diagnose_segmentation_cache,
     evaluate_checkpoint,
     extract_dataset_cache,
-    run_readout_matrix,
+    run_readout_matrix_seed_parallel,
     set_experiment_seed,
     train_cached_readout,
 )
 from fieldscope.gates import audit_signal_gate
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
+from fieldscope.readout_runtime_gate import (
+    load_readout_runtime_gate_report,
+    readout_runtime_profile_identity,
+    run_readout_runtime_gate,
+)
 from fieldscope.resource_planning import plan_cache_budget
 from fieldscope.response import FieldResponseExtractor
 from fieldscope.runtime_gate import load_runtime_gate_report, run_runtime_gate
@@ -452,6 +457,8 @@ def _build_parser() -> argparse.ArgumentParser:
         action="append",
     )
     matrix_parser.add_argument("--seed", required=True, type=int, action="append")
+    matrix_parser.add_argument("--seed-workers", type=int, default=1)
+    matrix_parser.add_argument("--readout-runtime-profile", type=Path)
     matrix_parser.add_argument("--epochs", required=True, type=int)
     matrix_parser.add_argument("--batch-size", required=True, type=int)
     matrix_parser.add_argument("--learning-rate", type=float, default=1e-3)
@@ -459,6 +466,16 @@ def _build_parser() -> argparse.ArgumentParser:
     matrix_parser.add_argument("--reference")
     matrix_parser.add_argument("--num-classes", type=int)
     matrix_parser.add_argument("--segmentation-classes", type=int)
+
+    readout_runtime_parser = subparsers.add_parser(
+        "readout-runtime-gate",
+        help="Select an exact, resource-safe cached-readout seed parallelism profile",
+    )
+    readout_runtime_parser.add_argument("--config", required=True, type=Path)
+    readout_runtime_parser.add_argument("--train-cache-dir", required=True, type=Path)
+    readout_runtime_parser.add_argument("--val-cache-dir", required=True, type=Path)
+    readout_runtime_parser.add_argument("--test-cache-dir", required=True, type=Path)
+    readout_runtime_parser.add_argument("--output", required=True, type=Path)
 
     gate_parser = subparsers.add_parser(
         "audit-signal-gate",
@@ -540,6 +557,9 @@ def _build_parser() -> argparse.ArgumentParser:
     evidence_parser.add_argument("--voc-unsupervised", required=True, type=Path)
     evidence_parser.add_argument("--backbone-asset", required=True, type=Path)
     evidence_parser.add_argument("--runtime-profile", required=True, type=Path)
+    evidence_parser.add_argument(
+        "--readout-runtime-profile", required=True, type=Path
+    )
     for dataset in ("imagenet100", "voc2012", "ade20k", "nyuv2"):
         evidence_parser.add_argument(
             f"--{dataset}-split-audit",
@@ -693,7 +713,21 @@ def main(argv: list[str] | None = None) -> int:
                     ),
                 ),
             )
-        report = run_readout_matrix(
+        seed_workers = args.seed_workers
+        readout_runtime_profile = None
+        if args.readout_runtime_profile is not None:
+            if seed_workers != 1:
+                raise ValueError(
+                    "Do not combine --seed-workers with --readout-runtime-profile"
+                )
+            load_readout_runtime_gate_report(config, args.readout_runtime_profile)
+            readout_runtime_profile = readout_runtime_profile_identity(
+                args.readout_runtime_profile
+            )
+            seed_workers = int(
+                readout_runtime_profile["selected_profile"]["seed_workers"]
+            )
+        report = run_readout_matrix_seed_parallel(
             config,
             train_cache_dir=args.train_cache_dir,
             val_cache_dir=args.val_cache_dir,
@@ -702,12 +736,28 @@ def main(argv: list[str] | None = None) -> int:
             task=args.task,
             representations=list(args.representation),
             seeds=list(args.seed),
+            seed_workers=seed_workers,
+            readout_runtime_profile=readout_runtime_profile,
             epochs=args.epochs,
             learning_rate=args.learning_rate,
             weight_decay=args.weight_decay,
             batch_size=args.batch_size,
             reference=args.reference,
         )
+    elif args.command == "readout-runtime-gate":
+        config = load_config(args.config)
+        if args.output.is_file():
+            report = load_readout_runtime_gate_report(config, args.output)
+        else:
+            report = run_readout_runtime_gate(
+                config,
+                config_path=args.config,
+                train_cache_dir=args.train_cache_dir,
+                val_cache_dir=args.val_cache_dir,
+                test_cache_dir=args.test_cache_dir,
+                output_path=args.output,
+            )
+            _json_dump(args.output, report)
     elif args.command == "audit-signal-gate":
         report = audit_signal_gate(
             cache_dirs=list(args.cache_dir),
@@ -782,6 +832,7 @@ def main(argv: list[str] | None = None) -> int:
             voc_unsupervised_path=args.voc_unsupervised,
             backbone_asset_path=args.backbone_asset,
             runtime_profile_path=args.runtime_profile,
+            readout_runtime_profile_path=args.readout_runtime_profile,
             split_audit_paths={
                 "imagenet100": args.imagenet100_split_audit,
                 "voc2012": args.voc2012_split_audit,
