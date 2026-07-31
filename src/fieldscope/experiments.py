@@ -577,16 +577,17 @@ def evaluate_checkpoint(
 ) -> dict[str, Any]:
     device = torch.device(config.backend.device)
     payload = torch.load(checkpoint, map_location=device, weights_only=False)
+    checkpoint_config = RunConfig.from_mapping(payload["config"])
     model = FieldScopeModel(
         payload["state_dim"],
         payload["response_dim"],
-        config.tokenizer,
+        checkpoint_config.tokenizer,
         mode=payload["mode"],
     ).to(device)
     model.load_state_dict(payload["model"])
     evaluation = evaluate_cached_readout(
         model,
-        config,
+        checkpoint_config,
         cache_dir=cache_dir,
         task=payload["task"],
         representation=payload["representation"],

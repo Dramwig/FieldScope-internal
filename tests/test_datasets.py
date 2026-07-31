@@ -6,6 +6,7 @@ import torch
 from PIL import Image
 
 from fieldscope.datasets import (
+    ADE20KDirectoryDataset,
     NYUv2DirectoryDataset,
     SyntheticShapesDataset,
     build_vision_dataset,
@@ -85,3 +86,19 @@ def test_stratified_holdout_is_deterministic_and_balanced() -> None:
     assert len(validation) == 4
     assert [targets[index] for index in validation].count(0) == 2
     assert [targets[index] for index in validation].count(1) == 2
+
+
+def test_ade20k_directory_dataset_remaps_labels(tmp_path: Path) -> None:
+    image_root = tmp_path / "images" / "training"
+    annotation_root = tmp_path / "annotations" / "training"
+    image_root.mkdir(parents=True)
+    annotation_root.mkdir(parents=True)
+    Image.new("RGB", (2, 2), color=(12, 34, 56)).save(
+        image_root / "ADE_train_00000001.jpg"
+    )
+    annotation = Image.fromarray(np.array([[0, 1], [2, 150]], dtype=np.uint8))
+    annotation.save(annotation_root / "ADE_train_00000001.png")
+
+    sample = ADE20KDirectoryDataset(tmp_path, "train", image_size=2)[0]
+    assert sample["sample_id"] == "ADE_train_00000001"
+    assert sample["segmentation"].tolist() == [[255, 0], [1, 149]]

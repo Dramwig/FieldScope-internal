@@ -269,6 +269,59 @@ class NYUv2DirectoryDataset(Dataset[dict[str, Any]]):
         }
 
 
+class ADE20KDirectoryDataset(Dataset[dict[str, Any]]):
+    """ADE20K semantic segmentation with official 150-class label remapping."""
+
+    def __init__(self, root: str | Path, split: str, image_size: int):
+        from torchvision.transforms import InterpolationMode
+        from torchvision.transforms import functional as TF
+
+        split_name = {"train": "training", "val": "validation"}.get(split, split)
+        if split_name not in {"training", "validation"}:
+            raise ValueError("ADE20K split must be train/training or val/validation")
+        self.root = Path(root)
+        image_root = self.root / "images" / split_name
+        annotation_root = self.root / "annotations" / split_name
+        self.samples = [
+            (path, annotation_root / f"{path.stem}.png")
+            for path in sorted(image_root.glob("*.jpg"))
+        ]
+        if not self.samples or any(not annotation.is_file() for _, annotation in self.samples):
+            raise FileNotFoundError(
+                f"Incomplete ADE20K image/annotation pairs under {self.root}"
+            )
+        self.image_size = image_size
+        self._tf = TF
+        self._image_interpolation = InterpolationMode.BILINEAR
+        self._target_interpolation = InterpolationMode.NEAREST
+
+    def __len__(self) -> int:
+        return len(self.samples)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        image_path, annotation_path = self.samples[index]
+        image = Image.open(image_path).convert("RGB")
+        annotation = Image.open(annotation_path)
+        image = self._tf.resize(
+            image,
+            [self.image_size, self.image_size],
+            interpolation=self._image_interpolation,
+            antialias=True,
+        )
+        annotation = self._tf.resize(
+            annotation,
+            [self.image_size, self.image_size],
+            interpolation=self._target_interpolation,
+        )
+        target = self._tf.pil_to_tensor(annotation).squeeze(0).long()
+        target = torch.where(target == 0, 255, target - 1)
+        return {
+            "image": self._tf.to_tensor(image),
+            "segmentation": target,
+            "sample_id": image_path.stem,
+        }
+
+
 def build_vision_dataset(
     name: str,
     root: str | Path,
@@ -348,4 +401,6 @@ def build_vision_dataset(
         return TaskDataset(dataset, "classification", f"{name}-{split}")
     if name == "nyuv2":
         return NYUv2DirectoryDataset(root, split, image_size)
+    if name == "ade20k":
+        return ADE20KDirectoryDataset(root, split, image_size)
     raise ValueError(f"Unsupported dataset: {name}")

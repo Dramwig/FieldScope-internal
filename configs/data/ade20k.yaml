@@ -5,3 +5,4 @@ prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/ade20k
 source_local: D:/datasets_raw_hub/registry/ade20k/raw/ADEChallengeData2016.zip
 archive_sha256: a4a2860390141240c3c05981b5c0084c1d773b2a8c39ac14209da40602cc11ea
 split_status: TODO_verify_after_preparation
+label_mapping: source_0_to_ignore_255_and_source_1_150_to_0_149

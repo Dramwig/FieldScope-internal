@@ -10,6 +10,7 @@ import platform
 import shutil
 import sys
 import time
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 
@@ -34,6 +35,7 @@ from fieldscope.experiments import (
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
 from fieldscope.response import FieldResponseExtractor
+from fieldscope.statistics import summarize_run_reports
 
 
 def _json_dump(path: Path, payload: dict[str, Any]) -> None:
@@ -312,7 +314,14 @@ def _build_parser() -> argparse.ArgumentParser:
     dataset_parser.add_argument(
         "--dataset",
         required=True,
-        choices=["cifar10", "voc2012", "imagenet", "imagenet100", "nyuv2"],
+        choices=[
+            "cifar10",
+            "voc2012",
+            "imagenet",
+            "imagenet100",
+            "ade20k",
+            "nyuv2",
+        ],
     )
     dataset_parser.add_argument("--root", required=True, type=Path)
     dataset_parser.add_argument("--split", required=True)
@@ -362,6 +371,8 @@ def _build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--seed", type=int)
     train_parser.add_argument("--resume", type=Path)
     train_parser.add_argument("--batch-size", type=int)
+    train_parser.add_argument("--num-classes", type=int)
+    train_parser.add_argument("--segmentation-classes", type=int)
 
     evaluate_parser = subparsers.add_parser(
         "evaluate-cache", help="Evaluate a saved readout on a cached split"
@@ -382,6 +393,15 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     segmentation_parser.add_argument("--cache-dir", required=True, type=Path)
     segmentation_parser.add_argument("--output", required=True, type=Path)
+
+    summary_parser = subparsers.add_parser(
+        "summarize-runs",
+        help="Aggregate multi-seed readout reports with paired t intervals",
+    )
+    summary_parser.add_argument("--report", required=True, type=Path, action="append")
+    summary_parser.add_argument("--metric", required=True)
+    summary_parser.add_argument("--reference")
+    summary_parser.add_argument("--output", required=True, type=Path)
 
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
@@ -426,8 +446,26 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "train-cache":
         if args.epochs < 1:
             raise ValueError("--epochs must be positive")
+        config = load_config(args.config)
+        if args.num_classes is not None or args.segmentation_classes is not None:
+            config = replace(
+                config,
+                tokenizer=replace(
+                    config.tokenizer,
+                    num_classes=(
+                        args.num_classes
+                        if args.num_classes is not None
+                        else config.tokenizer.num_classes
+                    ),
+                    segmentation_classes=(
+                        args.segmentation_classes
+                        if args.segmentation_classes is not None
+                        else config.tokenizer.segmentation_classes
+                    ),
+                ),
+            )
         report = train_cache(
-            load_config(args.config),
+            config,
             cache_dir=args.cache_dir,
             task=args.task,
             representation=args.representation,
@@ -455,6 +493,13 @@ def main(argv: list[str] | None = None) -> int:
             _json_dump(args.output, report)
     elif args.command == "diagnose-segmentation":
         report = diagnose_segmentation_cache(args.cache_dir)
+        _json_dump(args.output, report)
+    elif args.command == "summarize-runs":
+        report = summarize_run_reports(
+            list(args.report),
+            metric=args.metric,
+            reference=args.reference,
+        )
         _json_dump(args.output, report)
     elif args.command == "inspect-cache":
         _, _, report = load_features(args.cache)
