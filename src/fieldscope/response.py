@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import asdict
 
 import torch
@@ -72,12 +73,47 @@ class FieldResponseExtractor:
         images: torch.Tensor,
         *,
         noise: torch.Tensor | None = None,
+        noise_seeds: Sequence[int] | None = None,
     ) -> FieldFeatures:
         z0 = self.backend.encode_images(images)
-        generator = torch.Generator(device=z0.device)
-        generator.manual_seed(self.config.seed)
+        if noise is not None and noise_seeds is not None:
+            raise ValueError("noise and noise_seeds are mutually exclusive")
+        noise_policy = (
+            "explicit_tensor"
+            if noise is not None
+            else (
+                "sample_id_sha256_seeded_v1"
+                if noise_seeds is not None
+                else "batch_seeded_legacy"
+            )
+        )
         if noise is None:
-            noise = torch.randn(z0.shape, generator=generator, device=z0.device, dtype=z0.dtype)
+            if noise_seeds is None:
+                generator = torch.Generator(device="cpu").manual_seed(self.config.seed)
+                noise = torch.randn(
+                    z0.shape,
+                    generator=generator,
+                    device="cpu",
+                    dtype=torch.float32,
+                )
+            else:
+                if len(noise_seeds) != z0.shape[0]:
+                    raise ValueError("noise_seeds length must match the image batch")
+                noise = torch.stack(
+                    [
+                        torch.randn(
+                            z0.shape[1:],
+                            generator=torch.Generator(device="cpu").manual_seed(
+                                int(seed)
+                            ),
+                            device="cpu",
+                            dtype=torch.float32,
+                        )
+                        for seed in noise_seeds
+                    ],
+                    dim=0,
+                )
+            noise = noise.to(device=z0.device, dtype=z0.dtype)
         else:
             noise = noise.to(device=z0.device, dtype=z0.dtype)
         if noise.shape != z0.shape:
@@ -236,6 +272,8 @@ class FieldResponseExtractor:
                 "probe": asdict(self.config),
                 "time_convention": "clean_time: 0=noise, 1=image",
                 "noise_views": len(noise_views),
+                "noise_policy": noise_policy,
+                "probe_basis": "shared_fixed_seed_v1",
             },
         )
         features.validate()

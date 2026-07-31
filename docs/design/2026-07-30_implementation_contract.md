@@ -40,6 +40,18 @@ global token [B,D]
 基础状态为 `[velocity; mismatch; endpoint_residual; ||velocity||; ||mismatch||]`。
 响应签名按时间和 antithetic noise view 拼接；关系图先在每个时间/视图计算，再平均。
 
+随机性合约：
+
+- 每个数据样本的 path noise seed 由
+  `SHA256(f"{probe.seed}\0{sample_id}")` 的前 64 bit 派生，并限制在
+  `[0, 2^63)`；noise 在 CPU/float32 上生成后转换到 backbone device/dtype。
+- 因而同一样本的 path noise 不依赖 DataLoader batch 大小、cache shard 边界、
+  恢复位置或进程内 RNG 状态；不同样本不复用同一 path noise。
+- 同一配置和 latent shape 的所有样本共享由 `probe.seed` 固定的 probe basis。
+  这是 response sketch 的公共坐标系；batch 维只广播，不额外消耗 RNG。
+- cache manifest 必须记录 `sample_id_sha256_seeded_v1` 与
+  `shared_fixed_seed_v1`，代码树变化使旧缓存 signature 失效。
+
 ## 冻结边界
 
 VAE、文本编码器、Flow Transformer 和原生输出层都设置为 eval 且不参与梯度。

@@ -25,13 +25,14 @@ def generate_structured_probes(
     num_directions: int,
     seed: int,
 ) -> torch.Tensor:
-    """Generate [B,R,C,H,W] probes cycling through four structure families."""
+    """Generate a shared [B,R,C,H,W] probe basis across a batch."""
 
     if reference.ndim != 4:
         raise ValueError("reference must have shape [B,C,H,W]")
     if num_directions < 1:
         raise ValueError("num_directions must be positive")
     batch, channels, height, width = reference.shape
+    prototype_batch = 1
     generator = torch.Generator(device=reference.device)
     generator.manual_seed(seed)
     probes: list[torch.Tensor] = []
@@ -44,7 +45,7 @@ def generate_structured_probes(
         family = index % 4
         if family == 0:
             direction = _rademacher(
-                (batch, channels, height, width),
+                (prototype_batch, channels, height, width),
                 generator,
                 reference.device,
                 reference.dtype,
@@ -53,7 +54,7 @@ def generate_structured_probes(
             coarse_h = max(1, height // (2 + index % 3))
             coarse_w = max(1, width // (2 + (index + 1) % 3))
             coarse = _rademacher(
-                (batch, channels, coarse_h, coarse_w),
+                (prototype_batch, channels, coarse_h, coarse_w),
                 generator,
                 reference.device,
                 reference.dtype,
@@ -63,14 +64,14 @@ def generate_structured_probes(
             frequency_x = 1 + index % max(1, min(4, width // 2))
             frequency_y = 1 + (index // 2) % max(1, min(4, height // 2))
             phase = torch.rand(
-                (batch, channels, 1, 1),
+                (prototype_batch, channels, 1, 1),
                 generator=generator,
                 device=reference.device,
                 dtype=reference.dtype,
             )
             phase = phase * (2 * math.pi)
             channel_sign = _rademacher(
-                (batch, channels, 1, 1),
+                (prototype_batch, channels, 1, 1),
                 generator,
                 reference.device,
                 reference.dtype,
@@ -79,12 +80,12 @@ def generate_structured_probes(
             direction = channel_sign * torch.cos(wave[None, None] * math.pi + phase)
         else:
             direction = 0.05 * _rademacher(
-                (batch, channels, height, width),
+                (prototype_batch, channels, height, width),
                 generator,
                 reference.device,
                 reference.dtype,
             )
-            for batch_index in range(batch):
+            for batch_index in range(prototype_batch):
                 window_h = max(1, height // (2 + (index % 2)))
                 window_w = max(1, width // (2 + ((index + 1) % 2)))
                 top = int(
@@ -113,7 +114,8 @@ def generate_structured_probes(
                 ] += signs
         probes.append(_normalize(direction))
 
-    return torch.stack(probes, dim=1)
+    prototype = torch.stack(probes, dim=1)
+    return prototype.expand(batch, -1, -1, -1, -1).clone()
 
 
 def generate_probes(
@@ -128,9 +130,9 @@ def generate_probes(
         return generate_structured_probes(reference, num_directions, seed)
     if probe_type == "gaussian":
         generator = torch.Generator(device=reference.device).manual_seed(seed)
-        probes = torch.randn(
+        prototype = torch.randn(
             (
-                reference.shape[0],
+                1,
                 num_directions,
                 *reference.shape[1:],
             ),
@@ -138,9 +140,10 @@ def generate_probes(
             device=reference.device,
             dtype=reference.dtype,
         )
-        return _normalize(probes)
+        prototype = _normalize(prototype)
+        return prototype.expand(reference.shape[0], -1, -1, -1, -1).clone()
     if probe_type == "spatially_shuffled":
-        probes = generate_structured_probes(reference, num_directions, seed)
+        probes = generate_structured_probes(reference[:1], num_directions, seed)
         generator = torch.Generator(device=reference.device).manual_seed(seed + 7919)
         flat = probes.flatten(-2)
         for batch_index in range(flat.shape[0]):
@@ -156,5 +159,6 @@ def generate_probes(
                     :,
                     permutation,
                 ]
-        return flat.reshape_as(probes)
+        prototype = flat.reshape_as(probes)
+        return prototype.expand(reference.shape[0], -1, -1, -1, -1).clone()
     raise ValueError(f"Unsupported probe_type: {probe_type}")

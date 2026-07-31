@@ -6,6 +6,7 @@ import pytest
 import torch
 from torch.utils.data import Dataset
 
+from fieldscope.cached_dataset import CachedFeatureDataset
 from fieldscope.config import RunConfig
 from fieldscope.experiments import extract_dataset_cache, run_readout_matrix
 
@@ -87,6 +88,64 @@ def test_extract_dataset_cache_resumes_verified_shards(
     first_shard.write_bytes(first_shard.read_bytes()[:-1])
     with pytest.raises(ValueError, match="integrity"):
         extract_dataset_cache(_config(tmp_path), resume=True, **arguments)
+
+
+def test_dataset_cache_is_invariant_to_batch_and_shard_layout(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    first_mapping = _config(tmp_path).to_dict()
+    first_mapping["runtime"]["batch_size"] = 1
+    first_mapping["runtime"]["cache_shard_size"] = 2
+    second_mapping = _config(tmp_path).to_dict()
+    second_mapping["runtime"]["batch_size"] = 2
+    second_mapping["runtime"]["cache_shard_size"] = 3
+    first_dir = tmp_path / "cache-layout-a"
+    second_dir = tmp_path / "cache-layout-b"
+    common = {
+        "dataset_name": "synthetic-test",
+        "dataset_root": tmp_path,
+        "split": "train",
+        "limit": 4,
+    }
+    first_report = extract_dataset_cache(
+        RunConfig.from_mapping(first_mapping),
+        output_dir=first_dir,
+        **common,
+    )
+    second_report = extract_dataset_cache(
+        RunConfig.from_mapping(second_mapping),
+        output_dir=second_dir,
+        **common,
+    )
+    assert first_report["randomness"] == second_report["randomness"]
+    assert first_report["randomness"]["path_noise"] == "sample_id_sha256_seeded_v1"
+    first = CachedFeatureDataset(first_dir)
+    second = CachedFeatureDataset(second_dir)
+    assert len(first) == len(second) == 4
+    for index in range(4):
+        first_sample = first[index]
+        second_sample = second[index]
+        assert first_sample["sample_id"] == second_sample["sample_id"]
+        first_features = first_sample["features"]
+        second_features = second_sample["features"]
+        torch.testing.assert_close(first_features.state, second_features.state)
+        torch.testing.assert_close(first_features.response, second_features.response)
+        torch.testing.assert_close(first_features.affinity, second_features.affinity)
+        torch.testing.assert_close(first_features.adjacency, second_features.adjacency)
+        for name in first_features.baselines:
+            torch.testing.assert_close(
+                first_features.baselines[name],
+                second_features.baselines[name],
+            )
+        for name in first_features.graphs:
+            torch.testing.assert_close(
+                first_features.graphs[name],
+                second_features.graphs[name],
+            )
 
 
 def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> None:

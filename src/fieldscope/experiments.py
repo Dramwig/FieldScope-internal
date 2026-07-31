@@ -182,6 +182,13 @@ def _target_tensors(batch: Mapping[str, Any]) -> dict[str, torch.Tensor]:
     }
 
 
+def sample_noise_seed(sample_id: str, base_seed: int) -> int:
+    """Derive a stable per-sample path-noise seed independent of batching."""
+
+    encoded = f"{base_seed}\0{sample_id}".encode()
+    return int.from_bytes(hashlib.sha256(encoded).digest()[:8], "big") % (2**63)
+
+
 def extract_dataset_cache(
     config: RunConfig,
     *,
@@ -307,10 +314,19 @@ def extract_dataset_cache(
                 images = batch["image"]
                 if not isinstance(images, torch.Tensor):
                     raise TypeError("Dataset image batch must be a tensor")
-                sample_ids.extend(str(value) for value in batch["sample_id"])
+                batch_sample_ids = [str(value) for value in batch["sample_id"]]
+                sample_ids.extend(batch_sample_ids)
                 for name, value in _target_tensors(batch).items():
                     target_batches.setdefault(name, []).append(value)
-                feature_batches.append(extractor.extract(images).detached_cpu())
+                feature_batches.append(
+                    extractor.extract(
+                        images,
+                        noise_seeds=[
+                            sample_noise_seed(sample_id, config.probe.seed)
+                            for sample_id in batch_sample_ids
+                        ],
+                    ).detached_cpu()
+                )
             features = stack_features(feature_batches)
             shard_targets = {
                 name: torch.cat(values, dim=0)
@@ -356,6 +372,11 @@ def extract_dataset_cache(
             "backend": backend.describe(),
             "config": config.to_dict(),
             "class_names": class_names,
+            "randomness": {
+                "path_noise": "sample_id_sha256_seeded_v1",
+                "probe_basis": "shared_fixed_seed_v1",
+                "base_seed": config.probe.seed,
+            },
             **provenance,
             "shards": shards,
             "runtime": {

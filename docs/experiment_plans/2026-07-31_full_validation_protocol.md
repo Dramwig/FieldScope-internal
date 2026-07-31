@@ -27,6 +27,9 @@
 - 公共时间：clean-time `t=0` 为噪声、`t=1` 为图像；
 - 最终主配置：512 px、时间 `[0.2, 0.5, 0.8]`、`R=8`、中心差分、
   antithetic noise、16×16 patch 图、local radius 1、global top-k 16；
+- 每张图使用由样本 ID 与 probe seed 派生的固定 path noise；同一样本在不同
+  batch/shard/恢复布局下必须逐张一致，不同样本不得静默复用同一噪声。
+  所有图像共享固定 probe basis，使 response signature 处于同一随机草图坐标系；
 - 条件：空文本为主设置；中性文本和类别无关文本仅作条件消融；
 - 容量匹配：各表示先经固定、无训练参数的 768 维高斯 sketch，再共享一个
   768→hidden 投影；`full` 在该投影前无参数融合，DiT hidden cache 也固定为
@@ -101,6 +104,8 @@ epoch 数和选模规则：
 - 仅根据 validation 主指标选择 checkpoint；每 seed 只在最终 test 评估一次；
 - 记录 trainable parameter count、吞吐、峰值显存、cache 大小和失败重试；
 - 断点恢复必须保持 epoch 级 shuffle 可复现，cache 恢复必须校验样本 ID 与 target。
+- cache manifest 还必须记录 path-noise 与 probe-basis 策略；任何旧随机性策略缓存
+  不得与当前主实验混用。
 
 ## 统计与报告
 
