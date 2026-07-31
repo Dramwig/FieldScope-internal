@@ -12,15 +12,22 @@ config="configs/eval/auraflow_signal_gate.yaml"
 cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/signal_final512"
 output_root="outputs/signal_gate"
 
-actual_revision="$(git rev-parse HEAD)"
-if [[ "$actual_revision" != "$FIELDSCOPE_EXPECTED_REVISION" ]]; then
-  echo "revision mismatch: expected=$FIELDSCOPE_EXPECTED_REVISION actual=$actual_revision" >&2
-  exit 3
-fi
-if [[ -n "$(git status --porcelain)" ]]; then
-  echo "refusing to run signal gate from a dirty worktree" >&2
-  exit 4
-fi
+verify_revision() {
+  local actual_revision
+  actual_revision="$(git rev-parse HEAD)"
+  if [[ "$actual_revision" != "$FIELDSCOPE_EXPECTED_REVISION" ]]; then
+    echo \
+      "revision mismatch: expected=$FIELDSCOPE_EXPECTED_REVISION actual=$actual_revision" \
+      >&2
+    exit 3
+  fi
+  if [[ -n "$(git status --porcelain)" ]]; then
+    echo "refusing to run signal gate from a dirty worktree" >&2
+    exit 4
+  fi
+}
+
+verify_revision
 
 while [[ -n "$wait_for_pid" ]] && kill -0 "$wait_for_pid" 2>/dev/null; do
   echo "$(date --iso-8601=seconds) waiting for external runbook pid=$wait_for_pid"
@@ -40,6 +47,7 @@ while (( free_checks < 5 )); do
   sleep 60
 done
 
+verify_revision
 mkdir -p "$cache_root" "$output_root"
 for specification in "train 256" "val 128" "test 128"; do
   read -r split limit <<<"$specification"
