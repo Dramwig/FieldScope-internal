@@ -9,6 +9,7 @@ from fieldscope.datasets import (
     NYUv2DirectoryDataset,
     SyntheticShapesDataset,
     build_vision_dataset,
+    stratified_holdout_indices,
 )
 
 
@@ -64,3 +65,23 @@ def test_nyuv2_directory_dataset_uses_explicit_manifest(tmp_path: Path) -> None:
     assert sample["image"].shape == (3, 16, 16)
     assert sample["depth"].shape == (1, 16, 16)
     assert torch.allclose(sample["depth"], torch.full((1, 16, 16), 2.5))
+
+
+def test_stratified_holdout_is_deterministic_and_balanced() -> None:
+    targets = [0] * 10 + [1] * 10
+    first = stratified_holdout_indices(
+        targets,
+        holdout_per_class=2,
+        seed=4121,
+    )
+    second = stratified_holdout_indices(
+        targets,
+        holdout_per_class=2,
+        seed=4121,
+    )
+    assert first == second
+    training, validation = first
+    assert len(training) == 16
+    assert len(validation) == 4
+    assert [targets[index] for index in validation].count(0) == 2
+    assert [targets[index] for index in validation].count(1) == 2

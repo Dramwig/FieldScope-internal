@@ -270,6 +270,7 @@ def train_cache(
     weight_decay: float = 1e-4,
     seed: int | None = None,
     resume_checkpoint: Path | None = None,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
     return train_cached_readout(
         config,
@@ -283,6 +284,7 @@ def train_cache(
         weight_decay=weight_decay,
         seed=config.probe.seed if seed is None else seed,
         resume_checkpoint=resume_checkpoint,
+        batch_size=batch_size,
     )
 
 
@@ -359,6 +361,7 @@ def _build_parser() -> argparse.ArgumentParser:
     train_parser.add_argument("--weight-decay", type=float, default=1e-4)
     train_parser.add_argument("--seed", type=int)
     train_parser.add_argument("--resume", type=Path)
+    train_parser.add_argument("--batch-size", type=int)
 
     evaluate_parser = subparsers.add_parser(
         "evaluate-cache", help="Evaluate a saved readout on a cached split"
@@ -367,6 +370,7 @@ def _build_parser() -> argparse.ArgumentParser:
     evaluate_parser.add_argument("--checkpoint", required=True, type=Path)
     evaluate_parser.add_argument("--cache-dir", required=True, type=Path)
     evaluate_parser.add_argument("--output", required=True, type=Path)
+    evaluate_parser.add_argument("--batch-size", type=int)
 
     diagnose_parser = subparsers.add_parser("diagnose", help="Diagnose a feature cache")
     diagnose_parser.add_argument("--cache", required=True, type=Path)
@@ -434,12 +438,14 @@ def main(argv: list[str] | None = None) -> int:
             weight_decay=args.weight_decay,
             seed=args.seed,
             resume_checkpoint=args.resume,
+            batch_size=args.batch_size,
         )
     elif args.command == "evaluate-cache":
         report = evaluate_checkpoint(
             load_config(args.config),
             checkpoint=args.checkpoint,
             cache_dir=args.cache_dir,
+            batch_size=args.batch_size,
         )
         _json_dump(args.output, report)
     elif args.command == "diagnose":

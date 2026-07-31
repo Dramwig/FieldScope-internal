@@ -172,14 +172,15 @@ def fixed_grid_adjacency(
 def spectral_binary_partition(adjacency: torch.Tensor) -> torch.Tensor:
     """Return a deterministic two-way normalized-cut partition [B,P]."""
 
-    normalized = normalize_adjacency(adjacency.float())
+    output_device = adjacency.device
+    normalized = normalize_adjacency(adjacency.detach().float().cpu())
     patches = adjacency.shape[-1]
-    identity = torch.eye(patches, device=adjacency.device).unsqueeze(0)
+    identity = torch.eye(patches).unsqueeze(0)
     laplacian = identity - normalized
     _, eigenvectors = torch.linalg.eigh(laplacian)
     fiedler = eigenvectors[:, :, 1] if patches > 1 else eigenvectors[:, :, 0]
     threshold = fiedler.median(dim=-1, keepdim=True).values
-    return (fiedler > threshold).long()
+    return (fiedler > threshold).long().to(output_device)
 
 
 def boundary_strength(

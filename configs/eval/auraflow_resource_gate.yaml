@@ -18,7 +18,7 @@ probe:
   graph_grid: [8, 8]
   topk: 8
   local_radius: 1
-  probe_batch_size: 1
+  probe_batch_size: 2
   antithetic_noise: true
   hidden_baseline_dim: 768
   seed: 4121

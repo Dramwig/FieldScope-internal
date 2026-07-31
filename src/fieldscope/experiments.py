@@ -319,11 +319,12 @@ def evaluate_cached_readout(
     task: str,
     representation: str,
     device: torch.device,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
     dataset = CachedFeatureDataset(cache_dir)
     loader = DataLoader(
         dataset,
-        batch_size=config.runtime.batch_size,
+        batch_size=batch_size or config.runtime.batch_size,
         shuffle=False,
         num_workers=0,
         collate_fn=collate_cached,
@@ -382,6 +383,7 @@ def train_cached_readout(
     weight_decay: float,
     seed: int,
     resume_checkpoint: Path | None = None,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
     if epochs < 1:
         raise ValueError("epochs must be positive")
@@ -424,13 +426,14 @@ def train_cached_readout(
         best_epoch = int(payload.get("best_epoch", 0))
 
     output_dir.mkdir(parents=True, exist_ok=True)
+    readout_batch_size = batch_size or config.runtime.batch_size
     best_path = output_dir / f"{task}_{representation}_seed{seed}_best.pt"
     last_path = output_dir / f"{task}_{representation}_seed{seed}_last.pt"
     report: dict[str, Any] | None = None
     for epoch in range(start_epoch, epochs):
         train_loader = DataLoader(
             train_dataset,
-            batch_size=config.runtime.batch_size,
+            batch_size=readout_batch_size,
             shuffle=True,
             generator=torch.Generator().manual_seed(seed + epoch),
             num_workers=0,
@@ -470,6 +473,7 @@ def train_cached_readout(
             task=task,
             representation=representation,
             device=device,
+            batch_size=readout_batch_size,
         )
         entry = {
             "epoch": epoch + 1,
@@ -517,6 +521,7 @@ def train_cached_readout(
                 for parameter in model.parameters()
                 if parameter.requires_grad
             ),
+            "batch_size": readout_batch_size,
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
@@ -536,6 +541,7 @@ def train_cached_readout(
             task=task,
             representation=representation,
             device=device,
+            batch_size=readout_batch_size,
         )
         report = {
             "status": "passed",
@@ -550,6 +556,7 @@ def train_cached_readout(
                 for parameter in model.parameters()
                 if parameter.requires_grad
             ),
+            "batch_size": readout_batch_size,
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
@@ -566,6 +573,7 @@ def evaluate_checkpoint(
     *,
     checkpoint: Path,
     cache_dir: Path,
+    batch_size: int | None = None,
 ) -> dict[str, Any]:
     device = torch.device(config.backend.device)
     payload = torch.load(checkpoint, map_location=device, weights_only=False)
@@ -583,6 +591,7 @@ def evaluate_checkpoint(
         task=payload["task"],
         representation=payload["representation"],
         device=device,
+        batch_size=batch_size,
     )
     return {
         "status": "passed",

@@ -127,6 +127,56 @@ class TaskDataset(Dataset[dict[str, Any]]):
         }
 
 
+class IndexedTaskDataset(Dataset[dict[str, Any]]):
+    """Task adapter over an explicit source-index split."""
+
+    def __init__(
+        self,
+        dataset: Dataset[Any],
+        indices: list[int],
+        task: str,
+        sample_prefix: str,
+    ):
+        self.dataset = dataset
+        self.indices = indices
+        self.task = task
+        self.sample_prefix = sample_prefix
+
+    def __len__(self) -> int:
+        return len(self.indices)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        source_index = self.indices[index]
+        image, target = self.dataset[source_index]
+        return {
+            "image": image,
+            self.task: target,
+            "sample_id": f"{self.sample_prefix}-{source_index:08d}",
+        }
+
+
+def stratified_holdout_indices(
+    targets: list[int],
+    *,
+    holdout_per_class: int,
+    seed: int,
+) -> tuple[list[int], list[int]]:
+    """Return sorted train/holdout indices from a deterministic class split."""
+
+    generator = np.random.default_rng(seed)
+    target_array = np.asarray(targets)
+    training: list[int] = []
+    holdout: list[int] = []
+    for label in sorted(np.unique(target_array).tolist()):
+        indices = np.flatnonzero(target_array == label)
+        if len(indices) <= holdout_per_class:
+            raise ValueError(f"Class {label} has too few samples for the holdout")
+        shuffled = generator.permutation(indices)
+        holdout.extend(shuffled[:holdout_per_class].tolist())
+        training.extend(shuffled[holdout_per_class:].tolist())
+    return sorted(training), sorted(holdout)
+
+
 class ClassSubsetDataset(Dataset[dict[str, Any]]):
     """Deterministic class subset with contiguous labels."""
 
@@ -229,11 +279,50 @@ def build_vision_dataset(
 ) -> Dataset[dict[str, Any]]:
     """Build a benchmark dataset with explicit task names and sample IDs."""
 
-    if name in {"cifar10", "voc2012"}:
-        task = "classification" if name == "cifar10" else "segmentation"
+    if name == "cifar10":
+        from torchvision import datasets, transforms
+
+        image_transform = transforms.Compose(
+            [
+                transforms.Resize((image_size, image_size), antialias=True),
+                transforms.ToTensor(),
+            ]
+        )
+        if split == "test":
+            return TaskDataset(
+                datasets.CIFAR10(
+                    root=str(root),
+                    train=False,
+                    transform=image_transform,
+                    download=False,
+                ),
+                "classification",
+                "cifar10-test",
+            )
+        if split not in {"train", "val"}:
+            raise ValueError("CIFAR-10 split must be train, val, or test")
+        dataset = datasets.CIFAR10(
+            root=str(root),
+            train=True,
+            transform=image_transform,
+            download=False,
+        )
+        training, validation = stratified_holdout_indices(
+            dataset.targets,
+            holdout_per_class=500,
+            seed=4121,
+        )
+        indices = training if split == "train" else validation
+        return IndexedTaskDataset(
+            dataset,
+            indices,
+            "classification",
+            f"cifar10-{split}",
+        )
+    if name == "voc2012":
         return TaskDataset(
             build_torchvision_dataset(name, root, split, image_size, download=False),
-            task,
+            "segmentation",
             f"{name}-{split}",
         )
     if name in {"imagenet", "imagenet100"}:

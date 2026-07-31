@@ -107,6 +107,7 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
         representation="full",
         epochs=1,
         learning_rate=1e-3,
+        batch_size=2,
     )
     assert report["status"] == "passed"
     assert Path(report["checkpoint"]).is_file()

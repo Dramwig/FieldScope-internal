@@ -1,0 +1,68 @@
+{
+  "status": "passed",
+  "evidence_scope": "correctness_and_resource_gate_only",
+  "code_revision": "da5c9efb",
+  "machine": "pro6000",
+  "runs": [
+    {
+      "name": "contract_256_r1_forward",
+      "config": "configs/eval/auraflow_contract_smoke.yaml",
+      "probe_batch_size": 1,
+      "feature_extraction_seconds": 0.5298534221947193,
+      "cuda_peak_allocated_bytes": 14026253312,
+      "transformer_query_calls": 2,
+      "transformer_evaluated_states": 2,
+      "cache_bytes": 1608677,
+      "cache_fingerprint": "8ee78757771895b96d1eef0e6675582621081231b82a1201d413e1f2937b0987"
+    },
+    {
+      "name": "resource_256_r2_central_antithetic_batch1",
+      "config": "configs/eval/auraflow_resource_gate.yaml",
+      "probe_batch_size_override": 1,
+      "feature_extraction_seconds": 1.6507593598216772,
+      "cuda_peak_allocated_bytes": 14026253312,
+      "transformer_query_calls": 30,
+      "transformer_evaluated_states": 30,
+      "cache_bytes": 1737829,
+      "cache_fingerprint": "46cdce08645e6e024b821dc889ca37c5e1570c64d0e5e72196ff07b8fee812fc"
+    },
+    {
+      "name": "resource_256_r2_central_antithetic_batch2",
+      "config": "configs/eval/auraflow_resource_gate.yaml",
+      "probe_batch_size": 2,
+      "feature_extraction_seconds": 1.2006924469023943,
+      "cuda_peak_allocated_bytes": 14026253312,
+      "transformer_query_calls": 18,
+      "transformer_evaluated_states": 30,
+      "cache_bytes": 1737829,
+      "cache_fingerprint": "a1aae7d96344eb48d3c4539f2567a5d9eee4a2cb0632932d03cb0e18a9c221f5"
+    },
+    {
+      "name": "final_512_r8_central_antithetic_batch8",
+      "config": "configs/model/auraflow_v03.yaml",
+      "probe_batch_size": 8,
+      "feature_extraction_seconds": 5.189941119402647,
+      "cuda_peak_allocated_bytes": 14779257856,
+      "cuda_peak_reserved_bytes": 15349055488,
+      "transformer_query_calls": 18,
+      "transformer_evaluated_states": 102,
+      "cache_bytes": 7593893,
+      "cache_fingerprint": "0e06570c81a6b5c6afb46fc0136af2735ebdbf5d73ca8bc1c846dfdda8b8fbd9"
+    },
+    {
+      "name": "final_512_r8_probe_batch8_image_batch2",
+      "config": "configs/model/auraflow_v03.yaml",
+      "image_batch_size": 2,
+      "probe_batch_size": 8,
+      "feature_extraction_seconds": 9.94365793839097,
+      "seconds_per_sample": 4.971828969195485,
+      "cuda_peak_allocated_bytes": 14803352576,
+      "cuda_peak_reserved_bytes": 15502147584,
+      "transformer_query_calls": 30,
+      "transformer_evaluated_states": 204,
+      "cache_bytes": 15180709,
+      "cache_fingerprint": "1c3486dbacc85bb6a3ddf9f5bbc28ace849ff710de79f7a9dfde5c3e8698411d"
+    }
+  ],
+  "method_effectiveness_conclusion": null
+}

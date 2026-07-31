@@ -34,8 +34,12 @@ def multitask_loss(
             predictions["classification"], targets["classification"].long()
         )
     if "segmentation" in targets:
+        logits = predictions["segmentation"].permute(0, 2, 3, 1)
+        classes = logits.shape[-1]
         losses["segmentation"] = F.cross_entropy(
-            predictions["segmentation"], targets["segmentation"].long(), ignore_index=ignore_index
+            logits.reshape(-1, classes),
+            targets["segmentation"].long().reshape(-1),
+            ignore_index=ignore_index,
         )
     if "depth" in targets:
         valid = torch.isfinite(targets["depth"]) & (targets["depth"] > 0)
@@ -51,4 +55,3 @@ def multitask_loss(
         raise ValueError("No supported targets were supplied")
     total = sum(weights.get(name, 1.0) * value for name, value in losses.items())
     return total, losses
-
