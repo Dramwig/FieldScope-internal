@@ -38,6 +38,9 @@
   分组洗牌并使用固定容量 LRU；pro6000 的同一 readout matrix 进程允许最多 160 GiB
   只读内存 cache，任务头训练不重复调用生成主干；
 - 非方形图像及密集标签保持纵横比，将短边缩放到目标分辨率后做配对中心方形裁剪；
+- 无监督图诊断使用 `dense` cache；监督 readout 使用 `readout_sparse`，后者仅无损
+  打包实际使用的加权 adjacency，不保留未被监督 tokenizer 读取的 dense affinity。
+  两种策略的表示与职责必须在 manifest 中显式记录，不得用 sparse cache 计算无监督指标；
   NYUv2 主结果使用该完整中心裁剪而非 Eigen crop，因此只在本协议内比较，不直接与
   使用不同 crop 的公开数字横比；
 - 主 seed：`4121`、`7319`、`104729`。调试 seed 不进入主表。

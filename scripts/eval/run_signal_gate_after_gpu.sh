@@ -58,6 +58,7 @@ for specification in "train 256" "val 128" "test 128"; do
     --split "$split" \
     --limit "$limit" \
     --output "$cache_root/cifar10_$split" \
+    --storage-policy readout_sparse \
     --resume
 done
 

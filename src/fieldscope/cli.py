@@ -247,6 +247,7 @@ def extract_dataset(
     offset: int = 0,
     resume: bool = False,
     class_names: list[str] | None = None,
+    storage_policy: str = "dense",
 ) -> dict[str, Any]:
     return extract_dataset_cache(
         config,
@@ -258,6 +259,7 @@ def extract_dataset(
         offset=offset,
         resume=resume,
         class_names=class_names,
+        storage_policy=storage_policy,
     )
 
 
@@ -331,6 +333,11 @@ def _build_parser() -> argparse.ArgumentParser:
     dataset_parser.add_argument("--limit", type=int)
     dataset_parser.add_argument("--offset", type=int, default=0)
     dataset_parser.add_argument("--resume", action="store_true")
+    dataset_parser.add_argument(
+        "--storage-policy",
+        choices=["dense", "readout_sparse"],
+        default="dense",
+    )
     dataset_parser.add_argument(
         "--classes-file",
         type=Path,
@@ -486,6 +493,7 @@ def main(argv: list[str] | None = None) -> int:
             offset=args.offset,
             resume=args.resume,
             class_names=class_names,
+            storage_policy=args.storage_policy,
         )
     elif args.command == "train-cache":
         if args.epochs < 1:

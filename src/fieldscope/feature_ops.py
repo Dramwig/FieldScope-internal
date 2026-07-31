@@ -89,7 +89,10 @@ def select_representation(
                 state=selected,
                 response=features.response,
                 affinity=(
-                    features.graphs["dit_attention"]
+                    features.graphs.get(
+                        "dit_attention",
+                        features.graphs["dit_attention_adjacency"],
+                    )
                     if use_attention
                     else features.affinity
                 ),

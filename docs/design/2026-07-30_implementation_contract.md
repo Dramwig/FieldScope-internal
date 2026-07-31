@@ -52,6 +52,19 @@ global token [B,D]
 - cache manifest 必须记录 `sample_id_sha256_seeded_v1` 与
   `shared_fixed_seed_v1`，代码树变化使旧缓存 signature 失效。
 
+## Cache 存储策略
+
+- `dense`：保存完整 response affinity 与 DiT attention affinity，用于 VOC 等
+  无监督图诊断；
+- `readout_sparse`：保存所有节点特征和 baseline 原值，并以
+  `packed_weighted_adjacency_v1` 无损保存 response/DiT-attention 的稀疏加权邻接；
+  加载后恢复的 readout 输入逐位等同 `dense`，但不保留监督 readout 从不使用的
+  dense Gram 矩阵；
+- `readout_sparse` 不得用于 boundary AP、pairwise AUROC 或任何依赖完整 affinity
+  的诊断，诊断入口必须硬拒绝；正式监督主任务默认使用该策略，VOC 无监督门使用
+  独立 `dense` cache；
+- storage policy 属于 extraction signature 和 manifest，两个策略的 shard 不得混用。
+
 ## 冻结边界
 
 VAE、文本编码器、Flow Transformer 和原生输出层都设置为 eval 且不参与梯度。

@@ -10,6 +10,7 @@ from torch.utils.data import Dataset
 from fieldscope.cached_dataset import CachedFeatureDataset
 from fieldscope.config import RunConfig
 from fieldscope.experiments import (
+    diagnose_segmentation_cache,
     extract_dataset_cache,
     run_readout_matrix,
     train_cached_readout,
@@ -88,6 +89,14 @@ def test_extract_dataset_cache_resumes_verified_shards(
     assert [shard["status"] for shard in resumed["shards"]] == ["reused", "reused"]
     complete = extract_dataset_cache(_config(tmp_path), resume=True, **arguments)
     assert complete["resume_status"] == "already_complete"
+    assert complete["storage_policy"] == "dense"
+    with pytest.raises(ValueError, match="different extraction"):
+        extract_dataset_cache(
+            _config(tmp_path),
+            resume=True,
+            storage_policy="readout_sparse",
+            **arguments,
+        )
 
     first_shard = output / first["shards"][0]["path"]
     first_shard.write_bytes(first_shard.read_bytes()[:-1])
@@ -293,3 +302,31 @@ def test_readout_resume_matches_uninterrupted_training(
         assert first["learning_rate"] == second["learning_rate"]
         assert first["train_loss"] == second["train_loss"]
         assert first["validation"] == second["validation"]
+
+
+def test_sparse_readout_cache_rejects_unsupervised_diagnosis(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    output = tmp_path / "sparse-cache"
+    report = extract_dataset_cache(
+        _config(tmp_path),
+        dataset_name="synthetic-test",
+        dataset_root=tmp_path,
+        split="train",
+        output_dir=output,
+        limit=4,
+        storage_policy="readout_sparse",
+    )
+    assert report["storage_policy"] == "readout_sparse"
+    assert report["dense_affinity_available"] is False
+    dataset = CachedFeatureDataset(output)
+    assert torch.equal(
+        dataset[0]["features"].affinity,
+        dataset[0]["features"].adjacency,
+    )
+    with pytest.raises(ValueError, match="dense-affinity"):
+        diagnose_segmentation_cache(output)

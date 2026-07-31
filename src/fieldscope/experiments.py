@@ -184,6 +184,7 @@ def extraction_signature(
     offset: int,
     stop: int,
     code_tree_sha256: str,
+    storage_policy: str,
 ) -> str:
     payload = {
         "config": config.to_dict(),
@@ -194,6 +195,7 @@ def extraction_signature(
         "offset": offset,
         "stop": stop,
         "code_tree_sha256": code_tree_sha256,
+        "storage_policy": storage_policy,
     }
     encoded = json.dumps(
         payload, sort_keys=True, ensure_ascii=False, default=str
@@ -228,9 +230,12 @@ def extract_dataset_cache(
     offset: int = 0,
     resume: bool = False,
     class_names: list[str] | None = None,
+    storage_policy: str = "dense",
 ) -> dict[str, Any]:
     """Extract deterministic shards and checkpoint the manifest after every shard."""
 
+    if storage_policy not in {"dense", "readout_sparse"}:
+        raise ValueError("storage_policy must be dense or readout_sparse")
     total_started = time.perf_counter()
     provenance = code_provenance()
     if offset < 0 or (limit is not None and limit < 1):
@@ -258,6 +263,7 @@ def extract_dataset_cache(
         offset=offset,
         stop=stop,
         code_tree_sha256=provenance["code_tree_sha256"],
+        storage_policy=storage_policy,
     )
     if manifest_path.exists():
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -365,6 +371,7 @@ def extract_dataset_cache(
                 features,
                 targets=shard_targets,
                 sample_ids=sample_ids,
+                storage_policy=storage_policy,
             )
             status = "written"
             shard_seconds = time.perf_counter() - shard_started
@@ -400,6 +407,8 @@ def extract_dataset_cache(
             "backend": backend.describe(),
             "config": config.to_dict(),
             "class_names": class_names,
+            "storage_policy": storage_policy,
+            "dense_affinity_available": storage_policy == "dense",
             "randomness": {
                 "path_noise": "sample_id_sha256_seeded_v1",
                 "probe_basis": "shared_fixed_seed_v1",
@@ -880,6 +889,10 @@ def evaluate_checkpoint(
 
 def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
     dataset = CachedFeatureDataset(cache_dir)
+    if dataset.manifest.get("storage_policy", "dense") != "dense":
+        raise ValueError(
+            "Unsupervised graph diagnosis requires a dense-affinity cache"
+        )
     shuffled_dataset = ShuffledResponseCachedDataset(cache_dir, seed=4121)
     totals: dict[str, dict[str, float]] = {}
     counts: dict[str, dict[str, int]] = {}

@@ -9,6 +9,7 @@ fi
 python_bin="${FIELDSCOPE_PYTHON:-python}"
 config="${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}"
 cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
+storage_policy="${FIELDSCOPE_STORAGE_POLICY:-readout_sparse}"
 dataset="$1"
 prepared_root="$2"
 classes_file="${3:-}"
@@ -26,6 +27,7 @@ for split in train val test; do
     --root "$prepared_root" \
     --split "$split" \
     --output "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/${dataset}_${split}" \
+    --storage-policy "$storage_policy" \
     --resume \
     "${class_arguments[@]}"
 done
