@@ -1,6 +1,7 @@
 name: imagenet100
 task: classification
 selection: lexicographically_first_100_wordnet_ids
+preprocessing: resize_shorter_side_then_center_crop_square
 pilot_prepared_root: D:/datasets_raw_hub/registry/imagenet_256_10pct/extracted
 pilot_manifest_sha256: 3c92c77c923b49c60de36c29dddb7a0f9d147dd83139e9d1572182b68535a09f
 full_source_train: D:/datasets_raw_hub/registry/imagenet1k/raw/ILSVRC2012_img_train.tar

@@ -38,5 +38,6 @@ runtime:
   output_dir: outputs/random_auraflow_v03
   cache_dir: ${FIELDSCOPE_DATASETS_ROOT}/feature_cache/random_auraflow_v03
   batch_size: 2
-  num_workers: 4
+  cache_shard_size: 64
+  num_workers: 0
   deterministic: true

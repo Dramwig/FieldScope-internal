@@ -122,12 +122,19 @@ class RuntimeConfig:
     output_dir: str = "outputs/smoke"
     cache_dir: str = "artifacts/cache"
     batch_size: int = 2
+    cache_shard_size: int = 64
     num_workers: int = 0
     deterministic: bool = True
 
     def validate(self) -> None:
-        if self.batch_size < 1 or self.num_workers < 0:
-            raise ValueError("runtime batch_size/num_workers are invalid")
+        if (
+            self.batch_size < 1
+            or self.cache_shard_size < self.batch_size
+            or self.num_workers < 0
+        ):
+            raise ValueError(
+                "runtime batch_size/cache_shard_size/num_workers are invalid"
+            )
 
 
 @dataclass(frozen=True)

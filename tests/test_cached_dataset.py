@@ -8,6 +8,7 @@ from fieldscope.backends.toy import ToyFieldBackend
 from fieldscope.cache import save_features
 from fieldscope.cached_dataset import (
     CachedFeatureDataset,
+    ShardShuffleSampler,
     ShuffledResponseCachedDataset,
     collate_cached,
 )
@@ -31,13 +32,21 @@ def _write_cache(tmp_path: Path) -> tuple[Path, RunConfig]:
         torch.rand(3, 3, 32, 32)
     )
     cache_dir = tmp_path / "cache"
-    path = cache_dir / "shard-000000.pt"
-    save_features(
-        path,
-        features,
-        targets={"classification": torch.tensor([0, 1, 0])},
-        sample_ids=["a", "b", "c"],
-    )
+    labels = torch.tensor([0, 1, 0])
+    sample_ids = ["a", "b", "c"]
+    shards = []
+    for shard_index, (start, stop) in enumerate(((0, 2), (2, 3))):
+        path = cache_dir / f"shard-{shard_index:06d}.pt"
+        shard_features = stack_features(
+            [slice_features(features, index) for index in range(start, stop)]
+        )
+        save_features(
+            path,
+            shard_features,
+            targets={"classification": labels[start:stop]},
+            sample_ids=sample_ids[start:stop],
+        )
+        shards.append({"path": path.name, "num_samples": stop - start})
     (cache_dir / "dataset_manifest.json").write_text(
         json.dumps(
             {
@@ -45,7 +54,7 @@ def _write_cache(tmp_path: Path) -> tuple[Path, RunConfig]:
                 "dataset": "synthetic",
                 "split": "train",
                 "num_samples": 3,
-                "shards": [{"path": path.name, "num_samples": 3}],
+                "shards": shards,
             }
         ),
         encoding="utf-8",
@@ -144,3 +153,12 @@ def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
     )
     _, mode = select_representation(sample["features"], "full_shuffled")
     assert mode == "full"
+
+
+def test_shard_shuffle_sampler_is_deterministic_and_complete(tmp_path: Path) -> None:
+    cache_dir, _ = _write_cache(tmp_path)
+    dataset = CachedFeatureDataset(cache_dir)
+    first = list(ShardShuffleSampler(dataset, seed=5))
+    second = list(ShardShuffleSampler(dataset, seed=5))
+    assert first == second
+    assert sorted(first) == list(range(len(dataset)))

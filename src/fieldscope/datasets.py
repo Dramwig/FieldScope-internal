@@ -75,7 +75,8 @@ def build_torchvision_dataset(
     root = str(root)
     image_transform = transforms.Compose(
         [
-            transforms.Resize((image_size, image_size), antialias=True),
+            transforms.Resize(image_size, antialias=True),
+            transforms.CenterCrop(image_size),
             transforms.ToTensor(),
         ]
     )
@@ -90,8 +91,9 @@ def build_torchvision_dataset(
         target_transform = transforms.Compose(
             [
                 transforms.Resize(
-                    (image_size, image_size), interpolation=InterpolationMode.NEAREST
+                    image_size, interpolation=InterpolationMode.NEAREST
                 ),
+                transforms.CenterCrop(image_size),
                 transforms.PILToTensor(),
                 transforms.Lambda(lambda tensor: tensor.squeeze(0).long()),
             ]
@@ -283,6 +285,7 @@ class NYUv2DirectoryDataset(Dataset[dict[str, Any]]):
         self.samples = json.loads(manifest_path.read_text(encoding="utf-8"))
         self.image_size = image_size
         self._interpolation = InterpolationMode.BILINEAR
+        self._depth_interpolation = InterpolationMode.NEAREST
         self._tf = TF
 
     def __len__(self) -> int:
@@ -293,19 +296,21 @@ class NYUv2DirectoryDataset(Dataset[dict[str, Any]]):
         image = Image.open(self.root / sample["image"]).convert("RGB")
         image = self._tf.resize(
             image,
-            [self.image_size, self.image_size],
+            self.image_size,
             interpolation=self._interpolation,
             antialias=True,
         )
+        image = self._tf.center_crop(image, [self.image_size, self.image_size])
         image_tensor = self._tf.to_tensor(image)
         depth = torch.from_numpy(
             np.load(self.root / sample["depth"]).astype(np.float32, copy=False)
         ).unsqueeze(0)
-        depth = torch.nn.functional.interpolate(
-            depth.unsqueeze(0),
-            size=(self.image_size, self.image_size),
-            mode="nearest",
-        ).squeeze(0)
+        depth = self._tf.resize(
+            depth,
+            self.image_size,
+            interpolation=self._depth_interpolation,
+        )
+        depth = self._tf.center_crop(depth, [self.image_size, self.image_size])
         return {
             "image": image_tensor,
             "depth": depth,
@@ -348,14 +353,19 @@ class ADE20KDirectoryDataset(Dataset[dict[str, Any]]):
         annotation = Image.open(annotation_path)
         image = self._tf.resize(
             image,
-            [self.image_size, self.image_size],
+            self.image_size,
             interpolation=self._image_interpolation,
             antialias=True,
         )
         annotation = self._tf.resize(
             annotation,
-            [self.image_size, self.image_size],
+            self.image_size,
             interpolation=self._target_interpolation,
+        )
+        image = self._tf.center_crop(image, [self.image_size, self.image_size])
+        annotation = self._tf.center_crop(
+            annotation,
+            [self.image_size, self.image_size],
         )
         target = self._tf.pil_to_tensor(annotation).squeeze(0).long()
         target = torch.where(target == 0, 255, target - 1)
@@ -381,7 +391,8 @@ def build_vision_dataset(
 
         image_transform = transforms.Compose(
             [
-                transforms.Resize((image_size, image_size), antialias=True),
+                transforms.Resize(image_size, antialias=True),
+                transforms.CenterCrop(image_size),
                 transforms.ToTensor(),
             ]
         )

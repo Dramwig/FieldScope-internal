@@ -1,5 +1,6 @@
 name: ade20k
 task: segmentation
+preprocessing: paired_resize_shorter_side_then_center_crop_square
 archive: ${FIELDSCOPE_DATASETS_ROOT}/raw/ade20k/ADEChallengeData2016.zip
 prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/ade20k
 source_local: D:/datasets_raw_hub/registry/ade20k/raw/ADEChallengeData2016.zip

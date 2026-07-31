@@ -113,10 +113,12 @@ def test_ade20k_directory_dataset_remaps_labels(tmp_path: Path) -> None:
     annotation_root = tmp_path / "annotations" / "training"
     image_root.mkdir(parents=True)
     annotation_root.mkdir(parents=True)
-    Image.new("RGB", (2, 2), color=(12, 34, 56)).save(
+    Image.new("RGB", (4, 2), color=(12, 34, 56)).save(
         image_root / "ADE_train_00000001.jpg"
     )
-    annotation = Image.fromarray(np.array([[0, 1], [2, 150]], dtype=np.uint8))
+    annotation = Image.fromarray(
+        np.array([[5, 0, 1, 5], [5, 2, 150, 5]], dtype=np.uint8)
+    )
     annotation.save(annotation_root / "ADE_train_00000001.png")
 
     sample = ADE20KDirectoryDataset(tmp_path, "train", image_size=2)[0]

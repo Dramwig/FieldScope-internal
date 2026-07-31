@@ -44,6 +44,7 @@ def _config(tmp_path: Path) -> RunConfig:
             "runtime": {
                 "output_dir": str(tmp_path / "outputs"),
                 "batch_size": 2,
+                "cache_shard_size": 3,
                 "num_workers": 0,
             },
         }
@@ -68,6 +69,7 @@ def test_extract_dataset_cache_resumes_verified_shards(
     first = extract_dataset_cache(_config(tmp_path), **arguments)
     assert first["complete"] is True
     assert [shard["status"] for shard in first["shards"]] == ["written", "written"]
+    assert [shard["num_samples"] for shard in first["shards"]] == [3, 1]
     assert all(shard["sha256"] for shard in first["shards"])
     assert first["code_tree_sha256"]
 

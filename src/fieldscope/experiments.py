@@ -21,6 +21,7 @@ from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
 from fieldscope.cached_dataset import (
     CachedFeatureDataset,
+    ShardShuffleSampler,
     ShuffledResponseCachedDataset,
     collate_cached,
 )
@@ -32,7 +33,7 @@ from fieldscope.evaluation import (
     SegmentationMeter,
     graph_segmentation_metrics,
 )
-from fieldscope.feature_ops import select_representation
+from fieldscope.feature_ops import select_representation, stack_features
 from fieldscope.graph import cosine_affinity
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
@@ -210,12 +211,6 @@ def extract_dataset_cache(
         raise ValueError("Requested extraction range is empty")
     selected_indices = list(range(offset, stop))
     dataset = Subset(dataset, selected_indices)
-    loader = DataLoader(
-        dataset,
-        batch_size=config.runtime.batch_size,
-        shuffle=False,
-        num_workers=config.runtime.num_workers,
-    )
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = output_dir / "dataset_manifest.json"
     signature = extraction_signature(
@@ -267,24 +262,38 @@ def extract_dataset_cache(
     written_samples = 0
     extraction_seconds = 0.0
     cache_bytes = 0
-    for batch_index, batch in enumerate(loader):
+    shard_size = config.runtime.cache_shard_size
+    for local_start in range(0, len(dataset), shard_size):
         shard_started = time.perf_counter()
-        images = batch["image"]
-        if not isinstance(images, torch.Tensor):
-            raise TypeError("Dataset image batch must be a tensor")
-        sample_ids = [str(value) for value in batch["sample_id"]]
-        global_start = offset + batch_index * config.runtime.batch_size
-        global_end = global_start + images.shape[0]
+        local_end = min(len(dataset), local_start + shard_size)
+        global_start = offset + local_start
+        global_end = offset + local_end
         path = output_dir / f"shard-{global_start:08d}-{global_end:08d}.pt"
+        shard_dataset = Subset(dataset, range(local_start, local_end))
+        loader = DataLoader(
+            shard_dataset,
+            batch_size=config.runtime.batch_size,
+            shuffle=False,
+            num_workers=config.runtime.num_workers,
+        )
+        sample_ids: list[str] = []
+        target_batches: dict[str, list[torch.Tensor]] = {}
         if resume and path.is_file():
+            for batch in loader:
+                sample_ids.extend(str(value) for value in batch["sample_id"])
+                for name, value in _target_tensors(batch).items():
+                    target_batches.setdefault(name, []).append(value)
+            shard_targets = {
+                name: torch.cat(values, dim=0)
+                for name, values in target_batches.items()
+            }
             _, cached_targets, cached_manifest = load_features(path)
             if cached_manifest.get("sample_ids") != sample_ids:
                 raise ValueError(f"Sample IDs do not match resumed shard {path.name}")
-            batch_targets = _target_tensors(batch)
-            if set(cached_targets) != set(batch_targets):
+            if set(cached_targets) != set(shard_targets):
                 raise ValueError(f"Targets do not match resumed shard {path.name}")
             if any(
-                not torch.equal(cached_targets[name], batch_targets[name])
+                not torch.equal(cached_targets[name], shard_targets[name])
                 for name in cached_targets
             ):
                 raise ValueError(f"Target values do not match resumed shard {path.name}")
@@ -292,17 +301,30 @@ def extract_dataset_cache(
             status = "reused"
             shard_seconds = time.perf_counter() - shard_started
         else:
-            features = extractor.extract(images)
+            feature_batches = []
+            for batch in loader:
+                images = batch["image"]
+                if not isinstance(images, torch.Tensor):
+                    raise TypeError("Dataset image batch must be a tensor")
+                sample_ids.extend(str(value) for value in batch["sample_id"])
+                for name, value in _target_tensors(batch).items():
+                    target_batches.setdefault(name, []).append(value)
+                feature_batches.append(extractor.extract(images).detached_cpu())
+            features = stack_features(feature_batches)
+            shard_targets = {
+                name: torch.cat(values, dim=0)
+                for name, values in target_batches.items()
+            }
             feature_manifest = save_features(
                 path,
                 features,
-                targets=_target_tensors(batch),
+                targets=shard_targets,
                 sample_ids=sample_ids,
             )
             status = "written"
             shard_seconds = time.perf_counter() - shard_started
             extraction_seconds += shard_seconds
-            written_samples += images.shape[0]
+            written_samples += local_end - local_start
         shard_bytes = path.stat().st_size
         shard_sha256 = file_sha256(path)
         cache_bytes += shard_bytes
@@ -310,7 +332,7 @@ def extract_dataset_cache(
             "path": path.name,
             "start": global_start,
             "end": global_end,
-            "num_samples": images.shape[0],
+            "num_samples": local_end - local_start,
             "fingerprint": feature_manifest["fingerprint"],
             "status": status,
             "seconds": shard_seconds,
@@ -318,7 +340,7 @@ def extract_dataset_cache(
             "sha256": shard_sha256,
         }
         shards.append(shard)
-        sample_count += images.shape[0]
+        sample_count += local_end - local_start
         report = {
             "status": "passed" if sample_count == len(selected_indices) else "running",
             "format_version": 3,
@@ -546,8 +568,7 @@ def train_cached_readout(
         train_loader = DataLoader(
             train_dataset,
             batch_size=readout_batch_size,
-            shuffle=True,
-            generator=torch.Generator().manual_seed(seed + epoch),
+            sampler=ShardShuffleSampler(train_dataset, seed=seed + epoch),
             num_workers=0,
             collate_fn=collate_cached,
         )

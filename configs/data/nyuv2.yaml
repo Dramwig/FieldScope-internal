@@ -1,5 +1,6 @@
 name: nyuv2
 task: depth
+preprocessing: paired_resize_shorter_side_then_center_crop_square
 prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/nyuv2
 format: explicit_json_manifest_with_rgb_and_depth_npy
 source_labeled_mat: https://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat
@@ -14,4 +15,5 @@ split_counts:
   validation: 80
   test: 654
 depth_units: meters
+evaluation_scope: full_center_crop_not_eigen_crop
 asset_status: verified_on_pro6000_2026_07_31
