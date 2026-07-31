@@ -1057,6 +1057,14 @@ def train_cached_readout(
             "history": history,
             "validation": validation,
         }
+        # A process can be lost after the final epoch checkpoint is committed
+        # but before its passed report is written. Rebuild that durable report
+        # when resuming from the already-complete last checkpoint so matrix and
+        # evidence recovery do not retain a stale running report (or no report).
+        atomic_json_dump(
+            output_dir / f"{task}_{representation}_seed{seed}_report.json",
+            report,
+        )
     return report
 
 

@@ -528,6 +528,78 @@ def test_readout_resume_matches_uninterrupted_training(
         assert first["validation"] == second["validation"]
 
 
+def test_readout_resume_after_final_epoch_commit_rebuilds_passed_report(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    config = _config(tmp_path)
+    caches = {}
+    for split in ("train", "val"):
+        cache_dir = tmp_path / f"final-commit-cache-{split}"
+        extract_dataset_cache(
+            config,
+            dataset_name="synthetic-test",
+            dataset_root=tmp_path,
+            split=split,
+            output_dir=cache_dir,
+            limit=4,
+        )
+        caches[split] = cache_dir
+
+    common = {
+        "config": config,
+        "train_cache_dir": caches["train"],
+        "val_cache_dir": caches["val"],
+        "task": "classification",
+        "representation": "full",
+        "epochs": 2,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-4,
+        "seed": 17,
+        "batch_size": 2,
+    }
+    output_dir = tmp_path / "final-commit-interrupted"
+    report_path = output_dir / "classification_full_seed17_report.json"
+    last_checkpoint = output_dir / "classification_full_seed17_last.pt"
+    original_save = experiments.atomic_torch_save
+
+    def interrupt_after_final_epoch_commit(
+        path: Path, payload: dict[str, Any]
+    ) -> None:
+        original_save(path, payload)
+        if path == last_checkpoint and int(payload["epoch"]) == 2:
+            raise RuntimeError("simulated process loss after final epoch commit")
+
+    monkeypatch.setattr(
+        experiments,
+        "atomic_torch_save",
+        interrupt_after_final_epoch_commit,
+    )
+    with pytest.raises(RuntimeError, match="after final epoch commit"):
+        train_cached_readout(output_dir=output_dir, **common)
+    assert last_checkpoint.is_file()
+    stale = json.loads(report_path.read_text(encoding="utf-8"))
+    assert stale["status"] == "running"
+    assert len(stale["history"]) == 1
+
+    monkeypatch.setattr(experiments, "atomic_torch_save", original_save)
+    resumed = train_cached_readout(
+        output_dir=output_dir,
+        resume_checkpoint=last_checkpoint,
+        **common,
+    )
+    persisted = json.loads(report_path.read_text(encoding="utf-8"))
+    checkpoint = torch.load(last_checkpoint, map_location="cpu", weights_only=False)
+    assert resumed["status"] == persisted["status"] == "passed"
+    assert persisted["history"] == checkpoint["history"]
+    assert persisted["best_epoch"] == checkpoint["best_epoch"]
+    assert persisted["best_primary_metric"] == checkpoint["best_primary_metric"]
+    assert persisted["last_checkpoint"] == str(last_checkpoint)
+
+
 def test_readout_rejects_nonfinite_training_loss_before_checkpoint(
     tmp_path: Path, monkeypatch: Any
 ) -> None:
