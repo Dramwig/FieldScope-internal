@@ -11,6 +11,7 @@ from fieldscope.cached_dataset import (
     RandomFeatureCachedDataset,
     ShardShuffleSampler,
     ShuffledResponseCachedDataset,
+    cached_control_contract,
     collate_cached,
     shared_memory_cache_stats,
 )
@@ -158,12 +159,20 @@ def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
     cache_dir, _ = _write_cache(tmp_path)
     regular = CachedFeatureDataset(cache_dir)
     shuffled = ShuffledResponseCachedDataset(cache_dir, seed=17)
+    repeated = ShuffledResponseCachedDataset(cache_dir, seed=17)
+    different = ShuffledResponseCachedDataset(cache_dir, seed=19)
     assert torch.all(
         shuffled.donor_for_index != torch.arange(len(shuffled))
     )
     assert torch.equal(
         shuffled.donor_for_index.sort().values,
         torch.arange(len(shuffled)),
+    )
+    assert torch.equal(shuffled.donor_for_index, repeated.donor_for_index)
+    assert not torch.equal(shuffled.donor_for_index, different.donor_for_index)
+    assert torch.equal(
+        shuffled.pool_for_index,
+        shuffled.pool_for_index[shuffled.donor_for_index],
     )
     sample = shuffled[0]
     assert torch.equal(sample["features"].state, regular[0]["features"].state)
@@ -172,9 +181,18 @@ def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
         != sample["sample_id"]
     )
     assert sample["features"].metadata["response_shuffle_policy"] == (
-        "global_seeded_cyclic_derangement_v1"
+        "seeded_random_pooled_derangement_v2"
     )
-    assert 0 < sample["features"].metadata["response_shuffle_offset"] < len(shuffled)
+    assert sample["features"].metadata["response_shuffle_seed"] == 17
+    assert sample["features"].metadata["response_shuffle_pool_count"] == 1
+    assert sample["features"].metadata["response_shuffle_max_shards_per_pool"] == 32
+    assert sample["features"].metadata["response_shuffle_permutation_sha256"] == (
+        shuffled.donor_permutation_sha256
+    )
+    contract = cached_control_contract(shuffled)["response_shuffle"]
+    assert contract["seed"] == 17
+    assert contract["num_samples"] == len(shuffled)
+    assert contract["donor_permutation_sha256"] == shuffled.donor_permutation_sha256
     _, mode = select_representation(sample["features"], "full_shuffled")
     assert mode == "full"
 

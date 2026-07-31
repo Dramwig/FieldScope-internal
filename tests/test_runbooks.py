@@ -36,3 +36,21 @@ def test_full_runbooks_continue_after_complete_negative_signal() -> None:
         assert '"$verdict" == "incomplete"' in script
         assert '"$verdict" != "stop_or_redesign"' in script
         assert '"$verdict" != "proceed"' in script
+
+
+def test_causal_runbook_runs_after_complete_positive_or_negative_main_result() -> None:
+    full = (
+        REPOSITORY_ROOT
+        / "scripts"
+        / "eval"
+        / "run_full_validation_after_signal_gate.sh"
+    ).read_text(encoding="utf-8")
+    causal = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_causal_validation_after_main.sh"
+    ).read_text(encoding="utf-8")
+    for script in (full, causal):
+        assert '"limited_or_negative"' in script
+        assert '"main_tasks_supported_pending_causal_audits"' in script
+        assert '== "incomplete"' in script
+        assert "echo +" not in script
+    assert "exec bash scripts/eval/run_causal_validation_after_main.sh" in full

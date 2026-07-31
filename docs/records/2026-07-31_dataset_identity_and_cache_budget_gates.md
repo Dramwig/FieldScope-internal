@@ -67,12 +67,23 @@ record is not evidence that the FieldScope method is effective.
 - The formal supervised matrix includes a deterministic sample-ID random-feature
   control with the same tokenizer and active task head; its randomness is derived
   from the readout seed and never consumes labels or image content.
+- The shuffled-response control now uses a seeded random pooled derangement rather
+  than an index offset. It is one-to-one and fixed-point-free, mixes globally
+  randomized shards within cache-local pools of at most 32 shards, and therefore
+  does not preserve a reversible class-block mapping on sorted classification
+  caches. This correction was made before any real signal or formal result.
+- Registered Random Flow, spatially shuffled probe, neutral-prompt, and unrelated-
+  prompt controls now run after every complete main-task result, including
+  `limited_or_negative`. The final audit preserves that negative verdict or, after
+  a positive main result, distinguishes causal support from failed attribution.
+  Only incomplete evidence may truncate the registered final stage.
 
 ## Local validation facts
 
 - `ruff check src tests scripts`: passed.
-- `python -m pytest`: 75 tests passed after the formal evidence, causal runbook,
-  checkpoint-lineage, exact-count, and dense-target budget checks.
+- `python -m pytest`: 84 tests passed after the formal evidence, causal runbook,
+  checkpoint-lineage, exact-count, dense-target budget, shuffled-control contract,
+  and complete-negative final-stage checks.
 - Bash syntax checks passed for the signal gate, full-validation waiter,
   formal full-validation runbook, and final causal-validation runbook.
 - Toy end-to-end smoke: passed, including exact cache reload.

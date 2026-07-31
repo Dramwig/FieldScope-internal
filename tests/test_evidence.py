@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 import torch
 
+from fieldscope.cached_dataset import cached_control_contract_for_cache
 from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
 
 SEEDS = [4121, 7319, 104729]
@@ -310,6 +311,12 @@ def _matrix(
     }
     for representation in REPRESENTATIONS:
         for seed_index, seed in enumerate(SEEDS):
+            control_contracts = {
+                split: cached_control_contract_for_cache(
+                    cache_dirs[split], representation, seed
+                )
+                for split in ("train", "val", "test")
+            }
             run_root = matrix_root / representation / f"seed-{seed}"
             checkpoint = run_root / "best.pt"
             checkpoint.parent.mkdir(parents=True, exist_ok=True)
@@ -338,6 +345,8 @@ def _matrix(
                     "batch_size": batch_size,
                     "train_cache": cache_identities["train"],
                     "validation_cache": cache_identities["val"],
+                    "train_control_contract": control_contracts["train"],
+                    "validation_control_contract": control_contracts["val"],
                     "trainable_parameters": 123456,
                     "best_checkpoint": str(checkpoint),
                     "best_checkpoint_sha256": checkpoint_sha256,
@@ -354,6 +363,7 @@ def _matrix(
                     "config": config,
                     "batch_size": batch_size,
                     "test_cache": cache_identities["test"],
+                    "test_control_contract": control_contracts["test"],
                     "checkpoint": str(checkpoint),
                     "checkpoint_sha256": checkpoint_sha256,
                     "evaluation": {"metrics": {metric: value}},
@@ -579,6 +589,38 @@ def test_full_evidence_is_incomplete_for_stale_or_nonfinite_run(
     assert any("non-finite test metric" in problem for problem in report["problems"])
 
 
+def test_full_evidence_rejects_tampered_response_shuffle_contract(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _ = _evidence_inputs(
+        tmp_path,
+        monkeypatch,
+        passing=True,
+    )
+    matrix = json.loads(matrices["imagenet100"].read_text(encoding="utf-8"))
+    shuffled = next(
+        run
+        for run in matrix["runs"]
+        if run["representation"] == "response_shuffled"
+    )
+    training_path = Path(shuffled["training_report"])
+    training = json.loads(training_path.read_text(encoding="utf-8"))
+    training["train_control_contract"]["response_shuffle"][
+        "donor_permutation_sha256"
+    ] = "0" * 64
+    training_path.write_text(json.dumps(training), encoding="utf-8")
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+    )
+    assert report["status"] == "incomplete"
+    assert report["verdict"] == "incomplete"
+    assert any("training control contract mismatch" in problem for problem in report["problems"])
+
+
 def _causal_report(
     root: Path,
     provenance: dict[str, Any],
@@ -755,6 +797,66 @@ def test_causal_evidence_rejects_failed_random_flow_attribution(
     )
     assert report["status"] == "failed"
     assert report["verdict"] == "main_task_gain_not_causally_attributed"
+    assert report["supports_strong_claims"] is False
+
+
+def test_causal_evidence_finishes_registered_controls_after_negative_main_result(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, provenance = _evidence_inputs(
+        tmp_path,
+        monkeypatch,
+        passing=False,
+    )
+    main_path = tmp_path / "main_evidence.json"
+    _write_json(
+        main_path,
+        audit_full_evidence(
+            matrix_paths=matrices,
+            voc_unsupervised_path=unsupervised,
+            backbone_asset_path=backbone_asset,
+            split_audit_paths=split_audits,
+        ),
+    )
+    causal_reports = {
+        "random_flow": _causal_report(
+            tmp_path,
+            provenance,
+            "random_flow",
+            response_value=0.40,
+            random_transformer=True,
+        ),
+        "spatially_shuffled_probe": _causal_report(
+            tmp_path,
+            provenance,
+            "spatially_shuffled_probe",
+            response_value=0.45,
+            probe_type="spatially_shuffled",
+        ),
+        "neutral_prompt": _causal_report(
+            tmp_path,
+            provenance,
+            "neutral_prompt",
+            response_value=0.80,
+            prompt="a neutral photograph",
+        ),
+        "unrelated_prompt": _causal_report(
+            tmp_path,
+            provenance,
+            "unrelated_prompt",
+            response_value=0.75,
+            prompt="an unrelated scene",
+        ),
+    }
+    report = audit_causal_evidence(
+        main_evidence_path=main_path,
+        causal_report_paths=causal_reports,
+    )
+    assert report["status"] == "failed"
+    assert report["verdict"] == "limited_or_negative"
+    assert report["main_evidence_verdict"] == "limited_or_negative"
+    assert report["comparisons"]
     assert report["supports_strong_claims"] is False
 
 

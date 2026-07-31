@@ -167,3 +167,11 @@ epoch 数和选模规则：
 在固定的 `a neutral photograph` 和 `an unrelated scene` 两种条件下继续超过
 response-shuffled、state、DiT hidden 与 DiT attention，联合审计才可输出
 `supports_core_hypothesis`。否则报告因果归因失败或证据不完整，不得以主任务增益替代。
+跨图像打乱响应固定为按 seed 随机生成的 pooled derangement：每个样本恰有一个 donor、
+无 self-donor，pool 由全局随机 shard 组成并在 pool 内逐样本随机成单环，从而避免按类别
+排序缓存上的可逆标签映射，同时把随机访问限制在至多 32 个 shard 的局部工作集内。
+无论主任务审计为完整正向还是 `limited_or_negative`，Random Flow、空间打乱 probe、
+中性文本和无关文本四类已注册对照都必须执行并进入统一最终判定；只有 `incomplete`
+可以阻止该阶段。完整负向主结果的最终 verdict 保持 `limited_or_negative`；完整正向
+结果再由因果门区分 `supports_core_hypothesis` 与
+`main_task_gain_not_causally_attributed`。该修正在任何真实 signal 或正式结果产生前固定。

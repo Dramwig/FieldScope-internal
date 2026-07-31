@@ -68,3 +68,85 @@ def test_random_transformer_seed_is_preserved() -> None:
     )
     assert config.backend.random_transformer
     assert config.backend.random_transformer_seed == 17
+
+
+def test_registered_causal_configs_change_only_the_registered_factor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("FIELDSCOPE_CHECKPOINTS_ROOT", "/checkpoints")
+    repository_root = Path(__file__).resolve().parents[1]
+    main = load_config(repository_root / "configs" / "model" / "auraflow_v03.yaml")
+    variants = {
+        "random_flow": load_config(
+            repository_root / "configs" / "ablation" / "random_auraflow_v03.yaml"
+        ),
+        "spatially_shuffled_probe": load_config(
+            repository_root
+            / "configs"
+            / "ablation"
+            / "auraflow_spatially_shuffled_probe.yaml"
+        ),
+        "neutral_prompt": load_config(
+            repository_root
+            / "configs"
+            / "ablation"
+            / "auraflow_neutral_prompt.yaml"
+        ),
+        "unrelated_prompt": load_config(
+            repository_root
+            / "configs"
+            / "ablation"
+            / "auraflow_unrelated_prompt.yaml"
+        ),
+    }
+    shared_backend_fields = (
+        "name",
+        "model_path",
+        "variant",
+        "device",
+        "dtype",
+        "image_size",
+        "max_sequence_length",
+        "local_files_only",
+        "offload_text_encoder",
+    )
+    shared_probe_fields = (
+        "times",
+        "num_directions",
+        "eta",
+        "difference",
+        "graph_grid",
+        "topk",
+        "local_radius",
+        "probe_batch_size",
+        "antithetic_noise",
+        "hidden_baseline_dim",
+        "seed",
+    )
+    for variant in variants.values():
+        for field in shared_backend_fields:
+            assert getattr(variant.backend, field) == getattr(main.backend, field)
+        for field in shared_probe_fields:
+            assert getattr(variant.probe, field) == getattr(main.probe, field)
+        assert variant.tokenizer == main.tokenizer
+        assert variant.runtime.batch_size == main.runtime.batch_size
+        assert variant.runtime.cache_shard_size == main.runtime.cache_shard_size
+        assert variant.runtime.deterministic == main.runtime.deterministic
+
+    assert variants["random_flow"].backend.random_transformer is True
+    assert variants["random_flow"].backend.random_transformer_seed == 104729
+    assert variants["random_flow"].backend.prompt == main.backend.prompt
+    assert variants["random_flow"].probe.probe_type == main.probe.probe_type
+
+    shuffled = variants["spatially_shuffled_probe"]
+    assert shuffled.backend == main.backend
+    assert shuffled.probe.probe_type == "spatially_shuffled"
+
+    neutral = variants["neutral_prompt"]
+    unrelated = variants["unrelated_prompt"]
+    assert neutral.backend.random_transformer is False
+    assert unrelated.backend.random_transformer is False
+    assert neutral.backend.prompt == "a neutral photograph"
+    assert unrelated.backend.prompt == "an unrelated scene"
+    assert neutral.probe == main.probe
+    assert unrelated.probe == main.probe

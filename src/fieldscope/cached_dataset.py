@@ -21,6 +21,97 @@ _SHARED_PAYLOADS: OrderedDict[
 ] = OrderedDict()
 _SHARED_PAYLOAD_BYTES: dict[Path, int] = {}
 _SHARED_TOTAL_BYTES = 0
+_MAX_SHARDS_PER_RESPONSE_POOL = 32
+
+
+def _manifest_shard_ranges(manifest: dict[str, Any]) -> list[tuple[int, int]]:
+    ranges: list[tuple[int, int]] = []
+    stop = 0
+    for shard in manifest["shards"]:
+        start = stop
+        stop += int(shard["num_samples"])
+        ranges.append((start, stop))
+    return ranges
+
+
+def _response_shuffle_assignment(
+    shard_ranges: list[tuple[int, int]],
+    seed: int,
+) -> tuple[torch.Tensor, torch.Tensor, int]:
+    length = sum(stop - start for start, stop in shard_ranges)
+    if length < 2:
+        raise ValueError("Response shuffling requires at least two samples")
+    generator = torch.Generator().manual_seed(seed)
+    shard_order = torch.randperm(len(shard_ranges), generator=generator)
+    pool_count = max(
+        1,
+        (len(shard_ranges) + _MAX_SHARDS_PER_RESPONSE_POOL - 1)
+        // _MAX_SHARDS_PER_RESPONSE_POOL,
+    )
+    shard_pools = torch.tensor_split(shard_order, pool_count)
+    donor_for_index = torch.empty(length, dtype=torch.long)
+    pool_for_index = torch.empty(length, dtype=torch.long)
+    for pool_index, shard_pool in enumerate(shard_pools):
+        pooled_indices = torch.cat(
+            [
+                torch.arange(*shard_ranges[int(shard_index)])
+                for shard_index in shard_pool.tolist()
+            ]
+        )
+        if pooled_indices.numel() < 2:
+            raise AssertionError("Response shuffle pool has fewer than two samples")
+        cycle = pooled_indices[
+            torch.randperm(pooled_indices.numel(), generator=generator)
+        ]
+        donor_for_index[cycle] = cycle.roll(1)
+        pool_for_index[pooled_indices] = pool_index
+    if not torch.equal(
+        donor_for_index.sort().values,
+        torch.arange(length, dtype=torch.long),
+    ):
+        raise AssertionError("Response shuffle is not a one-to-one permutation")
+    if torch.any(donor_for_index == torch.arange(length)):
+        raise AssertionError("Response shuffle unexpectedly contains a fixed point")
+    if torch.any(pool_for_index != pool_for_index[donor_for_index]):
+        raise AssertionError("Response shuffle crossed a cache-locality pool")
+    return donor_for_index, pool_for_index, pool_count
+
+
+def cached_control_contract_for_cache(
+    cache_dir: str | Path,
+    representation: str,
+    seed: int,
+) -> dict[str, Any]:
+    manifest = json.loads(
+        (Path(cache_dir) / "dataset_manifest.json").read_text(encoding="utf-8")
+    )
+    num_samples = sum(int(shard["num_samples"]) for shard in manifest["shards"])
+    if representation in {"response_shuffled", "full_shuffled"}:
+        donor_for_index, _, pool_count = _response_shuffle_assignment(
+            _manifest_shard_ranges(manifest),
+            seed,
+        )
+        return {
+            "response_shuffle": {
+                "policy": "seeded_random_pooled_derangement_v2",
+                "seed": seed,
+                "pool_count": pool_count,
+                "max_shards_per_pool": _MAX_SHARDS_PER_RESPONSE_POOL,
+                "num_samples": num_samples,
+                "donor_permutation_sha256": hashlib.sha256(
+                    donor_for_index.numpy().tobytes()
+                ).hexdigest(),
+            }
+        }
+    if representation == "random_feature_local":
+        return {
+            "random_feature": {
+                "policy": "sample_id_sha256_seeded_v1",
+                "seed": seed,
+                "num_samples": num_samples,
+            }
+        }
+    return {}
 
 
 def shared_memory_cache_stats() -> dict[str, int]:
@@ -105,6 +196,8 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
 class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
     """Replace response signatures/graphs with a deterministic donor sample."""
 
+    _MAX_SHARDS_PER_POOL = _MAX_SHARDS_PER_RESPONSE_POOL
+
     def __init__(
         self,
         cache_dir: str | Path,
@@ -116,25 +209,18 @@ class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
             cache_dir,
             memory_cache_bytes=memory_cache_bytes,
         )
-        if len(self.dataset) < 2:
-            raise ValueError("Response shuffling requires at least two samples")
         self.shard_ranges = self.dataset.shard_ranges
-        generator = torch.Generator().manual_seed(seed)
-        donor_offset = int(
-            torch.randint(1, len(self.dataset), (1,), generator=generator).item()
-        )
-        self.donor_for_index = (
-            torch.arange(len(self.dataset), dtype=torch.long) + donor_offset
-        ) % len(self.dataset)
-        if not torch.equal(
-            self.donor_for_index.sort().values,
-            torch.arange(len(self.dataset), dtype=torch.long),
-        ):
-            raise AssertionError("Response shuffle is not a one-to-one permutation")
-        if torch.any(self.donor_for_index == torch.arange(len(self.dataset))):
-            raise AssertionError("Response shuffle unexpectedly contains a fixed point")
-        self.shuffle_policy = "global_seeded_cyclic_derangement_v1"
-        self.donor_offset = donor_offset
+        (
+            self.donor_for_index,
+            self.pool_for_index,
+            pool_count,
+        ) = _response_shuffle_assignment(self.shard_ranges, seed)
+        self.shuffle_policy = "seeded_random_pooled_derangement_v2"
+        self.shuffle_seed = seed
+        self.shuffle_pool_count = pool_count
+        self.donor_permutation_sha256 = hashlib.sha256(
+            self.donor_for_index.numpy().tobytes()
+        ).hexdigest()
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -157,7 +243,11 @@ class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
                 **receiver_features.metadata,
                 "response_donor_sample_id": donor["sample_id"],
                 "response_shuffle_policy": self.shuffle_policy,
-                "response_shuffle_offset": self.donor_offset,
+                "response_shuffle_seed": self.shuffle_seed,
+                "response_shuffle_pool": int(self.pool_for_index[index].item()),
+                "response_shuffle_pool_count": self.shuffle_pool_count,
+                "response_shuffle_max_shards_per_pool": self._MAX_SHARDS_PER_POOL,
+                "response_shuffle_permutation_sha256": self.donor_permutation_sha256,
             },
         )
         features.validate()
@@ -239,6 +329,29 @@ class ShardShuffleSampler(Sampler[int]):
             start, stop = self.shard_ranges[shard_index]
             local_order = torch.randperm(stop - start, generator=generator)
             yield from (start + local_order).tolist()
+
+
+def cached_control_contract(dataset: Any) -> dict[str, Any]:
+    if isinstance(dataset, ShuffledResponseCachedDataset):
+        return {
+            "response_shuffle": {
+                "policy": dataset.shuffle_policy,
+                "seed": dataset.shuffle_seed,
+                "pool_count": dataset.shuffle_pool_count,
+                "max_shards_per_pool": dataset._MAX_SHARDS_PER_POOL,
+                "num_samples": len(dataset),
+                "donor_permutation_sha256": dataset.donor_permutation_sha256,
+            }
+        }
+    if isinstance(dataset, RandomFeatureCachedDataset):
+        return {
+            "random_feature": {
+                "policy": "sample_id_sha256_seeded_v1",
+                "seed": dataset.seed,
+                "num_samples": len(dataset),
+            }
+        }
+    return {}
 
 
 def collate_cached(

@@ -32,10 +32,15 @@ if payload.get("code_revision") != sys.argv[2] or payload.get("code_dirty") is n
 print(payload.get("verdict", ""))
 PY
 )"
-if [[ "$main_verdict" != "main_tasks_supported_pending_causal_audits" ]]; then
-  echo "causal validation not promoted: verdict=$main_verdict" >&2
+if [[ "$main_verdict" == "incomplete" ]]; then
+  echo "main evidence is incomplete; refusing causal validation" >&2
   exit 5
 fi
+if [[ "$main_verdict" != "main_tasks_supported_pending_causal_audits" && "$main_verdict" != "limited_or_negative" ]]; then
+  echo "unexpected main evidence verdict=$main_verdict" >&2
+  exit 6
+fi
+echo "$(date --iso-8601=seconds) running registered causal controls after complete main verdict=$main_verdict"
 
 mkdir -p "$causal_output_root" "$causal_cache_root"
 declare -A configs=(

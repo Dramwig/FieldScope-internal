@@ -241,6 +241,12 @@ print(json.load(open(sys.argv[1], encoding="utf-8"))["verdict"])
 PY
 )"
 echo "$(date --iso-8601=seconds) full validation evidence verdict=$verdict"
-if [[ "$verdict" == "main_tasks_supported_pending_causal_audits" ]]; then
-  exec bash scripts/eval/run_causal_validation_after_main.sh
+if [[ "$verdict" == "incomplete" ]]; then
+  echo "main evidence is incomplete; refusing final causal audit" >&2
+  exit 9
 fi
+if [[ "$verdict" != "main_tasks_supported_pending_causal_audits" && "$verdict" != "limited_or_negative" ]]; then
+  echo "unexpected main evidence verdict=$verdict" >&2
+  exit 10
+fi
+exec bash scripts/eval/run_causal_validation_after_main.sh

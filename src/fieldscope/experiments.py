@@ -25,6 +25,8 @@ from fieldscope.cached_dataset import (
     RandomFeatureCachedDataset,
     ShardShuffleSampler,
     ShuffledResponseCachedDataset,
+    cached_control_contract,
+    cached_control_contract_for_cache,
     collate_cached,
     shared_memory_cache_stats,
 )
@@ -743,6 +745,8 @@ def train_cached_readout(
         seed,
         config.runtime.readout_memory_cache_gib,
     )
+    train_control_contract = cached_control_contract(train_dataset)
+    validation_control_contract = cached_control_contract(val_dataset)
     first = train_dataset[0]
     selected, mode = select_representation(first["features"], representation)
     device = torch.device(config.backend.device)
@@ -800,6 +804,12 @@ def train_cached_readout(
             raise ValueError("Resume checkpoint train cache does not match")
         if payload.get("validation_cache") != validation_cache:
             raise ValueError("Resume checkpoint validation cache does not match")
+        if payload.get("train_control_contract") != train_control_contract:
+            raise ValueError("Resume checkpoint train control contract does not match")
+        if payload.get("validation_control_contract") != validation_control_contract:
+            raise ValueError(
+                "Resume checkpoint validation control contract does not match"
+            )
         model.load_state_dict(payload["model"])
         optimizer.load_state_dict(payload["optimizer"])
         scheduler.load_state_dict(payload["scheduler"])
@@ -901,6 +911,8 @@ def train_cached_readout(
             "target_epochs": epochs,
             "train_cache": train_cache,
             "validation_cache": validation_cache,
+            "train_control_contract": train_control_contract,
+            "validation_control_contract": validation_control_contract,
             "rng_state": capture_rng_state(),
             **provenance,
             "best_epoch": best_epoch,
@@ -923,6 +935,8 @@ def train_cached_readout(
             "weight_decay": weight_decay,
             "train_cache": train_cache,
             "validation_cache": validation_cache,
+            "train_control_contract": train_control_contract,
+            "validation_control_contract": validation_control_contract,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
             "trainable_parameters": _task_trainable_parameters(model, task),
@@ -976,6 +990,8 @@ def train_cached_readout(
             "weight_decay": weight_decay,
             "train_cache": train_cache,
             "validation_cache": validation_cache,
+            "train_control_contract": train_control_contract,
+            "validation_control_contract": validation_control_contract,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
             "trainable_parameters": _task_trainable_parameters(model, task),
@@ -1018,6 +1034,13 @@ def evaluate_checkpoint(
     test_cache = cache_identity(cache_dir)
     checkpoint_sha256 = file_sha256(checkpoint)
     payload = torch.load(checkpoint, map_location=device, weights_only=False)
+    test_dataset = _cached_dataset(
+        cache_dir,
+        str(payload["representation"]),
+        int(payload["seed"]),
+        config.runtime.readout_memory_cache_gib,
+    )
+    test_control_contract = cached_control_contract(test_dataset)
     if payload.get("code_revision") != provenance["code_revision"]:
         raise ValueError("Checkpoint revision does not match current code")
     if payload.get("code_tree_sha256") != provenance["code_tree_sha256"]:
@@ -1058,6 +1081,7 @@ def evaluate_checkpoint(
         "config": _json_compatible(payload["config"]),
         "batch_size": batch_size or checkpoint_config.runtime.batch_size,
         "test_cache": test_cache,
+        "test_control_contract": test_control_contract,
         "evaluation": evaluation,
     }
 
@@ -1189,6 +1213,15 @@ def run_readout_matrix(
     test_cache = cache_identity(test_cache_dir)
     for representation in representations:
         for seed in seeds:
+            train_control_contract = cached_control_contract_for_cache(
+                train_cache_dir, representation, seed
+            )
+            validation_control_contract = cached_control_contract_for_cache(
+                val_cache_dir, representation, seed
+            )
+            test_control_contract = cached_control_contract_for_cache(
+                test_cache_dir, representation, seed
+            )
             run_dir = output_dir / representation / f"seed-{seed}"
             training_report_path = (
                 run_dir / f"{task}_{representation}_seed{seed}_report.json"
@@ -1214,6 +1247,8 @@ def run_readout_matrix(
                         "batch_size": readout_batch_size,
                         "train_cache": train_cache,
                         "validation_cache": validation_cache,
+                        "train_control_contract": train_control_contract,
+                        "validation_control_contract": validation_control_contract,
                     },
                     report_path=training_report_path,
                     kind="training",
@@ -1260,6 +1295,7 @@ def run_readout_matrix(
                         "config": config_payload,
                         "batch_size": readout_batch_size,
                         "test_cache": test_cache,
+                        "test_control_contract": test_control_contract,
                         "checkpoint": str(best_checkpoint),
                         "checkpoint_sha256": best_checkpoint_sha256,
                     },

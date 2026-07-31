@@ -11,6 +11,7 @@ from typing import Any
 import torch
 
 from fieldscope.cache import load_features
+from fieldscope.cached_dataset import cached_control_contract_for_cache
 from fieldscope.dataset_audit import sample_ids_sha256
 from fieldscope.experiments import cache_identity, code_provenance, file_sha256
 from fieldscope.statistics import (
@@ -419,6 +420,28 @@ def _validate_matrix(
     observations: dict[str, dict[int, float]] = {}
     parameter_counts: set[int] = set()
     seen: set[tuple[str, int]] = set()
+    cache_dirs = {
+        "train": _resolve_report_path(str(report.get("train_cache_dir", "")), repository_root),
+        "validation": _resolve_report_path(
+            str(report.get("val_cache_dir", "")), repository_root
+        ),
+        "test": _resolve_report_path(str(report.get("test_cache_dir", "")), repository_root),
+    }
+    expected_control_contracts: dict[tuple[str, int, str], dict[str, Any]] = {}
+
+    def expected_control_contract(
+        representation: str,
+        seed: int,
+        split: str,
+    ) -> dict[str, Any]:
+        key = (representation, seed, split)
+        if key in expected_control_contracts:
+            return expected_control_contracts[key]
+        contract = cached_control_contract_for_cache(
+            cache_dirs[split], representation, seed
+        )
+        expected_control_contracts[key] = contract
+        return contract
     for run in report.get("runs", []):
         representation = str(run.get("representation"))
         seed = int(run.get("seed", -1))
@@ -470,6 +493,14 @@ def _validate_matrix(
                     problems.append(f"training train-cache identity mismatch {source}")
                 if payload.get("validation_cache") != report.get("validation_cache"):
                     problems.append(f"training validation-cache identity mismatch {source}")
+                if payload.get("train_control_contract") != expected_control_contract(
+                    representation, seed, "train"
+                ):
+                    problems.append(f"training control contract mismatch {source}")
+                if payload.get(
+                    "validation_control_contract"
+                ) != expected_control_contract(representation, seed, "validation"):
+                    problems.append(f"validation control contract mismatch {source}")
                 try:
                     parameter_counts.add(int(payload["trainable_parameters"]))
                 except (KeyError, TypeError, ValueError):
@@ -501,6 +532,10 @@ def _validate_matrix(
                     problems.append(f"test batch size mismatch {source}")
                 if payload.get("test_cache") != report.get("test_cache"):
                     problems.append(f"test cache identity mismatch {source}")
+                if payload.get("test_control_contract") != expected_control_contract(
+                    representation, seed, "test"
+                ):
+                    problems.append(f"test control contract mismatch {source}")
                 checkpoint = _resolve_report_path(
                     str(payload.get("checkpoint", "")),
                     repository_root,
@@ -785,8 +820,11 @@ def audit_causal_evidence(
         main_evidence: dict[str, Any] = {}
     else:
         main_evidence = _read_json(main_evidence_path)
-        if main_evidence.get("verdict") != "main_tasks_supported_pending_causal_audits":
-            problems.append("main evidence did not promote causal audits")
+        if main_evidence.get("verdict") not in {
+            "main_tasks_supported_pending_causal_audits",
+            "limited_or_negative",
+        }:
+            problems.append("main evidence is neither complete positive nor complete negative")
         if main_evidence.get("code_revision") != provenance["code_revision"]:
             problems.append("main evidence revision mismatch")
         if main_evidence.get("code_tree_sha256") != provenance["code_tree_sha256"]:
@@ -903,9 +941,13 @@ def audit_causal_evidence(
                         "num_images": len(differences),
                         "passed": passed,
                     }
+    main_verdict = main_evidence.get("verdict")
     if problems:
         status = "incomplete"
         verdict = "incomplete"
+    elif main_verdict == "limited_or_negative":
+        status = "failed"
+        verdict = "limited_or_negative"
     elif comparisons and all(value["passed"] for value in comparisons.values()):
         status = "passed"
         verdict = "supports_core_hypothesis"
@@ -920,6 +962,7 @@ def audit_causal_evidence(
         "supports_strong_claims": verdict == "supports_core_hypothesis",
         "problems": sorted(set(problems)),
         "main_evidence": str(main_evidence_path),
+        "main_evidence_verdict": main_verdict,
         "sources": sources,
         "comparisons": comparisons,
         "decision_rule": (
