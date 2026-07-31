@@ -8,4 +8,12 @@ full_source_val: D:/datasets_raw_hub/registry/imagenet1k/raw/ILSVRC2012_img_val.
 full_source_devkit: D:/datasets_raw_hub/registry/imagenet1k/raw/ILSVRC2012_devkit_t12.tar.gz
 full_local_prepared_root: D:/datasets_raw_hub/registry/imagenet100_full/prepared
 remote_prepared_root: ${FIELDSCOPE_DATASETS_ROOT}/prepared/imagenet100
-final_asset_status: preparing_from_full_ilsvrc2012_archives
+full_counts:
+  train: 129395
+  official_validation: 5000
+internal_split_counts:
+  train: 116455
+  validation: 12940
+  test: 5000
+image_manifest_sha256: 26e5f44f25b3d8283265064d11d92e91db560aff9799d035916252fdbb8e57a1
+final_asset_status: local_verified_pending_remote_transfer_and_source_archive_hashes

@@ -42,6 +42,7 @@ def test_multitask_model_shapes_and_backward() -> None:
     assert predictions["classification"].shape == (2, 2)
     assert predictions["segmentation"].shape == (2, 3, 16, 16)
     assert predictions["depth"].shape == (2, 1, 16, 16)
+    assert torch.all(predictions["depth"] > 0)
     assert predictions["normals"].shape == (2, 3, 16, 16)
 
     targets = {

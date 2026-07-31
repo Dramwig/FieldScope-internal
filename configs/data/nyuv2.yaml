@@ -5,4 +5,13 @@ format: explicit_json_manifest_with_rgb_and_depth_npy
 source_labeled_mat: https://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat
 source_splits_mat: https://horatio.cs.nyu.edu/mit/silberman/indoor_seg_sup/splits.mat
 internal_validation: fixed_10_percent_of_official_train_seed_4121
-asset_status: TODO_acquire_verify_and_record_hashes
+labeled_mat_bytes: 2972037809
+labeled_mat_sha256: 2d724b0c0ab358aa1ce5df855e5bd14a2279ab7202efe22f32a30d612dcb86aa
+splits_mat_bytes: 2626
+splits_mat_sha256: 6e081404491a8bfba2f066beaa9713ef6046f9007aa5f799f2a350506a580cee
+split_counts:
+  train: 715
+  validation: 80
+  test: 654
+depth_units: meters
+asset_status: verified_on_pro6000_2026_07_31

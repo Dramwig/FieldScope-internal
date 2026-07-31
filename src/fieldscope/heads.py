@@ -80,10 +80,12 @@ class MultiTaskHeads(nn.Module):
     ) -> dict[str, torch.Tensor]:
         normals = self.normals(tokens.dense, grid_size, output_size)
         normals = F.normalize(normals, dim=1, eps=1e-6)
+        depth = F.softplus(
+            self.depth(tokens.dense, grid_size, output_size)
+        ).clamp_min(1e-6)
         return {
             "classification": self.classification(tokens.global_token),
             "segmentation": self.segmentation(tokens.dense, grid_size, output_size),
-            "depth": self.depth(tokens.dense, grid_size, output_size),
+            "depth": depth,
             "normals": normals,
         }
-

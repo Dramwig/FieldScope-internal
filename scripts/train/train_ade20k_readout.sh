@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 set -euo pipefail
 bash scripts/train/run_readout_matrix.sh \
-  voc2012 segmentation 80 4 dit_hidden_local 100 21
+  ade20k segmentation 80 2 dit_hidden_local 100 150
