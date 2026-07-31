@@ -14,6 +14,7 @@ def test_causal_runbook_has_real_multiline_cli_arguments() -> None:
         "--dataset voc2012",
         "--storage-policy dense",
         "--main-evidence",
+        "--runtime-profile",
         "--random-flow",
         "--spatially-shuffled-probe",
         "--neutral-prompt",
@@ -54,3 +55,31 @@ def test_causal_runbook_runs_after_complete_positive_or_negative_main_result() -
         assert '== "incomplete"' in script
         assert "echo +" not in script
     assert "exec bash scripts/eval/run_causal_validation_after_main.sh" in full
+
+
+def test_signal_runbook_runs_runtime_gate_before_real_cache_extraction() -> None:
+    signal = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_signal_gate_after_gpu.sh"
+    ).read_text(encoding="utf-8")
+    runtime_gate = signal.index("runtime-gate")
+    first_extract = signal.index("extract-dataset")
+    assert runtime_gate < first_extract
+    assert "unset FIELDSCOPE_RUNTIME_PROFILE" in signal
+    assert 'export FIELDSCOPE_RUNTIME_PROFILE="$PWD/$runtime_profile"' in signal
+
+
+def test_formal_runbooks_bind_runtime_profile_into_both_evidence_gates() -> None:
+    scripts = [
+        REPOSITORY_ROOT
+        / "scripts"
+        / "eval"
+        / "run_full_validation_after_signal_gate.sh",
+        REPOSITORY_ROOT
+        / "scripts"
+        / "eval"
+        / "run_causal_validation_after_main.sh",
+    ]
+    for path in scripts:
+        script = path.read_text(encoding="utf-8")
+        assert "FIELDSCOPE_RUNTIME_PROFILE" in script
+        assert '--runtime-profile "$runtime_profile"' in script

@@ -129,6 +129,12 @@ counts, and split audit were not yet complete, so the asset remains
 
 ## Interpretation boundary
 
+在任何真实信号或任务指标运行前，revision 还注册了一个纯性能 runtime gate：
+固定 image/probe 候选为 2/8、2/16、4/32、8/64，只有固定合成图上的所有 cache
+张量按字节等价、峰值 reserved 显存不超过 70%、且吞吐至少提升 5% 的候选
+才可替代 2/8。gate 产物及哈希进入 cache manifest，并由最终证据审计验证。
+它不读取标签，不减少样本、任务、seed 或表示，也不提供方法有效性结论。
+
 These gates only reduce data-leakage, identity-instability, and disk-exhaustion
 risks. They do not measure classification, boundary, segmentation, or depth
 quality. Formal training still requires all of the following:

@@ -27,6 +27,14 @@
 - 公共时间：clean-time `t=0` 为噪声、`t=1` 为图像；
 - 最终主配置：512 px、时间 `[0.2, 0.5, 0.8]`、`R=8`、中心差分、
   antithetic noise、16×16 patch 图、local radius 1、global top-k 16；
+- 抽取批处理只允许在看到任何真实标签或任务指标前，由无标签 runtime gate
+  从 image/probe 候选 2/8、2/16、4/32、8/64 中选择。gate 使用 8 张固定
+  seed 合成图和固定 sample-ID path noise；候选必须在所有 cache 张量上逐元素、
+  逐 dtype 完全相等，峰值 reserved 显存不超过单卡 70%，并相对 warm-up 后的
+  2/8 基线至少快 5% 才可替代基线。选择文件的 SHA-256、revision、code-tree
+  hash 与选中批量必须写入每个 cache manifest，并由主证据和因果证据审计重算
+  资格。该门只改变批处理形状，不改变方法、样本、探针、表示或训练矩阵，也不
+  构成方法效果证据；
 - 每张图使用由样本 ID 与 probe seed 派生的固定 path noise；同一样本在不同
   batch/shard/恢复布局下必须逐张一致，不同样本不得静默复用同一噪声。
   所有图像共享固定 probe basis，使 response signature 处于同一随机草图坐标系；
@@ -34,7 +42,7 @@
 - 容量匹配：各表示先经固定、无训练参数的 768 维高斯 sketch，再共享一个
   768→hidden 投影；`full` 在该投影前无参数融合，DiT hidden cache 也固定为
   768 维；
-- 特征按样本 ID 分片缓存；模型 batch 固定为 2，cache shard 固定为 64，训练按 shard
+- 特征按样本 ID 分片缓存；模型抽取 batch 由上述 gate 固定，cache shard 固定为 64，训练按 shard
   分组洗牌并使用固定容量 LRU；pro6000 的同一 readout matrix 进程允许最多 160 GiB
   只读内存 cache，任务头训练不重复调用生成主干；
 - 非方形图像及密集标签保持纵横比，将短边缩放到目标分辨率后做配对中心方形裁剪；

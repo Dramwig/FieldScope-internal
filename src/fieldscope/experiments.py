@@ -30,7 +30,7 @@ from fieldscope.cached_dataset import (
     collate_cached,
     shared_memory_cache_stats,
 )
-from fieldscope.config import RunConfig
+from fieldscope.config import RunConfig, runtime_profile_identity
 from fieldscope.dataset_audit import sample_ids_sha256
 from fieldscope.datasets import build_vision_dataset
 from fieldscope.evaluation import (
@@ -236,6 +236,7 @@ def extraction_signature(
     stop: int,
     code_tree_sha256: str,
     storage_policy: str,
+    runtime_profile: Mapping[str, Any] | None = None,
 ) -> str:
     payload = {
         "config": config.to_dict(),
@@ -247,6 +248,7 @@ def extraction_signature(
         "stop": stop,
         "code_tree_sha256": code_tree_sha256,
         "storage_policy": storage_policy,
+        "runtime_profile": runtime_profile,
     }
     encoded = json.dumps(
         payload, sort_keys=True, ensure_ascii=False, default=str
@@ -305,6 +307,17 @@ def extract_dataset_cache(
     dataset = Subset(dataset, selected_indices)
     output_dir.mkdir(parents=True, exist_ok=True)
     manifest_path = output_dir / "dataset_manifest.json"
+    runtime_profile_path = os.environ.get("FIELDSCOPE_RUNTIME_PROFILE")
+    runtime_profile = (
+        runtime_profile_identity(runtime_profile_path)
+        if runtime_profile_path
+        else None
+    )
+    if runtime_profile is not None:
+        if runtime_profile.get("code_revision") != provenance["code_revision"]:
+            raise ValueError("Runtime profile revision does not match current code")
+        if runtime_profile.get("code_tree_sha256") != provenance["code_tree_sha256"]:
+            raise ValueError("Runtime profile code tree does not match current code")
     signature = extraction_signature(
         config,
         dataset_name=dataset_name,
@@ -315,6 +328,7 @@ def extract_dataset_cache(
         stop=stop,
         code_tree_sha256=provenance["code_tree_sha256"],
         storage_policy=storage_policy,
+        runtime_profile=runtime_profile,
     )
     if manifest_path.exists():
         existing = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -462,6 +476,7 @@ def extract_dataset_cache(
             "config": config.to_dict(),
             "class_names": class_names,
             "storage_policy": storage_policy,
+            "runtime_profile": runtime_profile,
             "dense_affinity_available": storage_policy == "dense",
             "randomness": {
                 "path_noise": "sample_id_sha256_seeded_v1",

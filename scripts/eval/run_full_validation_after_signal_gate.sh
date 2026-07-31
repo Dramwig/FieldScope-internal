@@ -13,6 +13,13 @@ cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
 preflight_root="outputs/full_validation/$cache_tag/preflight"
 decision="$signal_root/promotion_decision.json"
 cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag"
+runtime_profile="${FIELDSCOPE_RUNTIME_PROFILE:-$PWD/outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
+
+if [[ ! -f "$runtime_profile" ]]; then
+  echo "missing runtime profile: $runtime_profile" >&2
+  exit 11
+fi
+export FIELDSCOPE_RUNTIME_PROFILE="$runtime_profile"
 
 verify_revision() {
   local actual_revision
@@ -226,6 +233,7 @@ done
   --nyuv2-matrix "outputs/full_validation/$cache_tag/nyuv2/matrix_report.json" \
   --voc-unsupervised "outputs/full_validation/$cache_tag/voc2012_unsupervised.json" \
   --backbone-asset "$preflight_root/auraflow_backbone_asset.json" \
+  --runtime-profile "$runtime_profile" \
   --imagenet100-split-audit "$preflight_root/imagenet100_split_audit.json" \
   --voc2012-split-audit "$preflight_root/voc2012_split_audit.json" \
   --ade20k-split-audit "$preflight_root/ade20k_split_audit.json" \

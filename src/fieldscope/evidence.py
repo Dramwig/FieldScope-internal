@@ -12,8 +12,15 @@ import torch
 
 from fieldscope.cache import load_features
 from fieldscope.cached_dataset import cached_control_contract_for_cache
+from fieldscope.config import runtime_profile_identity
 from fieldscope.dataset_audit import sample_ids_sha256
 from fieldscope.experiments import cache_identity, code_provenance, file_sha256
+from fieldscope.runtime_gate import (
+    MAX_MEMORY_FRACTION,
+    MIN_SPEEDUP_FRACTION,
+    NUM_SYNTHETIC_IMAGES,
+    REGISTERED_PROFILES,
+)
 from fieldscope.statistics import (
     bootstrap_mean_interval,
     holm_adjusted_pvalues,
@@ -123,6 +130,161 @@ _GRAPH_NAMES_BY_POLICY = {
 }
 
 
+def _validate_runtime_profile(
+    runtime_profile_path: Path,
+    provenance: Mapping[str, Any],
+) -> tuple[dict[str, Any], list[str]]:
+    problems: list[str] = []
+    if not runtime_profile_path.is_file():
+        return {"path": str(runtime_profile_path)}, [f"missing {runtime_profile_path}"]
+    payload = _read_json(runtime_profile_path)
+    try:
+        identity = runtime_profile_identity(runtime_profile_path)
+    except (KeyError, OSError, TypeError, ValueError) as error:
+        return {"path": str(runtime_profile_path)}, [f"invalid runtime profile: {error}"]
+    if payload.get("evidence_scope") != "label_free_runtime_equivalence_and_throughput_only":
+        problems.append("runtime profile evidence scope mismatch")
+    if payload.get("method_effectiveness_conclusion") is not None:
+        problems.append("runtime profile contains a method-effectiveness conclusion")
+    if payload.get("code_revision") != provenance["code_revision"]:
+        problems.append("runtime profile revision mismatch")
+    if payload.get("code_tree_sha256") != provenance["code_tree_sha256"]:
+        problems.append("runtime profile code tree mismatch")
+    if payload.get("code_dirty") is not False:
+        problems.append("runtime profile came from a dirty worktree")
+    if payload.get("equivalence_rule") != "torch.equal for every cached tensor field":
+        problems.append("runtime profile equivalence rule mismatch")
+    expected_profiles = [
+        {"image_batch_size": image, "probe_batch_size": probe}
+        for image, probe in REGISTERED_PROFILES
+    ]
+    if payload.get("registered_profiles") != expected_profiles:
+        problems.append("runtime profile registered candidates mismatch")
+    if payload.get("num_synthetic_images") != NUM_SYNTHETIC_IMAGES:
+        problems.append("runtime profile synthetic image count mismatch")
+    if payload.get("synthetic_image_policy") != "fixed_seed_random_plus_coordinate_ramps_v1":
+        problems.append("runtime profile synthetic image policy mismatch")
+    if payload.get("minimum_speedup_fraction") != MIN_SPEEDUP_FRACTION:
+        problems.append("runtime profile speedup threshold mismatch")
+    if payload.get("maximum_cuda_reserved_fraction") != MAX_MEMORY_FRACTION:
+        problems.append("runtime profile memory threshold mismatch")
+    warmup = payload.get("warmup", {})
+    if (
+        warmup.get("profile")
+        != {"image_batch_size": 2, "probe_batch_size": 8}
+        or warmup.get("num_images") != 2
+        or warmup.get("status") != "completed"
+    ):
+        problems.append("runtime profile warm-up contract mismatch")
+    backend = payload.get("backend", {})
+    if (
+        backend.get("backend") != "auraflow"
+        or backend.get("variant") != "fp16"
+        or backend.get("device") != "cuda"
+        or backend.get("dtype") != "bfloat16"
+        or backend.get("image_size") != 512
+        or backend.get("random_transformer") is not False
+        or backend.get("frozen") is not True
+    ):
+        problems.append("runtime profile backend contract mismatch")
+    candidates = payload.get("candidates")
+    if not isinstance(candidates, list) or len(candidates) != 4:
+        problems.append("runtime profile candidate matrix mismatch")
+    else:
+        observed_profiles = [
+            {
+                "image_batch_size": candidate.get("image_batch_size"),
+                "probe_batch_size": candidate.get("probe_batch_size"),
+            }
+            for candidate in candidates
+        ]
+        if observed_profiles != expected_profiles:
+            problems.append("runtime profile candidate order mismatch")
+        baseline_seconds = candidates[0].get("seconds_per_image")
+        eligible: list[Mapping[str, Any]] = []
+        if not isinstance(baseline_seconds, (int, float)) or not math.isfinite(
+            baseline_seconds
+        ) or baseline_seconds <= 0:
+            problems.append("runtime profile baseline timing is invalid")
+        else:
+            baseline_feature_sha256 = candidates[0].get("feature_sha256")
+            for index, candidate in enumerate(candidates):
+                seconds = candidate.get("seconds_per_image")
+                completed = candidate.get("status") == "completed"
+                timing_valid = bool(
+                    isinstance(seconds, (int, float))
+                    and math.isfinite(seconds)
+                    and seconds > 0
+                )
+                exact = candidate.get("equivalence", {}).get("exact") is True
+                if exact and candidate.get("feature_sha256") != baseline_feature_sha256:
+                    problems.append(
+                        f"runtime profile exact candidate hash mismatch candidate={index}"
+                    )
+                fields = candidate.get("equivalence", {}).get("fields", {})
+                if exact and fields and not all(
+                    field.get("exact") is True for field in fields.values()
+                ):
+                    problems.append(
+                        f"runtime profile exact field mismatch candidate={index}"
+                    )
+                fraction = candidate.get("cuda_peak_reserved_fraction")
+                memory_safe = bool(
+                    completed
+                    and isinstance(fraction, (int, float))
+                    and math.isfinite(fraction)
+                    and fraction <= MAX_MEMORY_FRACTION
+                )
+                speedup = (
+                    baseline_seconds / seconds - 1.0
+                    if completed and timing_valid
+                    else None
+                )
+                expected_eligible = bool(
+                    completed
+                    and timing_valid
+                    and exact
+                    and memory_safe
+                    and (index == 0 or speedup >= MIN_SPEEDUP_FRACTION)
+                )
+                if candidate.get("memory_safe") is not memory_safe:
+                    problems.append(f"runtime profile memory decision mismatch candidate={index}")
+                recorded_speedup = candidate.get("speedup_fraction_vs_baseline")
+                if speedup is None:
+                    if recorded_speedup is not None:
+                        problems.append(f"runtime profile speedup mismatch candidate={index}")
+                elif not isinstance(recorded_speedup, (int, float)) or not math.isclose(
+                    recorded_speedup,
+                    speedup,
+                    rel_tol=1e-9,
+                    abs_tol=1e-9,
+                ):
+                    problems.append(f"runtime profile speedup mismatch candidate={index}")
+                if candidate.get("eligible") is not expected_eligible:
+                    problems.append(f"runtime profile eligibility mismatch candidate={index}")
+                if expected_eligible:
+                    eligible.append(candidate)
+        selected = payload.get("selected_profile", {})
+        if eligible:
+            expected_selected = min(
+                eligible,
+                key=lambda candidate: float(candidate["seconds_per_image"]),
+            )
+            for key in (
+                "image_batch_size",
+                "probe_batch_size",
+                "seconds_per_image",
+                "speedup_fraction_vs_baseline",
+                "cuda_peak_reserved_fraction",
+                "feature_sha256",
+            ):
+                if selected.get(key) != expected_selected.get(key):
+                    problems.append(f"runtime profile selected candidate mismatch field={key}")
+        else:
+            problems.append("runtime profile has no eligible baseline")
+    return {"path": str(runtime_profile_path), "identity": identity, "report": payload}, problems
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     payload = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(payload, dict):
@@ -183,6 +345,7 @@ def _validate_cache_manifest(
     expected_probe_type: str = "structured",
     expected_prompt: str = "",
     expected_random_transformer: bool = False,
+    expected_runtime_profile: Mapping[str, Any] | None = None,
 ) -> list[str]:
     problems: list[str] = []
     manifest_path = cache_dir / "dataset_manifest.json"
@@ -207,6 +370,8 @@ def _validate_cache_manifest(
         problems.append(f"cache code tree mismatch {cache_dir}")
     if manifest.get("code_dirty") is not False:
         problems.append(f"cache was produced from a dirty worktree {cache_dir}")
+    if manifest.get("runtime_profile") != expected_runtime_profile:
+        problems.append(f"cache runtime profile mismatch {cache_dir}")
     shards = manifest.get("shards")
     if not isinstance(shards, list) or not shards:
         problems.append(f"cache has no shards {cache_dir}")
@@ -326,6 +491,11 @@ def _validate_cache_manifest(
     probe = config.get("probe", {})
     runtime = config.get("runtime", {})
     tokenizer = config.get("tokenizer", {})
+    selected_runtime = (
+        expected_runtime_profile.get("selected_profile", {})
+        if expected_runtime_profile is not None
+        else {"image_batch_size": 2, "probe_batch_size": 8}
+    )
     if (
         backend_config.get("name") != "auraflow"
         or Path(str(backend_config.get("model_path", ""))).name != "AuraFlow-v0.3"
@@ -355,7 +525,7 @@ def _validate_cache_manifest(
         or probe.get("graph_grid") != [16, 16]
         or probe.get("topk") != 16
         or probe.get("local_radius") != 1
-        or probe.get("probe_batch_size") != 8
+        or probe.get("probe_batch_size") != selected_runtime.get("probe_batch_size")
         or probe.get("antithetic_noise") is not True
         or probe.get("hidden_baseline_dim") != 768
         or probe.get("seed") != 4121
@@ -369,7 +539,7 @@ def _validate_cache_manifest(
     ):
         problems.append(f"cache tokenizer contract mismatch {cache_dir}")
     if (
-        runtime.get("batch_size") != 2
+        runtime.get("batch_size") != selected_runtime.get("image_batch_size")
         or runtime.get("cache_shard_size") != 64
         or runtime.get("deterministic") is not True
     ):
@@ -387,6 +557,7 @@ def _validate_matrix(
     path: Path,
     provenance: Mapping[str, Any],
     repository_root: Path,
+    expected_runtime_profile: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, dict[int, float]], dict[str, Any], list[str]]:
     task, metric, maximize, expected_counts = _TASKS[dataset]
     problems: list[str] = []
@@ -587,6 +758,7 @@ def _validate_matrix(
                 expected_split=split,
                 expected_count=expected_counts[split],
                 provenance=provenance,
+                expected_runtime_profile=expected_runtime_profile,
             )
         )
         try:
@@ -671,7 +843,9 @@ def _supervised_candidate_checks(
 
 
 def _unsupervised_checks(
-    path: Path, provenance: Mapping[str, Any]
+    path: Path,
+    provenance: Mapping[str, Any],
+    expected_runtime_profile: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Any], list[str]]:
     problems: list[str] = []
     if not path.is_file():
@@ -697,6 +871,7 @@ def _unsupervised_checks(
             expected_count=1449,
             provenance=provenance,
             storage_policy="dense",
+            expected_runtime_profile=expected_runtime_profile,
         )
     )
     per_sample = report.get("per_sample")
@@ -756,6 +931,7 @@ def _load_unsupervised_per_sample(
     expected_probe_type: str,
     expected_prompt: str,
     expected_random_transformer: bool,
+    expected_runtime_profile: Mapping[str, Any] | None = None,
 ) -> tuple[dict[str, Mapping[str, Any]], dict[str, Any], list[str]]:
     problems: list[str] = []
     if not path.is_file():
@@ -784,6 +960,7 @@ def _load_unsupervised_per_sample(
             expected_probe_type=expected_probe_type,
             expected_prompt=expected_prompt,
             expected_random_transformer=expected_random_transformer,
+            expected_runtime_profile=expected_runtime_profile,
         )
     )
     per_sample = report.get("per_sample")
@@ -808,11 +985,21 @@ def audit_causal_evidence(
     *,
     main_evidence_path: Path,
     causal_report_paths: Mapping[str, Path],
+    runtime_profile_path: Path | None = None,
 ) -> dict[str, Any]:
     """Combine main-task evidence with pre-registered causal/condition audits."""
 
     provenance = code_provenance()
     problems: list[str] = []
+    runtime_profile: dict[str, Any] = {}
+    expected_runtime_profile: Mapping[str, Any] | None = None
+    if runtime_profile_path is not None:
+        runtime_profile, runtime_problems = _validate_runtime_profile(
+            runtime_profile_path,
+            provenance,
+        )
+        problems.extend(runtime_problems)
+        expected_runtime_profile = runtime_profile.get("identity")
     if provenance.get("code_dirty") is not False:
         problems.append("causal evidence audit requires a clean code worktree")
     if not main_evidence_path.is_file():
@@ -829,6 +1016,8 @@ def audit_causal_evidence(
             problems.append("main evidence revision mismatch")
         if main_evidence.get("code_tree_sha256") != provenance["code_tree_sha256"]:
             problems.append("main evidence code tree mismatch")
+        if main_evidence.get("runtime_profile") != runtime_profile:
+            problems.append("main evidence runtime profile mismatch")
     if set(causal_report_paths) != set(_CAUSAL_VARIANTS):
         problems.append("causal_report_paths do not match the registered variants")
 
@@ -844,6 +1033,7 @@ def audit_causal_evidence(
         expected_probe_type="structured",
         expected_prompt="",
         expected_random_transformer=False,
+        expected_runtime_profile=expected_runtime_profile,
     )
     loaded["empty_prompt"] = main_indexed
     sources["empty_prompt"] = main_source
@@ -858,6 +1048,7 @@ def audit_causal_evidence(
             expected_probe_type=contract["probe_type"],
             expected_prompt=contract["prompt"],
             expected_random_transformer=contract["random_transformer"],
+            expected_runtime_profile=expected_runtime_profile,
         )
         loaded[variant] = indexed
         sources[variant] = source
@@ -964,6 +1155,7 @@ def audit_causal_evidence(
         "main_evidence": str(main_evidence_path),
         "main_evidence_verdict": main_verdict,
         "sources": sources,
+        "runtime_profile": runtime_profile,
         "comparisons": comparisons,
         "decision_rule": (
             "paired-image bootstrap CI95 lower bound > 0 for pretrained structured "
@@ -979,12 +1171,22 @@ def audit_full_evidence(
     voc_unsupervised_path: Path,
     backbone_asset_path: Path,
     split_audit_paths: Mapping[str, Path],
+    runtime_profile_path: Path | None = None,
 ) -> dict[str, Any]:
     """Audit complete formal evidence without converting smoke tests into claims."""
 
     provenance = code_provenance()
     repository_root = Path(__file__).resolve().parents[2]
     problems: list[str] = []
+    runtime_profile: dict[str, Any] = {}
+    expected_runtime_profile: Mapping[str, Any] | None = None
+    if runtime_profile_path is not None:
+        runtime_profile, runtime_problems = _validate_runtime_profile(
+            runtime_profile_path,
+            provenance,
+        )
+        problems.extend(runtime_problems)
+        expected_runtime_profile = runtime_profile.get("identity")
     if provenance.get("code_dirty") is not False:
         problems.append("formal evidence audit requires a clean code worktree")
     if set(matrix_paths) != set(_TASKS):
@@ -1045,6 +1247,7 @@ def audit_full_evidence(
             path,
             provenance,
             repository_root,
+            expected_runtime_profile,
         )
         matrices[dataset] = observations
         task_reports[dataset] = task_report
@@ -1065,6 +1268,7 @@ def audit_full_evidence(
     unsupervised, unsupervised_problems = _unsupervised_checks(
         voc_unsupervised_path,
         provenance,
+        expected_runtime_profile,
     )
     problems.extend(unsupervised_problems)
     supervised: dict[str, Any] = {}
@@ -1096,6 +1300,7 @@ def audit_full_evidence(
         "tasks": task_reports,
         "backbone_asset": backbone_asset,
         "split_audits": split_audits,
+        "runtime_profile": runtime_profile,
         "unsupervised": unsupervised,
         "supervised": supervised,
         "decision_rule": {

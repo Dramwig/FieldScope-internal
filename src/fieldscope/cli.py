@@ -41,6 +41,7 @@ from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
 from fieldscope.resource_planning import plan_cache_budget
 from fieldscope.response import FieldResponseExtractor
+from fieldscope.runtime_gate import load_runtime_gate_report, run_runtime_gate
 from fieldscope.statistics import summarize_run_reports
 
 
@@ -310,6 +311,13 @@ def _build_parser() -> argparse.ArgumentParser:
     smoke_parser.add_argument("--config", required=True, type=Path)
     smoke_parser.add_argument("--steps", type=int, default=2)
 
+    runtime_parser = subparsers.add_parser(
+        "runtime-gate",
+        help="Select an exact, label-free AuraFlow extraction batching profile",
+    )
+    runtime_parser.add_argument("--config", required=True, type=Path)
+    runtime_parser.add_argument("--output", required=True, type=Path)
+
     extract_parser = subparsers.add_parser("extract", help="Extract features for local images")
     extract_parser.add_argument("--config", required=True, type=Path)
     extract_parser.add_argument("--image", required=True, type=Path, action="append")
@@ -531,6 +539,7 @@ def _build_parser() -> argparse.ArgumentParser:
         )
     evidence_parser.add_argument("--voc-unsupervised", required=True, type=Path)
     evidence_parser.add_argument("--backbone-asset", required=True, type=Path)
+    evidence_parser.add_argument("--runtime-profile", required=True, type=Path)
     for dataset in ("imagenet100", "voc2012", "ade20k", "nyuv2"):
         evidence_parser.add_argument(
             f"--{dataset}-split-audit",
@@ -551,6 +560,7 @@ def _build_parser() -> argparse.ArgumentParser:
         help="Apply the final causal and condition conclusion gate",
     )
     causal_parser.add_argument("--main-evidence", required=True, type=Path)
+    causal_parser.add_argument("--runtime-profile", required=True, type=Path)
     for variant in (
         "random-flow",
         "spatially-shuffled-probe",
@@ -578,6 +588,15 @@ def main(argv: list[str] | None = None) -> int:
         config = load_config(args.config)
         report = run_smoke(config, args.steps)
         _json_dump(Path(config.runtime.output_dir) / "smoke_report.json", report)
+    elif args.command == "runtime-gate":
+        if os.environ.get("FIELDSCOPE_RUNTIME_PROFILE"):
+            raise ValueError("Unset FIELDSCOPE_RUNTIME_PROFILE while running the gate")
+        config = load_config(args.config)
+        if args.output.is_file():
+            report = load_runtime_gate_report(config, args.output)
+        else:
+            report = run_runtime_gate(config)
+            _json_dump(args.output, report)
     elif args.command == "extract":
         report = extract_images(
             load_config(args.config), list(args.image), args.output
@@ -762,6 +781,7 @@ def main(argv: list[str] | None = None) -> int:
             },
             voc_unsupervised_path=args.voc_unsupervised,
             backbone_asset_path=args.backbone_asset,
+            runtime_profile_path=args.runtime_profile,
             split_audit_paths={
                 "imagenet100": args.imagenet100_split_audit,
                 "voc2012": args.voc2012_split_audit,
@@ -780,6 +800,7 @@ def main(argv: list[str] | None = None) -> int:
     elif args.command == "audit-causal-evidence":
         report = audit_causal_evidence(
             main_evidence_path=args.main_evidence,
+            runtime_profile_path=args.runtime_profile,
             causal_report_paths={
                 "random_flow": args.random_flow,
                 "spatially_shuffled_probe": args.spatially_shuffled_probe,

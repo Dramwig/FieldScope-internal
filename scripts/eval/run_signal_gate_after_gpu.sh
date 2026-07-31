@@ -11,6 +11,7 @@ wait_for_pid="${FIELDSCOPE_WAIT_FOR_PID:-}"
 config="configs/eval/auraflow_signal_gate.yaml"
 cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/signal_final512"
 output_root="outputs/signal_gate"
+runtime_profile="outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json"
 
 verify_revision() {
   local actual_revision
@@ -49,6 +50,12 @@ done
 
 verify_revision
 mkdir -p "$cache_root" "$output_root"
+mkdir -p "$(dirname "$runtime_profile")"
+unset FIELDSCOPE_RUNTIME_PROFILE
+"$python_bin" -m fieldscope.cli runtime-gate \
+  --config "$config" \
+  --output "$runtime_profile"
+export FIELDSCOPE_RUNTIME_PROFILE="$PWD/$runtime_profile"
 for specification in "train 256" "val 128" "test 128"; do
   read -r split limit <<<"$specification"
   "$python_bin" -m fieldscope.cli extract-dataset \

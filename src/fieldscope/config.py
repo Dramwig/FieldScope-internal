@@ -2,14 +2,18 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from pathlib import Path
 from typing import Any
 
 import yaml
+
+_RUNTIME_PROFILE_SCHEMA_VERSION = 1
+_REGISTERED_RUNTIME_PROFILES = {(2, 8), (2, 16), (4, 32), (8, 64)}
 
 
 def _expand(value: Any) -> Any:
@@ -181,6 +185,107 @@ class RunConfig:
         return asdict(self)
 
 
+def runtime_method_contract(config: RunConfig) -> dict[str, Any]:
+    """Return method fields that a runtime batching profile may not change."""
+
+    return {
+        "backend": {
+            "name": config.backend.name,
+            "model_name": (
+                Path(config.backend.model_path).name
+                if config.backend.model_path is not None
+                else None
+            ),
+            "variant": config.backend.variant,
+            "device": config.backend.device,
+            "dtype": config.backend.dtype,
+            "image_size": config.backend.image_size,
+            "max_sequence_length": config.backend.max_sequence_length,
+            "local_files_only": config.backend.local_files_only,
+            "offload_text_encoder": config.backend.offload_text_encoder,
+        },
+        "probe": {
+            "times": list(config.probe.times),
+            "num_directions": config.probe.num_directions,
+            "eta": config.probe.eta,
+            "difference": config.probe.difference,
+            "graph_grid": list(config.probe.graph_grid),
+            "topk": config.probe.topk,
+            "local_radius": config.probe.local_radius,
+            "antithetic_noise": config.probe.antithetic_noise,
+            "hidden_baseline_dim": config.probe.hidden_baseline_dim,
+            "seed": config.probe.seed,
+        },
+        "runtime": {
+            "cache_shard_size": config.runtime.cache_shard_size,
+            "deterministic": config.runtime.deterministic,
+        },
+    }
+
+
+def runtime_method_contract_sha256(config: RunConfig) -> str:
+    encoded = json.dumps(
+        runtime_method_contract(config),
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def runtime_profile_identity(path: str | Path) -> dict[str, Any]:
+    """Load the immutable identity embedded in caches using a runtime gate."""
+
+    profile_path = Path(path).expanduser().resolve()
+    raw = profile_path.read_bytes()
+    payload = json.loads(raw.decode("utf-8"))
+    if not isinstance(payload, Mapping):
+        raise TypeError("Runtime profile must be a JSON object")
+    selected = payload.get("selected_profile", {})
+    image_batch_size = int(selected.get("image_batch_size", -1))
+    probe_batch_size = int(selected.get("probe_batch_size", -1))
+    if payload.get("schema_version") != _RUNTIME_PROFILE_SCHEMA_VERSION:
+        raise ValueError("Runtime profile schema version mismatch")
+    if payload.get("status") != "passed":
+        raise ValueError("Runtime profile is not passed")
+    if (image_batch_size, probe_batch_size) not in _REGISTERED_RUNTIME_PROFILES:
+        raise ValueError("Runtime profile selected an unregistered batch shape")
+    return {
+        "path": str(profile_path),
+        "sha256": hashlib.sha256(raw).hexdigest(),
+        "schema_version": payload["schema_version"],
+        "code_revision": payload.get("code_revision"),
+        "code_tree_sha256": payload.get("code_tree_sha256"),
+        "method_runtime_contract_sha256": payload.get(
+            "method_runtime_contract_sha256"
+        ),
+        "selected_profile": {
+            "image_batch_size": image_batch_size,
+            "probe_batch_size": probe_batch_size,
+        },
+    }
+
+
+def apply_runtime_profile(config: RunConfig, path: str | Path) -> RunConfig:
+    identity = runtime_profile_identity(path)
+    if identity["method_runtime_contract_sha256"] != runtime_method_contract_sha256(
+        config
+    ):
+        raise ValueError("Runtime profile method contract does not match the config")
+    selected = identity["selected_profile"]
+    return replace(
+        config,
+        probe=replace(
+            config.probe,
+            probe_batch_size=selected["probe_batch_size"],
+        ),
+        runtime=replace(
+            config.runtime,
+            batch_size=selected["image_batch_size"],
+        ),
+    )
+
+
 def load_config(path: str | Path) -> RunConfig:
     config_path = Path(path)
     with config_path.open("r", encoding="utf-8") as handle:
@@ -190,4 +295,8 @@ def load_config(path: str | Path) -> RunConfig:
             raw = yaml.safe_load(handle)
     if not isinstance(raw, Mapping):
         raise TypeError("Top-level configuration must be a mapping")
-    return RunConfig.from_mapping(raw)
+    config = RunConfig.from_mapping(raw)
+    runtime_profile = os.environ.get("FIELDSCOPE_RUNTIME_PROFILE")
+    if runtime_profile:
+        config = apply_runtime_profile(config, runtime_profile)
+    return config

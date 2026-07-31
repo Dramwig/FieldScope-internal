@@ -10,6 +10,13 @@ main_evidence="outputs/full_validation/$cache_tag/evidence_decision.json"
 causal_output_root="outputs/full_validation/$cache_tag/causal"
 causal_cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/${cache_tag}_causal"
 voc_root="$FIELDSCOPE_DATASETS_ROOT/prepared/pascal_voc_2012"
+runtime_profile="${FIELDSCOPE_RUNTIME_PROFILE:-$PWD/outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
+
+if [[ ! -f "$runtime_profile" ]]; then
+  echo "missing runtime profile: $runtime_profile" >&2
+  exit 7
+fi
+export FIELDSCOPE_RUNTIME_PROFILE="$runtime_profile"
 
 actual_revision="$(git rev-parse HEAD)"
 if [[ "$actual_revision" != "$FIELDSCOPE_EXPECTED_REVISION" ]]; then
@@ -69,6 +76,7 @@ done
 
 "$python_bin" -m fieldscope.cli audit-causal-evidence \
   --main-evidence "$main_evidence" \
+  --runtime-profile "$runtime_profile" \
   --random-flow "$causal_output_root/random_flow.json" \
   --spatially-shuffled-probe "$causal_output_root/spatially_shuffled_probe.json" \
   --neutral-prompt "$causal_output_root/neutral_prompt.json" \

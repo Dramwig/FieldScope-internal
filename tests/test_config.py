@@ -1,8 +1,15 @@
+import json
 from pathlib import Path
 
 import pytest
 
-from fieldscope.config import RunConfig, load_config
+from fieldscope.config import (
+    RunConfig,
+    apply_runtime_profile,
+    load_config,
+    runtime_method_contract_sha256,
+    runtime_profile_identity,
+)
 
 
 def test_default_config_is_valid() -> None:
@@ -150,3 +157,79 @@ def test_registered_causal_configs_change_only_the_registered_factor(
     assert unrelated.backend.prompt == "an unrelated scene"
     assert neutral.probe == main.probe
     assert unrelated.probe == main.probe
+
+
+def test_runtime_profile_changes_only_registered_batch_shapes(tmp_path: Path) -> None:
+    config = RunConfig.from_mapping(
+        {
+            "backend": {
+                "name": "auraflow",
+                "model_path": "/models/AuraFlow-v0.3",
+                "device": "cuda",
+            },
+            "probe": {"probe_batch_size": 8},
+            "runtime": {"batch_size": 2},
+        }
+    )
+    profile = tmp_path / "runtime.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "status": "passed",
+                "method_runtime_contract_sha256": runtime_method_contract_sha256(
+                    config
+                ),
+                "selected_profile": {
+                    "image_batch_size": 4,
+                    "probe_batch_size": 32,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    selected = apply_runtime_profile(config, profile)
+    assert selected.runtime.batch_size == 4
+    assert selected.probe.probe_batch_size == 32
+    assert selected.backend == config.backend
+    assert selected.tokenizer == config.tokenizer
+    assert runtime_profile_identity(profile)["sha256"]
+
+
+def test_runtime_profile_rejects_unregistered_or_mismatched_selection(
+    tmp_path: Path,
+) -> None:
+    config = RunConfig.from_mapping(
+        {
+            "backend": {
+                "name": "auraflow",
+                "model_path": "/models/AuraFlow-v0.3",
+                "device": "cuda",
+            }
+        }
+    )
+    profile = tmp_path / "runtime.json"
+    profile.write_text(
+        json.dumps(
+            {
+                "schema_version": 1,
+                "status": "passed",
+                "method_runtime_contract_sha256": "tampered",
+                "selected_profile": {
+                    "image_batch_size": 3,
+                    "probe_batch_size": 24,
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(ValueError, match="unregistered"):
+        runtime_profile_identity(profile)
+    payload = json.loads(profile.read_text(encoding="utf-8"))
+    payload["selected_profile"] = {
+        "image_batch_size": 2,
+        "probe_batch_size": 16,
+    }
+    profile.write_text(json.dumps(payload), encoding="utf-8")
+    with pytest.raises(ValueError, match="method contract"):
+        apply_runtime_profile(config, profile)
