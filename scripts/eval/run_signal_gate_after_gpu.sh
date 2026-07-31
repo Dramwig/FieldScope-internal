@@ -90,7 +90,7 @@ matrix_arguments=(
 )
 for representation in \
   z0 trajectory state response_local response full \
-  dit_hidden_local dit_hidden_attention response_shuffled; do
+  dit_hidden_local dit_hidden_attention response_shuffled full_shuffled; do
   matrix_arguments+=(--representation "$representation")
 done
 for seed in 4121 7319 104729; do
@@ -98,4 +98,19 @@ for seed in 4121 7319 104729; do
 done
 
 "$python_bin" -m fieldscope.cli run-readout-matrix "${matrix_arguments[@]}"
-echo "$(date --iso-8601=seconds) signal gate completed"
+
+"$python_bin" -m fieldscope.cli audit-signal-gate \
+  --cache-dir "$cache_root/cifar10_train" \
+  --cache-dir "$cache_root/cifar10_val" \
+  --cache-dir "$cache_root/cifar10_test" \
+  --cache-dir "$cache_root/voc2012_test" \
+  --voc-report "$output_root/voc2012_unsupervised.json" \
+  --cifar-matrix "$output_root/cifar10_readout/matrix_report.json" \
+  --output "$output_root/promotion_decision.json"
+
+verdict="$(
+  "$python_bin" -c \
+    'import json,sys; print(json.load(open(sys.argv[1], encoding="utf-8"))["verdict"])' \
+    "$output_root/promotion_decision.json"
+)"
+echo "$(date --iso-8601=seconds) signal gate completed verdict=$verdict"

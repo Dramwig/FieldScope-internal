@@ -121,6 +121,15 @@ epoch 数和选模规则：
 1. **正确性门**：单元测试、toy smoke、真实 AuraFlow contract smoke；
 2. **资源门**：记录单样本 wall time、峰值显存、缓存体积并估算全量成本；
 3. **信号门**：VOC 无监督图和 CIFAR-10 同容量 readout，不作论文结论；
+   固定晋级规则如下：
+   - VOC：`response` 的 boundary AP 同时高于 response-shuffled、state、
+     DiT hidden 与 DiT attention，且 pairwise AUROC 高于 response-shuffled 和 state；
+   - CIFAR：`response` 与 `full` 各自相对 response-shuffled 和每 seed 最佳的
+     state/DiT hidden/DiT attention 对照，三 seed 平均 top-1 增益至少 0.5 个百分点，
+     且至少 2/3 seed 同向；
+   - 任一 cache 不完整、revision 不一致、随机性合约不匹配或指标非有限时，
+     判为 `incomplete`；全部满足为 `proceed`，信号完整但任一阈值不满足为
+     `stop_or_redesign`。该门只决定是否投入全量算力，不作为论文有效性证据；
 4. **主任务门**：完整 ImageNet-100、VOC、ADE20K、NYUv2 三 seed；
 5. **扩展门**：前四门满足后执行 ImageNet-1k 与高成本消融；
 6. **结论门**：逐条核对本文件四项有效性条件，再更新论文。

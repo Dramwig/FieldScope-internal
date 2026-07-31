@@ -33,6 +33,7 @@ from fieldscope.experiments import (
     set_experiment_seed,
     train_cached_readout,
 )
+from fieldscope.gates import audit_signal_gate
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
 from fieldscope.response import FieldResponseExtractor
@@ -435,6 +436,17 @@ def _build_parser() -> argparse.ArgumentParser:
     matrix_parser.add_argument("--num-classes", type=int)
     matrix_parser.add_argument("--segmentation-classes", type=int)
 
+    gate_parser = subparsers.add_parser(
+        "audit-signal-gate",
+        help="Apply the pre-registered promotion rule to completed signal-gate outputs",
+    )
+    gate_parser.add_argument(
+        "--cache-dir", required=True, type=Path, action="append"
+    )
+    gate_parser.add_argument("--voc-report", required=True, type=Path)
+    gate_parser.add_argument("--cifar-matrix", required=True, type=Path)
+    gate_parser.add_argument("--output", required=True, type=Path)
+
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
     return parser
@@ -562,6 +574,13 @@ def main(argv: list[str] | None = None) -> int:
             batch_size=args.batch_size,
             reference=args.reference,
         )
+    elif args.command == "audit-signal-gate":
+        report = audit_signal_gate(
+            cache_dirs=list(args.cache_dir),
+            voc_report_path=args.voc_report,
+            cifar_matrix_path=args.cifar_matrix,
+        )
+        _json_dump(args.output, report)
     elif args.command == "inspect-cache":
         _, _, report = load_features(args.cache)
     else:
