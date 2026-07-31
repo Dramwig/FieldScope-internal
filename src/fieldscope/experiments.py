@@ -318,6 +318,8 @@ def extract_dataset_cache(
             raise ValueError("Runtime profile revision does not match current code")
         if runtime_profile.get("code_tree_sha256") != provenance["code_tree_sha256"]:
             raise ValueError("Runtime profile code tree does not match current code")
+        if runtime_profile.get("code_dirty") is not False:
+            raise ValueError("Runtime profile came from a dirty worktree")
     signature = extraction_signature(
         config,
         dataset_name=dataset_name,

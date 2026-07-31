@@ -248,6 +248,8 @@ def runtime_profile_identity(path: str | Path) -> dict[str, Any]:
         raise ValueError("Runtime profile schema version mismatch")
     if payload.get("status") != "passed":
         raise ValueError("Runtime profile is not passed")
+    if payload.get("code_dirty") is not False:
+        raise ValueError("Runtime profile must come from a clean worktree")
     if (image_batch_size, probe_batch_size) not in _REGISTERED_RUNTIME_PROFILES:
         raise ValueError("Runtime profile selected an unregistered batch shape")
     return {
@@ -256,6 +258,7 @@ def runtime_profile_identity(path: str | Path) -> dict[str, Any]:
         "schema_version": payload["schema_version"],
         "code_revision": payload.get("code_revision"),
         "code_tree_sha256": payload.get("code_tree_sha256"),
+        "code_dirty": payload.get("code_dirty"),
         "method_runtime_contract_sha256": payload.get(
             "method_runtime_contract_sha256"
         ),

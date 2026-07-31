@@ -177,6 +177,7 @@ def test_runtime_profile_changes_only_registered_batch_shapes(tmp_path: Path) ->
             {
                 "schema_version": 1,
                 "status": "passed",
+                "code_dirty": False,
                 "method_runtime_contract_sha256": runtime_method_contract_sha256(
                     config
                 ),
@@ -214,6 +215,7 @@ def test_runtime_profile_rejects_unregistered_or_mismatched_selection(
             {
                 "schema_version": 1,
                 "status": "passed",
+                "code_dirty": False,
                 "method_runtime_contract_sha256": "tampered",
                 "selected_profile": {
                     "image_batch_size": 3,
