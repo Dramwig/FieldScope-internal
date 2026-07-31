@@ -36,6 +36,8 @@ class AuraFlowBackend:
         self.config = config
         self._device = torch.device(config.device)
         self._dtype = _DTYPES[config.dtype]
+        self._query_calls = 0
+        self._evaluated_states = 0
         self.pipe = AuraFlowPipeline.from_pretrained(
             config.model_path,
             torch_dtype=self._dtype,
@@ -115,6 +117,8 @@ class AuraFlowBackend:
     @torch.no_grad()
     def query_velocity(self, latents: torch.Tensor, clean_time: torch.Tensor) -> torch.Tensor:
         latents, native_time, prompt_embeds = self._prepare_query(latents, clean_time)
+        self._query_calls += 1
+        self._evaluated_states += latents.shape[0]
         native_velocity = self.pipe.transformer(
             latents,
             encoder_hidden_states=prompt_embeds,
@@ -132,6 +136,8 @@ class AuraFlowBackend:
         """Query velocity and capture frozen final-token and attention Q/K maps."""
 
         latents, native_time, prompt_embeds = self._prepare_query(latents, clean_time)
+        self._query_calls += 1
+        self._evaluated_states += latents.shape[0]
         transformer = self.pipe.transformer
         captured: dict[str, torch.Tensor] = {}
 
@@ -218,7 +224,18 @@ class AuraFlowBackend:
             )
         return -native_velocity, auxiliary
 
+    def runtime_stats(self) -> dict[str, int]:
+        return {
+            "transformer_query_calls": self._query_calls,
+            "transformer_evaluated_states": self._evaluated_states,
+        }
+
     def describe(self) -> dict[str, Any]:
+        modules = (
+            self.pipe.transformer,
+            self.pipe.vae,
+            self.pipe.text_encoder,
+        )
         return {
             "backend": "auraflow",
             "model_id": self.model_id,
@@ -230,5 +247,9 @@ class AuraFlowBackend:
             "native_time": "1=noise, 0=image",
             "public_time": "clean_time: 0=noise, 1=image",
             "velocity_conversion": "public_velocity=-native_transformer_output",
-            "frozen": True,
+            "frozen": not any(
+                parameter.requires_grad
+                for module in modules
+                for parameter in module.parameters()
+            ),
         }

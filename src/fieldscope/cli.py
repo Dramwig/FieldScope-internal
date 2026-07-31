@@ -9,6 +9,7 @@ import os
 import platform
 import shutil
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -112,13 +113,20 @@ def _synthetic_batch(config: RunConfig) -> dict[str, torch.Tensor | list[str]]:
 
 
 def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
+    total_started = time.perf_counter()
     _set_seed(config.probe.seed, config.runtime.deterministic)
+    backend_started = time.perf_counter()
     backend = build_backend(config.backend)
+    backend_seconds = time.perf_counter() - backend_started
+    if backend.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(backend.device)
     extractor = FieldResponseExtractor(backend, config.probe)
     batch = _synthetic_batch(config)
     images = batch["image"]
     assert isinstance(images, torch.Tensor)
+    extraction_started = time.perf_counter()
     features = extractor.extract(images)
+    extraction_seconds = time.perf_counter() - extraction_started
     features_for_model = features.to(backend.device, dtype=torch.float32)
     model = FieldScopeModel(
         state_dim=features.state.shape[-1],
@@ -134,6 +142,7 @@ def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
     }
     losses: list[float] = []
     components: dict[str, float] = {}
+    training_started = time.perf_counter()
     model.train()
     for _ in range(steps):
         optimizer.zero_grad(set_to_none=True)
@@ -146,6 +155,7 @@ def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
         optimizer.step()
         losses.append(float(total.detach().item()))
         components = {name: float(value.detach().item()) for name, value in pieces.items()}
+    training_seconds = time.perf_counter() - training_started
 
     cache_path = Path(config.runtime.output_dir) / "smoke_features.pt"
     manifest = save_features(
@@ -155,6 +165,7 @@ def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
         sample_ids=list(batch["sample_id"]),
     )
     reloaded, _, _ = load_features(cache_path)
+    runtime_stats = getattr(backend, "runtime_stats", lambda: {})()
     return {
         "status": "passed",
         "backend": backend.describe(),
@@ -162,14 +173,38 @@ def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
             "state": list(features.state.shape),
             "response": list(features.response.shape),
             "affinity": list(features.affinity.shape),
+            "baselines": {
+                name: list(value.shape) for name, value in features.baselines.items()
+            },
+            "graphs": {
+                name: list(value.shape) for name, value in features.graphs.items()
+            },
         },
         "diagnostics": graph_diagnostics(features),
         "train_steps": steps,
         "losses": losses,
         "loss_components": components,
         "cache": str(cache_path),
+        "cache_bytes": cache_path.stat().st_size,
         "cache_fingerprint": manifest["fingerprint"],
         "cache_reload_equal": bool(torch.equal(features.state.cpu(), reloaded.state)),
+        "runtime": {
+            "backend_initialization_seconds": backend_seconds,
+            "feature_extraction_seconds": extraction_seconds,
+            "readout_training_seconds": training_seconds,
+            "total_seconds": time.perf_counter() - total_started,
+            "cuda_peak_allocated_bytes": (
+                torch.cuda.max_memory_allocated(backend.device)
+                if backend.device.type == "cuda"
+                else None
+            ),
+            "cuda_peak_reserved_bytes": (
+                torch.cuda.max_memory_reserved(backend.device)
+                if backend.device.type == "cuda"
+                else None
+            ),
+            **runtime_stats,
+        },
     }
 
 

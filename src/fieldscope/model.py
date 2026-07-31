@@ -26,6 +26,7 @@ class FieldScopeModel(nn.Module):
             state_dim=state_dim,
             response_dim=response_dim,
             hidden_dim=config.hidden_dim,
+            input_dim=config.input_dim,
             num_layers=config.num_layers,
             dropout=config.dropout,
             mode=mode,
@@ -44,4 +45,3 @@ class FieldScopeModel(nn.Module):
     ) -> dict[str, torch.Tensor]:
         tokens = self.tokenizer(features)
         return self.heads(tokens, features.grid_size, output_size)
-

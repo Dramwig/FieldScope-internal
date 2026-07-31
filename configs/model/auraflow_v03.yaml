@@ -20,10 +20,12 @@ probe:
   local_radius: 1
   probe_batch_size: 1
   antithetic_noise: true
+  hidden_baseline_dim: 768
   seed: 4121
 
 tokenizer:
   hidden_dim: 256
+  input_dim: 768
   num_layers: 3
   dropout: 0.1
   num_classes: 100

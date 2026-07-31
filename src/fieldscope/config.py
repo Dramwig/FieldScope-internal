@@ -66,6 +66,7 @@ class ProbeConfig:
     local_radius: int = 1
     probe_batch_size: int = 4
     antithetic_noise: bool = True
+    hidden_baseline_dim: int = 768
     seed: int = 4121
 
     def validate(self) -> None:
@@ -83,18 +84,21 @@ class ProbeConfig:
             raise ValueError("probe.graph_grid entries must be positive")
         if self.topk < 0 or self.local_radius < 0 or self.probe_batch_size < 1:
             raise ValueError("topk/local_radius/probe_batch_size are invalid")
+        if self.hidden_baseline_dim < 1:
+            raise ValueError("probe.hidden_baseline_dim must be positive")
 
 
 @dataclass(frozen=True)
 class TokenizerConfig:
     hidden_dim: int = 128
+    input_dim: int = 768
     num_layers: int = 3
     dropout: float = 0.0
     num_classes: int = 10
     segmentation_classes: int = 21
 
     def validate(self) -> None:
-        if self.hidden_dim < 8 or self.num_layers < 1:
+        if self.hidden_dim < 8 or self.input_dim < 1 or self.num_layers < 1:
             raise ValueError("tokenizer dimensions must be positive")
         if not 0.0 <= self.dropout < 1.0:
             raise ValueError("tokenizer.dropout must be in [0, 1)")

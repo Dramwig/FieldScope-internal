@@ -3,6 +3,7 @@ import torch
 from fieldscope.graph import (
     boundary_strength,
     cosine_affinity,
+    fixed_gaussian_sketch,
     normalize_adjacency,
     patch_pool,
     sparsify_affinity,
@@ -32,3 +33,11 @@ def test_sparse_graph_is_symmetric_and_diagnostic_ready() -> None:
     assert boundaries.shape == (2, 16)
     assert torch.all(adjacency.diagonal(dim1=-2, dim2=-1) >= 1)
 
+
+def test_fixed_gaussian_sketch_is_deterministic_and_parameter_free() -> None:
+    features = torch.randn(2, 5, 11)
+    first = fixed_gaussian_sketch(features, 7, seed=19)
+    second = fixed_gaussian_sketch(features, 7, seed=19)
+    assert first.shape == (2, 5, 7)
+    assert torch.equal(first, second)
+    assert first.requires_grad is False

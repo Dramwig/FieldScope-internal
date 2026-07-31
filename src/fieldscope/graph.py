@@ -5,6 +5,11 @@ from __future__ import annotations
 import torch
 import torch.nn.functional as F
 
+_PROJECTIONS: dict[
+    tuple[int, int, str, int | None, torch.dtype, int],
+    torch.Tensor,
+] = {}
+
 
 def patch_pool(tensor: torch.Tensor, grid_size: tuple[int, int]) -> torch.Tensor:
     """Adaptive-average pool [B,C,H,W] to [B,P,C]."""
@@ -22,6 +27,40 @@ def cosine_affinity(features: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
         raise ValueError("features must have shape [B,P,D]")
     normalized = F.normalize(features.float(), dim=-1, eps=eps)
     return torch.bmm(normalized, normalized.transpose(1, 2)).to(dtype=features.dtype)
+
+
+def fixed_gaussian_sketch(
+    features: torch.Tensor,
+    output_dim: int,
+    *,
+    seed: int = 271828,
+) -> torch.Tensor:
+    """Apply a deterministic, non-trainable Gaussian projection on the last axis."""
+
+    if features.ndim < 2 or output_dim < 1:
+        raise ValueError("features must have a last dimension and output_dim must be positive")
+    input_dim = features.shape[-1]
+    if input_dim == output_dim:
+        return features
+    key = (
+        input_dim,
+        output_dim,
+        features.device.type,
+        features.device.index,
+        features.dtype,
+        seed,
+    )
+    projection = _PROJECTIONS.get(key)
+    if projection is None:
+        generator = torch.Generator(device="cpu").manual_seed(seed)
+        projection = torch.randn(
+            (input_dim, output_dim),
+            generator=generator,
+            dtype=torch.float32,
+        ) / output_dim**0.5
+        projection = projection.to(device=features.device, dtype=features.dtype)
+        _PROJECTIONS[key] = projection
+    return torch.matmul(features, projection)
 
 
 def pooled_attention_affinity(

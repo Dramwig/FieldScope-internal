@@ -21,6 +21,8 @@ class ToyFieldBackend:
         self._device = torch.device(device)
         self._dtype = _DTYPES[dtype]
         self.image_size = image_size
+        self._query_calls = 0
+        self._evaluated_states = 0
 
     @property
     def device(self) -> torch.device:
@@ -50,6 +52,8 @@ class ToyFieldBackend:
 
     def query_velocity(self, latents: torch.Tensor, clean_time: torch.Tensor) -> torch.Tensor:
         latents = latents.to(device=self.device, dtype=self.dtype)
+        self._query_calls += 1
+        self._evaluated_states += latents.shape[0]
         if clean_time.ndim == 0:
             clean_time = clean_time.expand(latents.shape[0])
         time = clean_time.to(device=self.device, dtype=self.dtype).reshape(-1, 1, 1, 1)
@@ -82,6 +86,12 @@ class ToyFieldBackend:
             "dit_hidden": hidden,
             "dit_attention_q": normalized.unsqueeze(1),
             "dit_attention_k": normalized.unsqueeze(1),
+        }
+
+    def runtime_stats(self) -> dict[str, int]:
+        return {
+            "transformer_query_calls": self._query_calls,
+            "transformer_evaluated_states": self._evaluated_states,
         }
 
     def describe(self) -> dict[str, Any]:

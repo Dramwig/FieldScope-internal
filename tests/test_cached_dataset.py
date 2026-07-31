@@ -80,7 +80,7 @@ def test_feature_batch_ops_and_baselines(tmp_path: Path) -> None:
     assert baseline.state.shape[-1] == 4
     hidden, mode = select_representation(features, "dit_hidden_local")
     assert mode == "state"
-    assert hidden.state.shape[-1] == 8
+    assert hidden.state.shape[-1] == 768
     hidden_attention, mode = select_representation(
         features,
         "dit_hidden_attention",

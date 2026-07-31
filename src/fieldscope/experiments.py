@@ -6,6 +6,7 @@ import hashlib
 import json
 import os
 import random
+import time
 from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
@@ -118,6 +119,7 @@ def extract_dataset_cache(
 ) -> dict[str, Any]:
     """Extract deterministic shards and checkpoint the manifest after every shard."""
 
+    total_started = time.perf_counter()
     if offset < 0 or (limit is not None and limit < 1):
         raise ValueError("offset must be non-negative and limit must be positive")
     dataset = build_vision_dataset(
@@ -158,11 +160,19 @@ def extract_dataset_cache(
         if existing.get("extraction_signature") != signature:
             raise ValueError("Existing cache was produced by a different extraction")
 
+    backend_started = time.perf_counter()
     backend = build_backend(config.backend)
+    backend_seconds = time.perf_counter() - backend_started
+    if backend.device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(backend.device)
     extractor = FieldResponseExtractor(backend, config.probe)
     shards: list[dict[str, Any]] = []
     sample_count = 0
+    written_samples = 0
+    extraction_seconds = 0.0
+    cache_bytes = 0
     for batch_index, batch in enumerate(loader):
+        shard_started = time.perf_counter()
         images = batch["image"]
         if not isinstance(images, torch.Tensor):
             raise TypeError("Dataset image batch must be a tensor")
@@ -184,6 +194,7 @@ def extract_dataset_cache(
                 raise ValueError(f"Target values do not match resumed shard {path.name}")
             feature_manifest = cached_manifest
             status = "reused"
+            shard_seconds = time.perf_counter() - shard_started
         else:
             features = extractor.extract(images)
             feature_manifest = save_features(
@@ -193,6 +204,11 @@ def extract_dataset_cache(
                 sample_ids=sample_ids,
             )
             status = "written"
+            shard_seconds = time.perf_counter() - shard_started
+            extraction_seconds += shard_seconds
+            written_samples += images.shape[0]
+        shard_bytes = path.stat().st_size
+        cache_bytes += shard_bytes
         shard = {
             "path": path.name,
             "start": global_start,
@@ -200,6 +216,8 @@ def extract_dataset_cache(
             "num_samples": images.shape[0],
             "fingerprint": feature_manifest["fingerprint"],
             "status": status,
+            "seconds": shard_seconds,
+            "bytes": shard_bytes,
         }
         shards.append(shard)
         sample_count += images.shape[0]
@@ -217,6 +235,29 @@ def extract_dataset_cache(
             "config": config.to_dict(),
             "class_names": class_names,
             "shards": shards,
+            "runtime": {
+                "backend_initialization_seconds": backend_seconds,
+                "elapsed_seconds": time.perf_counter() - total_started,
+                "feature_extraction_seconds": extraction_seconds,
+                "written_samples": written_samples,
+                "written_samples_per_second": (
+                    written_samples / extraction_seconds
+                    if extraction_seconds > 0
+                    else None
+                ),
+                "cache_bytes": cache_bytes,
+                "cuda_peak_allocated_bytes": (
+                    torch.cuda.max_memory_allocated(backend.device)
+                    if backend.device.type == "cuda"
+                    else None
+                ),
+                "cuda_peak_reserved_bytes": (
+                    torch.cuda.max_memory_reserved(backend.device)
+                    if backend.device.type == "cuda"
+                    else None
+                ),
+                **getattr(backend, "runtime_stats", lambda: {})(),
+            },
         }
         atomic_json_dump(manifest_path, report)
     return report

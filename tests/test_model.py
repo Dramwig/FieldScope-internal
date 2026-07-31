@@ -2,6 +2,7 @@ import torch
 
 from fieldscope.backends.toy import ToyFieldBackend
 from fieldscope.config import ProbeConfig, TokenizerConfig
+from fieldscope.feature_ops import select_representation
 from fieldscope.losses import (
     graph_stability_loss,
     multitask_loss,
@@ -69,3 +70,25 @@ def test_feature_transfer_can_normalize_readout_dtype() -> None:
     assert normalized.response.dtype == torch.float32
     assert all(value.dtype == torch.float32 for value in normalized.baselines.values())
     assert all(value.dtype == torch.float32 for value in normalized.graphs.values())
+
+
+def test_readout_parameter_count_is_representation_matched() -> None:
+    features = _features()
+    config = TokenizerConfig(
+        hidden_dim=32,
+        input_dim=64,
+        num_layers=1,
+        num_classes=2,
+        segmentation_classes=3,
+    )
+    counts = []
+    for representation in ("z0", "response", "full", "dit_hidden_attention"):
+        selected, mode = select_representation(features, representation)
+        model = FieldScopeModel(
+            selected.state.shape[-1],
+            selected.response.shape[-1],
+            config,
+            mode=mode,
+        )
+        counts.append(sum(parameter.numel() for parameter in model.parameters()))
+    assert len(set(counts)) == 1

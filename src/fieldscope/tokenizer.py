@@ -8,7 +8,11 @@ import torch
 from torch import nn
 
 from fieldscope.contracts import FieldFeatures
-from fieldscope.graph import fixed_grid_adjacency, normalize_adjacency
+from fieldscope.graph import (
+    fixed_gaussian_sketch,
+    fixed_grid_adjacency,
+    normalize_adjacency,
+)
 
 
 def sinusoidal_2d_position(
@@ -72,6 +76,7 @@ class FieldTokenizer(nn.Module):
         state_dim: int,
         response_dim: int,
         hidden_dim: int = 128,
+        input_dim: int = 768,
         num_layers: int = 3,
         dropout: float = 0.0,
         mode: str = "full",
@@ -88,8 +93,10 @@ class FieldTokenizer(nn.Module):
                 "mode must be full, state, response, response_local, or state_graph"
             )
         self.mode = mode
-        self.state_projection = nn.Linear(state_dim, hidden_dim)
-        self.response_projection = nn.Linear(response_dim, hidden_dim)
+        self.state_dim = state_dim
+        self.response_dim = response_dim
+        self.input_dim = input_dim
+        self.input_projection = nn.Linear(input_dim, hidden_dim)
         self.layers = nn.ModuleList(
             [GraphMessageLayer(hidden_dim, dropout) for _ in range(num_layers)]
         )
@@ -100,13 +107,30 @@ class FieldTokenizer(nn.Module):
     def forward(self, features: FieldFeatures) -> TokenizerOutput:
         features.validate()
         if self.mode in {"state", "state_graph"}:
-            nodes = self.state_projection(features.state)
-        elif self.mode in {"response", "response_local"}:
-            nodes = self.response_projection(features.response)
-        else:
-            nodes = self.state_projection(features.state) + self.response_projection(
-                features.response
+            inputs = fixed_gaussian_sketch(
+                features.state,
+                self.input_dim,
+                seed=314159,
             )
+        elif self.mode in {"response", "response_local"}:
+            inputs = fixed_gaussian_sketch(
+                features.response,
+                self.input_dim,
+                seed=161803,
+            )
+        else:
+            state = fixed_gaussian_sketch(
+                features.state,
+                self.input_dim,
+                seed=314159,
+            )
+            response = fixed_gaussian_sketch(
+                features.response,
+                self.input_dim,
+                seed=161803,
+            )
+            inputs = (state + response) * 2**-0.5
+        nodes = self.input_projection(inputs)
         position = sinusoidal_2d_position(
             features.grid_size, nodes.shape[-1], nodes.device, nodes.dtype
         )

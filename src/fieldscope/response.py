@@ -10,6 +10,7 @@ from fieldscope.config import ProbeConfig
 from fieldscope.contracts import FieldBackend, FieldFeatures
 from fieldscope.graph import (
     cosine_affinity,
+    fixed_gaussian_sketch,
     patch_pool,
     pooled_attention_affinity,
     sparsify_affinity,
@@ -148,9 +149,12 @@ class FieldResponseExtractor:
                 time_affinities.append(cosine_affinity(pooled_response))
                 if "dit_hidden" in auxiliary:
                     time_baselines.setdefault("dit_hidden", []).append(
-                        patch_pool(
-                            auxiliary["dit_hidden"],
-                            self.config.graph_grid,
+                        fixed_gaussian_sketch(
+                            patch_pool(
+                                auxiliary["dit_hidden"],
+                                self.config.graph_grid,
+                            ),
+                            self.config.hidden_baseline_dim,
                         )
                     )
                 if {

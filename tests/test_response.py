@@ -35,6 +35,7 @@ def test_extractor_produces_complete_feature_contract() -> None:
         "dit_attention",
         "dit_attention_adjacency",
     }
+    assert features.baselines["dit_hidden"].shape == (2, 16, 768)
     assert features.metadata["noise_views"] == 2
     features.validate()
 
