@@ -118,12 +118,17 @@ PY
           >&2
         exit 9
       fi
-      if [[ "$verdict" != "proceed" ]]; then
-        echo "formal validation not promoted: verdict=$verdict" >&2
+      if [[ "$verdict" == "incomplete" ]]; then
+        echo "signal gate is incomplete; refusing formal validation" >&2
         exit 10
       fi
+      if [[ "$verdict" != "proceed" && "$verdict" != "stop_or_redesign" ]]; then
+        echo "unexpected signal-gate verdict=$verdict" >&2
+        exit 11
+      fi
       signal_ready=true
-      echo "$(date --iso-8601=seconds) signal gate promoted formal validation"
+      echo \
+        "$(date --iso-8601=seconds) signal gate completed verdict=$verdict; continuing required full validation"
     fi
   fi
 

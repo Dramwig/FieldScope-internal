@@ -50,9 +50,13 @@ payload = json.load(open(sys.argv[1], encoding="utf-8"))
 print(payload.get("verdict", ""), payload.get("code_revision", ""))
 PY
 )
-if [[ "$verdict" != "proceed" ]]; then
-  echo "full validation is not promoted: verdict=$verdict" >&2
+if [[ "$verdict" == "incomplete" ]]; then
+  echo "signal gate is incomplete; refusing full validation" >&2
   exit 6
+fi
+if [[ "$verdict" != "proceed" && "$verdict" != "stop_or_redesign" ]]; then
+  echo "unexpected signal-gate verdict=$verdict" >&2
+  exit 8
 fi
 if [[ "$decision_revision" != "$FIELDSCOPE_EXPECTED_REVISION" ]]; then
   echo \
@@ -60,6 +64,8 @@ if [[ "$decision_revision" != "$FIELDSCOPE_EXPECTED_REVISION" ]]; then
     >&2
   exit 7
 fi
+echo \
+  "$(date --iso-8601=seconds) signal gate recorded verdict=$verdict; running required full validation"
 
 declare -A dataset_roots=(
   [cifar10]="$FIELDSCOPE_DATASETS_ROOT/prepared/cifar10"

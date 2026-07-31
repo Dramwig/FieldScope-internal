@@ -13,7 +13,7 @@ from torch.utils.data import Dataset, Sampler
 
 from fieldscope.cache import load_features
 from fieldscope.contracts import FieldFeatures
-from fieldscope.feature_ops import slice_features, stack_features
+from fieldscope.feature_ops import select_representation, slice_features, stack_features
 
 _SHARED_PAYLOADS: OrderedDict[
     Path,
@@ -120,28 +120,21 @@ class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
             raise ValueError("Response shuffling requires at least two samples")
         self.shard_ranges = self.dataset.shard_ranges
         generator = torch.Generator().manual_seed(seed)
-        self.donor_for_index = torch.empty(len(self.dataset), dtype=torch.long)
-        if len(self.shard_ranges) == 1:
-            order = torch.randperm(len(self.dataset), generator=generator)
-            self.donor_for_index[order] = order.roll(1)
-        else:
-            shard_order = torch.randperm(len(self.shard_ranges), generator=generator)
-            donor_for_shard = torch.empty_like(shard_order)
-            donor_for_shard[shard_order] = shard_order.roll(1)
-            for shard_index, (start, stop) in enumerate(self.shard_ranges):
-                donor_start, donor_stop = self.shard_ranges[
-                    int(donor_for_shard[shard_index].item())
-                ]
-                donor_count = donor_stop - donor_start
-                rotation = int(
-                    torch.randint(donor_count, (1,), generator=generator).item()
-                )
-                local = torch.arange(stop - start)
-                self.donor_for_index[start:stop] = (
-                    donor_start + (local + rotation) % donor_count
-                )
+        donor_offset = int(
+            torch.randint(1, len(self.dataset), (1,), generator=generator).item()
+        )
+        self.donor_for_index = (
+            torch.arange(len(self.dataset), dtype=torch.long) + donor_offset
+        ) % len(self.dataset)
+        if not torch.equal(
+            self.donor_for_index.sort().values,
+            torch.arange(len(self.dataset), dtype=torch.long),
+        ):
+            raise AssertionError("Response shuffle is not a one-to-one permutation")
         if torch.any(self.donor_for_index == torch.arange(len(self.dataset))):
             raise AssertionError("Response shuffle unexpectedly contains a fixed point")
+        self.shuffle_policy = "global_seeded_cyclic_derangement_v1"
+        self.donor_offset = donor_offset
 
     def __len__(self) -> int:
         return len(self.dataset)
@@ -163,6 +156,8 @@ class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
             metadata={
                 **receiver_features.metadata,
                 "response_donor_sample_id": donor["sample_id"],
+                "response_shuffle_policy": self.shuffle_policy,
+                "response_shuffle_offset": self.donor_offset,
             },
         )
         features.validate()
@@ -246,17 +241,34 @@ class ShardShuffleSampler(Sampler[int]):
             yield from (start + local_order).tolist()
 
 
-def collate_cached(samples: list[dict[str, Any]]) -> dict[str, Any]:
+def collate_cached(
+    samples: list[dict[str, Any]],
+    *,
+    representation: str | None = None,
+) -> dict[str, Any]:
     if not samples:
         raise ValueError("Cannot collate an empty batch")
     target_names = set(samples[0]["targets"])
     if any(set(sample["targets"]) != target_names for sample in samples):
         raise ValueError("Cached samples have inconsistent targets")
+    selected_features = [sample["features"] for sample in samples]
+    tokenizer_mode = None
+    if representation is not None:
+        selected = [
+            select_representation(features, representation)
+            for features in selected_features
+        ]
+        modes = {mode for _, mode in selected}
+        if len(modes) != 1:
+            raise ValueError("Cached samples selected inconsistent tokenizer modes")
+        selected_features = [features for features, _ in selected]
+        tokenizer_mode = modes.pop()
     return {
-        "features": stack_features([sample["features"] for sample in samples]),
+        "features": stack_features(selected_features),
         "targets": {
             name: torch.stack([sample["targets"][name] for sample in samples])
             for name in target_names
         },
         "sample_ids": [sample["sample_id"] for sample in samples],
+        "tokenizer_mode": tokenizer_mode,
     }

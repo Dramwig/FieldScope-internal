@@ -7,9 +7,13 @@ import pytest
 import torch
 from torch.utils.data import Dataset
 
+import fieldscope.experiments as experiments
+from fieldscope.cache import save_features
 from fieldscope.cached_dataset import CachedFeatureDataset
 from fieldscope.config import RunConfig
+from fieldscope.contracts import FieldFeatures
 from fieldscope.experiments import (
+    _task_loss_targets,
     diagnose_segmentation_cache,
     extract_dataset_cache,
     run_readout_matrix,
@@ -27,6 +31,158 @@ class _SmallDataset(Dataset[dict[str, Any]]):
             "classification": torch.tensor(index % 2),
             "sample_id": f"sample-{index}",
         }
+
+
+def test_dense_loss_targets_use_patch_grid_without_filling_invalid_depth() -> None:
+    segmentation = torch.tensor(
+        [[
+            [0, 0, 1, 1],
+            [0, 0, 1, 1],
+            [2, 2, 3, 3],
+            [2, 2, 3, 3],
+        ]]
+    )
+    segmentation_target = _task_loss_targets(
+        "segmentation",
+        {"segmentation": segmentation},
+        (2, 2),
+    )["segmentation"]
+    assert torch.equal(
+        segmentation_target,
+        torch.tensor([[[0, 1], [2, 3]]]),
+    )
+
+    depth = torch.tensor(
+        [[[[1.0, 0.0], [3.0, float("nan")]]]]
+    )
+    depth_target = _task_loss_targets(
+        "depth",
+        {"depth": depth},
+        (1, 1),
+    )["depth"]
+    assert depth_target.item() == pytest.approx(2.0)
+
+
+def _write_full_resolution_dense_cache(
+    tmp_path: Path,
+    task: str,
+) -> Path:
+    patches = 16 * 16
+    adjacency = torch.eye(patches).unsqueeze(0)
+    features = FieldFeatures(
+        state=torch.zeros(1, patches, 4),
+        response=torch.zeros(1, patches, 4),
+        affinity=adjacency,
+        adjacency=adjacency,
+        grid_size=(16, 16),
+    )
+    target = (
+        torch.ones(1, 512, 512, dtype=torch.long)
+        if task == "segmentation"
+        else torch.full((1, 1, 512, 512), 2.0)
+    )
+    cache_dir = tmp_path / f"dense-{task}-cache"
+    shard_path = cache_dir / "shard-000000.pt"
+    save_features(
+        shard_path,
+        features,
+        targets={task: target},
+        sample_ids=[f"{task}-sample"],
+        storage_policy="readout_sparse",
+    )
+    (cache_dir / "dataset_manifest.json").write_text(
+        json.dumps(
+            {
+                "format_version": 1,
+                "dataset": f"synthetic-{task}",
+                "split": "validation",
+                "num_samples": 1,
+                "complete": True,
+                "storage_policy": "readout_sparse",
+                "shards": [{"path": shard_path.name, "num_samples": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    return cache_dir
+
+
+@pytest.mark.parametrize("task", ["segmentation", "depth"])
+def test_dense_readout_trains_on_patch_grid_and_scores_full_resolution(
+    tmp_path: Path,
+    monkeypatch: Any,
+    task: str,
+) -> None:
+    cache_dir = _write_full_resolution_dense_cache(tmp_path, task)
+    mapping = _config(tmp_path).to_dict()
+    mapping["probe"]["graph_grid"] = [16, 16]
+    mapping["tokenizer"]["input_dim"] = 8
+    mapping["runtime"]["batch_size"] = 1
+    mapping["runtime"]["cache_shard_size"] = 1
+    config = RunConfig.from_mapping(mapping)
+
+    loss_shapes: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
+    metric_shapes: list[tuple[tuple[int, ...], tuple[int, ...]]] = []
+    original_loss = experiments.multitask_loss
+    original_update = experiments._update_meter
+
+    def tracked_loss(
+        predictions: dict[str, torch.Tensor],
+        targets: dict[str, torch.Tensor],
+        **kwargs: Any,
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        loss_shapes.append(
+            (tuple(predictions[task].shape), tuple(targets[task].shape))
+        )
+        return original_loss(predictions, targets, **kwargs)
+
+    def tracked_update(
+        meter: Any,
+        active_task: str,
+        predictions: dict[str, torch.Tensor],
+        targets: dict[str, torch.Tensor],
+    ) -> None:
+        metric_shapes.append(
+            (
+                tuple(predictions[active_task].shape),
+                tuple(targets[active_task].shape),
+            )
+        )
+        original_update(meter, active_task, predictions, targets)
+
+    monkeypatch.setattr(experiments, "multitask_loss", tracked_loss)
+    monkeypatch.setattr(experiments, "_update_meter", tracked_update)
+    report = train_cached_readout(
+        config,
+        train_cache_dir=cache_dir,
+        val_cache_dir=cache_dir,
+        output_dir=tmp_path / f"dense-{task}-readout",
+        task=task,
+        representation="state",
+        epochs=1,
+        learning_rate=1e-3,
+        weight_decay=1e-4,
+        seed=17,
+        batch_size=1,
+    )
+
+    output_channels = 2 if task == "segmentation" else 1
+    target_channels = () if task == "segmentation" else (1,)
+    assert loss_shapes
+    assert all(
+        prediction_shape == (1, output_channels, 16, 16)
+        and target_shape == (1, *target_channels, 16, 16)
+        for prediction_shape, target_shape in loss_shapes
+    )
+    expected_metric_shape = (
+        (1, 512, 512)
+        if task == "segmentation"
+        else (1, 1, 512, 512)
+    )
+    assert metric_shapes == [(expected_metric_shape, expected_metric_shape)]
+    validation = report["history"][0]["validation"]
+    assert validation["num_samples"] == 1
+    assert all(torch.isfinite(torch.tensor(list(validation["metrics"].values()))))
 
 
 def _config(tmp_path: Path) -> RunConfig:

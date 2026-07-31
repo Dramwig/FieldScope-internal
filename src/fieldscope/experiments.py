@@ -9,6 +9,7 @@ import random
 import subprocess
 import time
 from collections.abc import Mapping
+from functools import partial
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -501,8 +502,48 @@ def _task_output_size(
     grid_size: tuple[int, int],
 ) -> tuple[int, int]:
     if task in {"segmentation", "depth", "normals"}:
-        return tuple(targets[task].shape[-2:])
+        return grid_size
     return grid_size
+
+
+def _task_loss_targets(
+    task: str,
+    targets: Mapping[str, torch.Tensor],
+    output_size: tuple[int, int],
+) -> dict[str, torch.Tensor]:
+    target = targets[task]
+    if task == "segmentation" and tuple(target.shape[-2:]) != output_size:
+        target = torch.nn.functional.interpolate(
+            target[:, None].float(),
+            size=output_size,
+            mode="nearest",
+        ).squeeze(1).to(dtype=target.dtype)
+    elif task == "depth" and tuple(target.shape[-2:]) != output_size:
+        valid = torch.isfinite(target) & (target > 0)
+        values = torch.where(valid, target, torch.zeros_like(target))
+        pooled_values = torch.nn.functional.interpolate(
+            values,
+            size=output_size,
+            mode="area",
+        )
+        pooled_valid = torch.nn.functional.interpolate(
+            valid.to(dtype=target.dtype),
+            size=output_size,
+            mode="area",
+        )
+        target = torch.where(
+            pooled_valid > 0,
+            pooled_values / pooled_valid.clamp_min(1e-8),
+            torch.zeros_like(pooled_values),
+        )
+    elif task == "normals" and tuple(target.shape[-2:]) != output_size:
+        target = torch.nn.functional.interpolate(
+            target,
+            size=output_size,
+            mode="bilinear",
+            align_corners=False,
+        )
+    return {task: target}
 
 
 def _task_trainable_parameters(model: FieldScopeModel, task: str) -> int:
@@ -599,17 +640,14 @@ def evaluate_cached_readout(
         batch_size=batch_size or config.runtime.batch_size,
         shuffle=False,
         num_workers=0,
-        collate_fn=collate_cached,
+        collate_fn=partial(collate_cached, representation=representation),
     )
     meter = _make_meter(task, config)
     total_loss = 0.0
     total_samples = 0
     model.eval()
     for cached_batch in loader:
-        features, _ = select_representation(
-            cached_batch["features"].to(device, dtype=torch.float32),
-            representation,
-        )
+        features = cached_batch["features"].to(device, dtype=torch.float32)
         targets = {
             name: value.to(device) for name, value in cached_batch["targets"].items()
         }
@@ -620,11 +658,38 @@ def evaluate_cached_readout(
             output_size=_task_output_size(task, targets, features.grid_size),
             task=task,
         )
-        loss, _ = multitask_loss(predictions, {task: targets[task]})
+        loss_targets = _task_loss_targets(
+            task,
+            targets,
+            tuple(predictions[task].shape[-2:]),
+        )
+        loss, _ = multitask_loss(predictions, loss_targets)
         batch_size = features.state.shape[0]
         total_loss += float(loss.item()) * batch_size
         total_samples += batch_size
-        _update_meter(meter, task, predictions, targets)
+        metric_predictions = predictions
+        if task == "segmentation" and tuple(
+            predictions[task].shape[-2:]
+        ) != tuple(targets[task].shape[-2:]):
+            metric_predictions = {
+                task: torch.nn.functional.interpolate(
+                    predictions[task].argmax(dim=1, keepdim=True).float(),
+                    size=targets[task].shape[-2:],
+                    mode="nearest",
+                ).squeeze(1).long()
+            }
+        elif task in {"depth", "normals"} and tuple(
+            predictions[task].shape[-2:]
+        ) != tuple(targets[task].shape[-2:]):
+            metric_predictions = {
+                task: torch.nn.functional.interpolate(
+                    predictions[task],
+                    size=targets[task].shape[-2:],
+                    mode="bilinear",
+                    align_corners=False,
+                )
+            }
+        _update_meter(meter, task, metric_predictions, targets)
     return {
         "loss": total_loss / max(1, total_samples),
         "num_samples": total_samples,
@@ -755,16 +820,13 @@ def train_cached_readout(
             batch_size=readout_batch_size,
             sampler=ShardShuffleSampler(train_dataset, seed=seed + epoch),
             num_workers=0,
-            collate_fn=collate_cached,
+            collate_fn=partial(collate_cached, representation=representation),
         )
         model.train()
         total_loss = 0.0
         total_samples = 0
         for cached_batch in train_loader:
-            features, _ = select_representation(
-                cached_batch["features"].to(device, dtype=torch.float32),
-                representation,
-            )
+            features = cached_batch["features"].to(device, dtype=torch.float32)
             targets = {
                 name: tensor.to(device)
                 for name, tensor in cached_batch["targets"].items()
@@ -777,7 +839,12 @@ def train_cached_readout(
                 output_size=_task_output_size(task, targets, features.grid_size),
                 task=task,
             )
-            loss, _ = multitask_loss(predictions, {task: targets[task]})
+            loss_targets = _task_loss_targets(
+                task,
+                targets,
+                tuple(predictions[task].shape[-2:]),
+            )
+            loss, _ = multitask_loss(predictions, loss_targets)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
             optimizer.step()

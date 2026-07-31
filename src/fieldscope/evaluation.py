@@ -136,7 +136,11 @@ class SegmentationMeter:
         )
 
     def update(self, logits: torch.Tensor, targets: torch.Tensor) -> None:
-        predictions = logits.argmax(dim=1).detach().cpu()
+        predictions = (
+            logits.argmax(dim=1)
+            if logits.ndim == targets.ndim + 1
+            else logits
+        ).detach().cpu().long()
         targets = targets.detach().cpu().long()
         valid = (
             (targets != self.ignore_index)

@@ -161,14 +161,35 @@ def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
     assert torch.all(
         shuffled.donor_for_index != torch.arange(len(shuffled))
     )
+    assert torch.equal(
+        shuffled.donor_for_index.sort().values,
+        torch.arange(len(shuffled)),
+    )
     sample = shuffled[0]
     assert torch.equal(sample["features"].state, regular[0]["features"].state)
     assert (
         sample["features"].metadata["response_donor_sample_id"]
         != sample["sample_id"]
     )
+    assert sample["features"].metadata["response_shuffle_policy"] == (
+        "global_seeded_cyclic_derangement_v1"
+    )
+    assert 0 < sample["features"].metadata["response_shuffle_offset"] < len(shuffled)
     _, mode = select_representation(sample["features"], "full_shuffled")
     assert mode == "full"
+
+
+def test_representation_collation_drops_unused_cached_fields(tmp_path: Path) -> None:
+    cache_dir, _ = _write_cache(tmp_path)
+    dataset = CachedFeatureDataset(cache_dir)
+    batch = collate_cached(
+        [dataset[0], dataset[1]],
+        representation="z0",
+    )
+    assert batch["tokenizer_mode"] == "state"
+    assert batch["features"].state.shape[-1] == 4
+    assert batch["features"].baselines == {}
+    assert batch["features"].graphs == {}
 
 
 def test_shard_shuffle_sampler_is_deterministic_and_complete(tmp_path: Path) -> None:

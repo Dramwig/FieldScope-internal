@@ -37,6 +37,16 @@ def test_task_meters_report_perfect_predictions() -> None:
     )
     assert segmentation.compute() == {"mean_iou": 1.0, "pixel_accuracy": 1.0}
 
+    segmentation_labels = SegmentationMeter(num_classes=2)
+    segmentation_labels.update(
+        torch.tensor([[[0, 0], [1, 1]]]),
+        torch.tensor([[[0, 0], [1, 1]]]),
+    )
+    assert segmentation_labels.compute() == {
+        "mean_iou": 1.0,
+        "pixel_accuracy": 1.0,
+    }
+
     depth = DepthMeter()
     target = torch.tensor([[[[1.0, 2.0], [3.0, 4.0]]]])
     depth.update(target.clone(), target)

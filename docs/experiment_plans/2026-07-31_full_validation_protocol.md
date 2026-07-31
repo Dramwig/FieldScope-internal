@@ -104,6 +104,11 @@ epoch 数和选模规则：
 
 - train/validation/test 严格分离；test 不参与超参数选择；
 - 分类使用交叉熵，分割使用 ignore-index 255 的像素交叉熵，深度使用有效像素损失；
+- 密集 readout 在冻结的 16×16 patch 网格上训练，监督目标以配对的 nearest
+  （分割）、仅有效像素的 area average（深度）或 bilinear（法向）规则降采样；
+  正式 test 指标仍在 512×512 目标网格上计算，其中分割只上采样离散 argmax
+  标签，避免构造 512×512×150 的无意义 logits。该实现约束在任何新 signal
+  或正式结果产生前固定；
 - AdamW、cosine schedule、梯度裁剪 1.0；每任务的学习率、weight decay、
   epoch 和增强在首次主实验前冻结；
 - 仅根据 validation 主指标选择 checkpoint；每 seed 只在最终 test 评估一次；
@@ -134,7 +139,11 @@ epoch 数和选模规则：
      且至少 2/3 seed 同向；
    - 任一 cache 不完整、revision 不一致、随机性合约不匹配或指标非有限时，
      判为 `incomplete`；全部满足为 `proceed`，信号完整但任一阈值不满足为
-     `stop_or_redesign`。该门只决定是否投入全量算力，不作为论文有效性证据；
+     `stop_or_redesign`。最初该门用于节省全量算力；在用户明确要求必须完成全量
+     训练测试后，`stop_or_redesign` 改为必须保留的负向预诊断，不再停止四个正式
+     主任务。只有 `incomplete`（输入、revision、cache 或指标不完整）会阻止继续；
+     这一预注册变更发生在任何新 signal 或正式任务结果产生之前。该门不作为论文
+     有效性证据；
 4. **主任务门**：完整 ImageNet-100、VOC、ADE20K、NYUv2 三 seed；
 5. **扩展门**：前四门满足后执行 ImageNet-1k 与高成本消融；
 6. **结论门**：逐条核对本文件四项有效性条件，再更新论文。

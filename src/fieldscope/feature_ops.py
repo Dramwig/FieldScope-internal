@@ -65,6 +65,31 @@ def select_representation(
 ) -> tuple[FieldFeatures, str]:
     """Select a matched experiment representation and tokenizer mode."""
 
+    def compact(
+        *,
+        state: torch.Tensor,
+        response: torch.Tensor,
+        affinity: torch.Tensor,
+        adjacency: torch.Tensor,
+        mode: str,
+    ) -> tuple[FieldFeatures, str]:
+        selected = FieldFeatures(
+            state=state,
+            response=response,
+            affinity=affinity,
+            adjacency=adjacency,
+            grid_size=features.grid_size,
+            baselines={},
+            graphs={},
+            metadata={
+                **features.metadata,
+                "selected_representation": representation,
+                "tokenizer_mode": mode,
+            },
+        )
+        selected.validate()
+        return selected, mode
+
     if representation in {
         "full",
         "full_local",
@@ -76,13 +101,37 @@ def select_representation(
         "response_nograph",
         "state_graph",
     }:
-        return features, representation
+        return compact(
+            state=features.state,
+            response=features.response,
+            affinity=features.affinity,
+            adjacency=features.adjacency,
+            mode=representation,
+        )
     if representation == "random_feature_local":
-        return features, "state"
+        return compact(
+            state=features.state,
+            response=features.response,
+            affinity=features.affinity,
+            adjacency=features.adjacency,
+            mode="state",
+        )
     if representation == "response_shuffled":
-        return features, "response"
+        return compact(
+            state=features.state,
+            response=features.response,
+            affinity=features.affinity,
+            adjacency=features.adjacency,
+            mode="response",
+        )
     if representation == "full_shuffled":
-        return features, "full"
+        return compact(
+            state=features.state,
+            response=features.response,
+            affinity=features.affinity,
+            adjacency=features.adjacency,
+            mode="full",
+        )
     if representation in {"dit_hidden_local", "dit_hidden_attention"}:
         if "dit_hidden" not in features.baselines:
             raise ValueError("DiT hidden features are absent from this cache")
@@ -90,46 +139,32 @@ def select_representation(
         if use_attention and "dit_attention_adjacency" not in features.graphs:
             raise ValueError("DiT attention graph is absent from this cache")
         selected = features.baselines["dit_hidden"]
-        return (
-            FieldFeatures(
-                state=selected,
-                response=features.response,
-                affinity=(
-                    features.graphs.get(
-                        "dit_attention",
-                        features.graphs["dit_attention_adjacency"],
-                    )
-                    if use_attention
-                    else features.affinity
-                ),
-                adjacency=(
-                    features.graphs["dit_attention_adjacency"]
-                    if use_attention
-                    else features.adjacency
-                ),
-                grid_size=features.grid_size,
-                baselines=features.baselines,
-                graphs=features.graphs,
-                metadata={
-                    **features.metadata,
-                    "selected_representation": representation,
-                },
+        return compact(
+            state=selected,
+            response=features.response,
+            affinity=(
+                features.graphs.get(
+                    "dit_attention",
+                    features.graphs["dit_attention_adjacency"],
+                )
+                if use_attention
+                else features.affinity
             ),
-            "state_graph" if use_attention else "state",
+            adjacency=(
+                features.graphs["dit_attention_adjacency"]
+                if use_attention
+                else features.adjacency
+            ),
+            mode="state_graph" if use_attention else "state",
         )
     if representation not in features.baselines:
         available = ", ".join(sorted(features.baselines))
         raise ValueError(f"Unknown representation {representation!r}; baselines: {available}")
     selected = features.baselines[representation]
-    baseline_features = FieldFeatures(
+    return compact(
         state=selected,
         response=features.response,
         affinity=features.affinity,
         adjacency=features.adjacency,
-        grid_size=features.grid_size,
-        baselines=features.baselines,
-        graphs=features.graphs,
-        metadata={**features.metadata, "selected_representation": representation},
+        mode="state",
     )
-    baseline_features.validate()
-    return baseline_features, "state"

@@ -24,7 +24,8 @@ record is not evidence that the FieldScope method is effective.
   1,048,576 bytes/sample for NYUv2 float32 depth maps. This avoids treating the
   four-byte CIFAR classification target as representative of dense tasks.
 - `scripts/eval/run_full_validation_after_signal_gate.sh` requires a same-revision
-  signal verdict of `proceed`, all five metadata-only split audits, and a combined
+  complete signal verdict (`proceed` or `stop_or_redesign`), all five metadata-only
+  split audits, and a combined
   disk budget for formal sparse readout caches plus the full VOC dense diagnostic
   cache. Only when `fits=true` does it run the VOC unsupervised diagnostic and the
   complete three-seed readout matrices. It does not change registered thresholds,
@@ -39,7 +40,9 @@ record is not evidence that the FieldScope method is effective.
 - `scripts/eval/run_full_validation_when_ready.sh` is the persistent CPU-side
   orchestrator. It validates the live signal-gate PID and revision, waits for the
   transfer archive to reach the exact byte count in three consecutive checks,
-  runs the asset gate, and requires a same-revision `proceed` decision. The formal
+  runs the asset gate, and requires a same-revision complete signal decision. A
+  complete negative signal is retained as a diagnostic but no longer truncates the
+  explicitly required full four-task validation. The formal
   runbook then requires five consecutive GPU-free checks before extraction.
 - `fieldscope audit-full-evidence` is the formal conclusion gate. It rejects stale
   revisions, dirty worktrees, incomplete caches, non-finite metrics, unmatched
@@ -119,7 +122,8 @@ These gates only reduce data-leakage, identity-instability, and disk-exhaustion
 risks. They do not measure classification, boundary, segmentation, or depth
 quality. Formal training still requires all of the following:
 
-1. signal gate verdict `proceed`;
+1. complete signal gate verdict (`proceed` or `stop_or_redesign`); only
+   `incomplete` blocks formal execution;
 2. complete remote ImageNet-100 asset verification;
 3. split audits for all five datasets on the committed revision;
 4. combined sparse+dense cache budget with `fits=true`.
