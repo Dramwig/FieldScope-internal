@@ -1,6 +1,9 @@
+import json
 from pathlib import Path
 
-from fieldscope.cli import doctor, run_smoke
+import pytest
+
+from fieldscope.cli import doctor, main, run_smoke
 from fieldscope.config import RunConfig
 
 
@@ -40,3 +43,26 @@ def test_doctor_and_smoke(tmp_path: Path) -> None:
     assert report["cache_reload_equal"] is True
     assert Path(report["cache"]).is_file()
 
+
+def test_dataset_audit_cli_returns_nonzero_on_failed_audit(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.cli.audit_dataset_splits",
+        lambda **_kwargs: {"status": "failed", "problems": ["overlap"]},
+    )
+    output = tmp_path / "audit.json"
+    exit_code = main(
+        [
+            "audit-dataset-splits",
+            "--dataset",
+            "cifar10",
+            "--root",
+            str(tmp_path),
+            "--output",
+            str(output),
+        ]
+    )
+    assert exit_code == 2
+    assert json.loads(output.read_text(encoding="utf-8"))["status"] == "failed"

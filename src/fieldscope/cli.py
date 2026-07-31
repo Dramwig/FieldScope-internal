@@ -22,6 +22,7 @@ from torch.utils.data import DataLoader
 from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
 from fieldscope.config import RunConfig, load_config
+from fieldscope.dataset_audit import audit_dataset_splits
 from fieldscope.datasets import SyntheticShapesDataset
 from fieldscope.diagnostics import graph_diagnostics
 from fieldscope.experiments import (
@@ -36,6 +37,7 @@ from fieldscope.experiments import (
 from fieldscope.gates import audit_signal_gate
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
+from fieldscope.resource_planning import plan_cache_budget
 from fieldscope.response import FieldResponseExtractor
 from fieldscope.statistics import summarize_run_reports
 
@@ -454,6 +456,56 @@ def _build_parser() -> argparse.ArgumentParser:
     gate_parser.add_argument("--cifar-matrix", required=True, type=Path)
     gate_parser.add_argument("--output", required=True, type=Path)
 
+    budget_parser = subparsers.add_parser(
+        "plan-cache-budget",
+        help="Project a full cache from a measured sparse cache before extraction",
+    )
+    budget_parser.add_argument("--measurement-cache", required=True, type=Path)
+    budget_parser.add_argument(
+        "--target-split",
+        required=True,
+        action="append",
+        help="Split count as NAME=COUNT",
+    )
+    budget_parser.add_argument("--filesystem-path", required=True, type=Path)
+    budget_parser.add_argument(
+        "--storage-policy",
+        choices=["dense", "readout_sparse"],
+        default="readout_sparse",
+    )
+    budget_parser.add_argument("--additional-required-bytes", type=int, default=0)
+    budget_parser.add_argument(
+        "--reserve-gib", type=float, default=10.0
+    )
+    budget_parser.add_argument(
+        "--safety-factor", type=float, default=1.15
+    )
+    budget_parser.add_argument("--output", required=True, type=Path)
+
+    split_audit_parser = subparsers.add_parser(
+        "audit-dataset-splits",
+        help="Verify benchmark train/val/test source IDs are unique and disjoint",
+    )
+    split_audit_parser.add_argument(
+        "--dataset",
+        required=True,
+        choices=["cifar10", "voc2012", "imagenet100", "ade20k", "nyuv2"],
+    )
+    split_audit_parser.add_argument("--root", required=True, type=Path)
+    split_audit_parser.add_argument("--image-size", type=int, default=256)
+    split_audit_parser.add_argument(
+        "--expected-split",
+        action="append",
+        default=[],
+        help="Expected split count as NAME=COUNT",
+    )
+    split_audit_parser.add_argument(
+        "--classes-file",
+        type=Path,
+        help="One ImageNet synset per line; order defines contiguous labels",
+    )
+    split_audit_parser.add_argument("--output", required=True, type=Path)
+
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
     return parser
@@ -461,6 +513,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
 def main(argv: list[str] | None = None) -> int:
     args = _build_parser().parse_args(argv)
+    exit_code = 0
     if args.command == "doctor":
         report = doctor(load_config(args.config))
         if args.output:
@@ -589,12 +642,57 @@ def main(argv: list[str] | None = None) -> int:
             cifar_matrix_path=args.cifar_matrix,
         )
         _json_dump(args.output, report)
+    elif args.command == "plan-cache-budget":
+        target_samples: dict[str, int] = {}
+        for specification in args.target_split:
+            name, separator, count = specification.partition("=")
+            if not separator or not name or not count:
+                raise ValueError("--target-split must use NAME=COUNT")
+            if name in target_samples:
+                raise ValueError(f"Duplicate target split: {name}")
+            target_samples[name] = int(count)
+        report = plan_cache_budget(
+            measurement_cache=args.measurement_cache,
+            target_samples=target_samples,
+            filesystem_path=args.filesystem_path,
+            reserve_bytes=int(args.reserve_gib * 1024**3),
+            safety_factor=args.safety_factor,
+            required_storage_policy=args.storage_policy,
+            additional_required_bytes=args.additional_required_bytes,
+        )
+        _json_dump(args.output, report)
+    elif args.command == "audit-dataset-splits":
+        class_names = None
+        if args.classes_file:
+            class_names = [
+                line.strip()
+                for line in args.classes_file.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+        expected_counts: dict[str, int] = {}
+        for specification in args.expected_split:
+            name, separator, count = specification.partition("=")
+            if not separator or not name or not count:
+                raise ValueError("--expected-split must use NAME=COUNT")
+            if name in expected_counts:
+                raise ValueError(f"Duplicate expected split: {name}")
+            expected_counts[name] = int(count)
+        report = audit_dataset_splits(
+            dataset_name=args.dataset,
+            dataset_root=args.root,
+            image_size=args.image_size,
+            class_names=class_names,
+            expected_counts=expected_counts,
+        )
+        _json_dump(args.output, report)
+        if report["status"] != "passed":
+            exit_code = 2
     elif args.command == "inspect-cache":
         _, _, report = load_features(args.cache)
     else:
         raise AssertionError(args.command)
     print(json.dumps(report, indent=2, ensure_ascii=False, default=str))
-    return 0
+    return exit_code
 
 
 if __name__ == "__main__":

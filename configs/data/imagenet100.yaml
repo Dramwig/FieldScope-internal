@@ -17,4 +17,12 @@ internal_split_counts:
   validation: 12940
   test: 5000
 image_manifest_sha256: 26e5f44f25b3d8283265064d11d92e91db560aff9799d035916252fdbb8e57a1
-final_asset_status: local_verified_pending_remote_transfer_and_source_archive_hashes
+source_sha256:
+  train_tar: b08200a27a8e34218a0e58fde36b0fe8f73bc377f4acea2d91602057c3ca45bb
+  validation_tar: c7e06a6c0baccf06d8dbeb6577d71efff84673a5dbdd50633ab44f8ea0456ae0
+  devkit: b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953
+transfer_archive:
+  bytes: 17319391232
+  members: 134600
+  sha256: c5b57e1f6b6994d709ba5842952e7c669d0dd9b6d5ab2390e603e5fc2ffb0e6d
+final_asset_status: local_verified_pending_remote_transfer_and_verification

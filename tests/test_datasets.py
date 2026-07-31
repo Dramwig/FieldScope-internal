@@ -4,12 +4,14 @@ from pathlib import Path
 import numpy as np
 import torch
 from PIL import Image
+from torch.utils.data import Dataset
 
 from fieldscope.datasets import (
     ADE20KDirectoryDataset,
     NYUv2DirectoryDataset,
     SyntheticShapesDataset,
     build_vision_dataset,
+    dataset_sample_ids,
     fraction_holdout_indices,
     stratified_fraction_holdout_indices,
     stratified_holdout_indices,
@@ -149,3 +151,38 @@ def test_ade20k_directory_dataset_remaps_labels(tmp_path: Path) -> None:
     sample = ADE20KDirectoryDataset(tmp_path, "train", image_size=2)[0]
     assert sample["sample_id"] == "ADE_train_00000001"
     assert sample["segmentation"].tolist() == [[255, 0], [1, 149]]
+
+
+class _MetadataOnlyDataset(Dataset[tuple[torch.Tensor, int]]):
+    def __init__(self, length: int) -> None:
+        self.length = length
+
+    def __len__(self) -> int:
+        return self.length
+
+    def __getitem__(self, index: int) -> tuple[torch.Tensor, int]:
+        raise AssertionError(f"sample {index} must not be decoded while reading IDs")
+
+
+def test_dataset_sample_ids_do_not_decode_underlying_samples() -> None:
+    from fieldscope.datasets import IndexedTaskDataset, TaskDataset
+
+    source = _MetadataOnlyDataset(5)
+    indexed = IndexedTaskDataset(
+        source,
+        [4, 1],
+        "classification",
+        "source-train",
+    )
+    wrapped = TaskDataset(source, "classification", "source-test")
+    assert dataset_sample_ids(indexed) == [
+        "source-train-00000004",
+        "source-train-00000001",
+    ]
+    assert dataset_sample_ids(wrapped) == [
+        "source-test-00000000",
+        "source-test-00000001",
+        "source-test-00000002",
+        "source-test-00000003",
+        "source-test-00000004",
+    ]

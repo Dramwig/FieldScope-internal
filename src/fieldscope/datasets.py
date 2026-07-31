@@ -11,6 +11,24 @@ from PIL import Image
 from torch.utils.data import Dataset, Subset
 
 
+def _path_sample_id(sample_prefix: str, path: str | Path) -> str:
+    source = Path(path)
+    source_name = (Path(source.parent.name) / source.name).as_posix()
+    return f"{sample_prefix}-{source_name}"
+
+
+def _dataset_source_sample_id(dataset: Dataset[Any], index: int, sample_prefix: str) -> str:
+    images = getattr(dataset, "images", None)
+    if images is not None:
+        return _path_sample_id(sample_prefix, images[index])
+    samples = getattr(dataset, "samples", None)
+    if samples is not None:
+        source = samples[index][0]
+        if isinstance(source, (str, Path)):
+            return _path_sample_id(sample_prefix, source)
+    return f"{sample_prefix}-{index:08d}"
+
+
 class SyntheticShapesDataset(Dataset[dict[str, torch.Tensor]]):
     """Deterministic classification + segmentation + depth + normal targets."""
 
@@ -125,7 +143,11 @@ class TaskDataset(Dataset[dict[str, Any]]):
         return {
             "image": image,
             self.task: target,
-            "sample_id": f"{self.sample_prefix}-{index:08d}",
+            "sample_id": _dataset_source_sample_id(
+                self.dataset,
+                index,
+                self.sample_prefix,
+            ),
         }
 
 
@@ -153,7 +175,11 @@ class IndexedTaskDataset(Dataset[dict[str, Any]]):
         return {
             "image": image,
             self.task: target,
-            "sample_id": f"{self.sample_prefix}-{source_index:08d}",
+            "sample_id": _dataset_source_sample_id(
+                self.dataset,
+                source_index,
+                self.sample_prefix,
+            ),
         }
 
 
@@ -261,7 +287,7 @@ class ClassSubsetDataset(Dataset[dict[str, Any]]):
         return {
             "image": image,
             "classification": torch.tensor(target, dtype=torch.long),
-            "sample_id": f"{self.sample_prefix}-{index:08d}",
+            "sample_id": _path_sample_id(self.sample_prefix, path),
         }
 
 
@@ -405,7 +431,7 @@ def build_vision_dataset(
                     download=False,
                 ),
                 "classification",
-                "cifar10-test",
+                "cifar10-official-test",
             )
         if split not in {"train", "val"}:
             raise ValueError("CIFAR-10 split must be train, val, or test")
@@ -425,7 +451,7 @@ def build_vision_dataset(
             dataset,
             indices,
             "classification",
-            f"cifar10-{split}",
+            "cifar10-official-train",
         )
     if name == "voc2012":
         if split not in {"train", "val", "test"}:
@@ -515,3 +541,41 @@ def build_vision_dataset(
             )
         return field_dataset
     raise ValueError(f"Unsupported dataset: {name}")
+
+
+def dataset_sample_ids(dataset: Dataset[Any]) -> list[str]:
+    """Return source-stable sample IDs without decoding images or targets."""
+
+    if isinstance(dataset, Subset):
+        source_ids = dataset_sample_ids(dataset.dataset)
+        return [source_ids[int(index)] for index in dataset.indices]
+    if isinstance(dataset, SyntheticShapesDataset):
+        return [f"synthetic-{index:06d}" for index in range(len(dataset))]
+    if isinstance(dataset, IndexedTaskDataset):
+        return [
+            _dataset_source_sample_id(
+                dataset.dataset,
+                source_index,
+                dataset.sample_prefix,
+            )
+            for source_index in dataset.indices
+        ]
+    if isinstance(dataset, TaskDataset):
+        return [
+            _dataset_source_sample_id(
+                dataset.dataset,
+                index,
+                dataset.sample_prefix,
+            )
+            for index in range(len(dataset))
+        ]
+    if isinstance(dataset, ClassSubsetDataset):
+        return [
+            _path_sample_id(dataset.sample_prefix, path)
+            for path, _ in dataset.samples
+        ]
+    if isinstance(dataset, NYUv2DirectoryDataset):
+        return [str(sample["id"]) for sample in dataset.samples]
+    if isinstance(dataset, ADE20KDirectoryDataset):
+        return [image_path.stem for image_path, _ in dataset.samples]
+    raise TypeError(f"Cannot derive source-stable IDs for {type(dataset).__name__}")
