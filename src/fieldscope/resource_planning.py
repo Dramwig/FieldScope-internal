@@ -61,6 +61,7 @@ def plan_cache_budget(
     safety_factor: float = 1.15,
     required_storage_policy: str = "readout_sparse",
     additional_required_bytes: int = 0,
+    additional_bytes_per_sample: Mapping[str, int] | None = None,
 ) -> dict[str, Any]:
     """Project a full readout cache and decide whether extraction may start."""
 
@@ -68,12 +69,25 @@ def plan_cache_budget(
         raise ValueError("reserve_bytes and safety_factor are invalid")
     if not target_samples or any(value < 1 for value in target_samples.values()):
         raise ValueError("target_samples must contain positive split counts")
+    per_sample_overhead = dict(additional_bytes_per_sample or {})
+    unknown_splits = sorted(set(per_sample_overhead) - set(target_samples))
+    if unknown_splits or any(value < 0 for value in per_sample_overhead.values()):
+        raise ValueError(
+            "additional_bytes_per_sample must contain non-negative values "
+            "for target splits"
+        )
     measured = measured_bytes_per_sample(
         measurement_cache,
         required_storage_policy=required_storage_policy,
     )
     projected = {
-        split: int(round(count * measured * safety_factor))
+        split: int(
+            round(
+                count
+                * (measured + per_sample_overhead.get(split, 0))
+                * safety_factor
+            )
+        )
         for split, count in target_samples.items()
     }
     projected_total = sum(projected.values())
@@ -87,6 +101,7 @@ def plan_cache_budget(
         "required_storage_policy": required_storage_policy,
         "safety_factor": safety_factor,
         "target_samples": dict(target_samples),
+        "additional_bytes_per_sample": per_sample_overhead,
         "projected_split_bytes": projected,
         "projected_total_bytes": projected_total,
         "reserve_bytes": reserve_bytes,

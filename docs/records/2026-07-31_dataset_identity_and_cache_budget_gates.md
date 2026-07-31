@@ -19,6 +19,10 @@ record is not evidence that the FieldScope method is effective.
   plus SHA-256 when present, before measuring bytes/sample. The default policy
   applies a 1.15 safety factor and reserves 10 GiB. Insufficient space returns
   `resource_blocked` without reducing formal sample counts.
+- The formal sparse-cache budget explicitly adds dense target payloads before the
+  safety factor: 262,144 bytes/sample for VOC and ADE20K uint8 masks, and
+  1,048,576 bytes/sample for NYUv2 float32 depth maps. This avoids treating the
+  four-byte CIFAR classification target as representative of dense tasks.
 - `scripts/eval/run_full_validation_after_signal_gate.sh` requires a same-revision
   signal verdict of `proceed`, all five metadata-only split audits, and a combined
   disk budget for formal sparse readout caches plus the full VOC dense diagnostic
@@ -32,11 +36,17 @@ record is not evidence that the FieldScope method is effective.
   `outputs/asset_verification/` so the committed-revision worktree remains clean;
   verified facts are copied into a tracked record afterward. The script is not
   invoked while upload is incomplete.
+- `scripts/eval/run_full_validation_when_ready.sh` is the persistent CPU-side
+  orchestrator. It validates the live signal-gate PID and revision, waits for the
+  transfer archive to reach the exact byte count in three consecutive checks,
+  runs the asset gate, and requires a same-revision `proceed` decision. The formal
+  runbook then requires five consecutive GPU-free checks before extraction.
 
 ## Local validation facts
 
 - `ruff check src tests scripts`: passed.
-- `python -m pytest`: 61 tests passed after the runbook and exact-count gates.
+- `python -m pytest`: 63 tests passed after the runbook, exact-count gates, and
+  dense-target budget correction.
 - Bash syntax checks passed for the signal gate, dataset extraction helper, and
   formal full-validation runbook.
 - Toy end-to-end smoke: passed, including exact cache reload.
@@ -54,6 +64,13 @@ record is not evidence that the FieldScope method is effective.
 The ImageNet audit above ran from an uncommitted code tree and therefore reported
 `code_dirty=true`. It validates the local implementation only. The audit must be
 rerun on the committed revision after the remote asset is fully verified.
+
+On remote revision `02867e3b6453817cb956ecc7c70254ba9b88221f`, with
+`code_dirty=false`, exact-count metadata audits passed for all currently deployed
+datasets: CIFAR-10 `45000/5000/10000`, VOC 2012 `1318/146/1449`, ADE20K
+`18189/2021/2000`, and NYUv2 `715/80/654`. Every audited split had zero duplicate
+IDs and every pairwise train/val/test overlap was zero. The final runbook reruns
+these audits after any code revision change; this fact does not waive that gate.
 
 ## ImageNet-100 sources and transfer
 

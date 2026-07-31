@@ -123,3 +123,45 @@ def test_cache_budget_includes_other_planned_cache_bytes(
     )
     assert report["required_bytes"] == 105_000
     assert report["fits"] is False
+
+
+def test_cache_budget_adds_split_specific_target_payload_before_margin(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache = _measurement_cache(tmp_path)
+    monkeypatch.setattr(
+        "fieldscope.resource_planning.shutil.disk_usage",
+        lambda _path: type("Usage", (), {"free": 1_000_000})(),
+    )
+    report = plan_cache_budget(
+        measurement_cache=cache,
+        target_samples={"classification": 10, "segmentation": 5},
+        filesystem_path=tmp_path,
+        reserve_bytes=0,
+        safety_factor=1.2,
+        additional_bytes_per_sample={"segmentation": 256},
+    )
+    assert report["projected_split_bytes"] == {
+        "classification": 12_000,
+        "segmentation": 7_536,
+    }
+    assert report["additional_bytes_per_sample"] == {"segmentation": 256}
+
+
+def test_cache_budget_rejects_unknown_or_negative_split_overhead(tmp_path: Path) -> None:
+    cache = _measurement_cache(tmp_path)
+    with pytest.raises(ValueError, match="additional_bytes_per_sample"):
+        plan_cache_budget(
+            measurement_cache=cache,
+            target_samples={"train": 10},
+            filesystem_path=tmp_path,
+            additional_bytes_per_sample={"unknown": 1},
+        )
+    with pytest.raises(ValueError, match="additional_bytes_per_sample"):
+        plan_cache_budget(
+            measurement_cache=cache,
+            target_samples={"train": 10},
+            filesystem_path=tmp_path,
+            additional_bytes_per_sample={"train": -1},
+        )

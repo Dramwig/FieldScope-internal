@@ -89,6 +89,7 @@ for dataset in cifar10 voc2012 imagenet100 ade20k nyuv2; do
 done
 
 target_split_arguments=()
+target_payload_arguments=()
 for dataset in cifar10 voc2012 imagenet100 ade20k nyuv2; do
   while IFS= read -r target; do
     target_split_arguments+=(--target-split "$target")
@@ -105,10 +106,18 @@ for split in payload["split_order"]:
 PY
   )
 done
+for split in train val test; do
+  target_payload_arguments+=(
+    --split-extra-bytes-per-sample "voc2012_${split}=262144"
+    --split-extra-bytes-per-sample "ade20k_${split}=262144"
+    --split-extra-bytes-per-sample "nyuv2_${split}=1048576"
+  )
+done
 
 "$python_bin" -m fieldscope.cli plan-cache-budget \
   --measurement-cache "$signal_cache_root/cifar10_train" \
   "${target_split_arguments[@]}" \
+  "${target_payload_arguments[@]}" \
   --filesystem-path "$cache_root" \
   --storage-policy readout_sparse \
   --reserve-gib 10 \
@@ -156,6 +165,19 @@ if [[ "$fits" != "true" ]]; then
     >&2
   exit 8
 fi
+
+free_checks=0
+while (( free_checks < 5 )); do
+  if nvidia-smi --query-compute-apps=pid --format=csv,noheader,nounits |
+    grep -Eq '^[[:space:]]*[0-9]+'; then
+    free_checks=0
+    echo "$(date --iso-8601=seconds) full validation waiting for free GPU"
+  else
+    free_checks=$((free_checks + 1))
+    echo "$(date --iso-8601=seconds) full validation GPU free check $free_checks/5"
+  fi
+  sleep 60
+done
 
 verify_revision
 export FIELDSCOPE_CONFIG="configs/model/auraflow_v03.yaml"

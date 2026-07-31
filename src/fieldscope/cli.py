@@ -475,6 +475,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     budget_parser.add_argument("--additional-required-bytes", type=int, default=0)
     budget_parser.add_argument(
+        "--split-extra-bytes-per-sample",
+        action="append",
+        default=[],
+        help="Extra target payload as SPLIT=BYTES_PER_SAMPLE",
+    )
+    budget_parser.add_argument(
         "--reserve-gib", type=float, default=10.0
     )
     budget_parser.add_argument(
@@ -651,6 +657,16 @@ def main(argv: list[str] | None = None) -> int:
             if name in target_samples:
                 raise ValueError(f"Duplicate target split: {name}")
             target_samples[name] = int(count)
+        additional_bytes_per_sample: dict[str, int] = {}
+        for specification in args.split_extra_bytes_per_sample:
+            name, separator, value = specification.partition("=")
+            if not separator or not name or not value:
+                raise ValueError(
+                    "--split-extra-bytes-per-sample must use SPLIT=BYTES_PER_SAMPLE"
+                )
+            if name in additional_bytes_per_sample:
+                raise ValueError(f"Duplicate split extra bytes: {name}")
+            additional_bytes_per_sample[name] = int(value)
         report = plan_cache_budget(
             measurement_cache=args.measurement_cache,
             target_samples=target_samples,
@@ -659,6 +675,7 @@ def main(argv: list[str] | None = None) -> int:
             safety_factor=args.safety_factor,
             required_storage_policy=args.storage_policy,
             additional_required_bytes=args.additional_required_bytes,
+            additional_bytes_per_sample=additional_bytes_per_sample,
         )
         _json_dump(args.output, report)
     elif args.command == "audit-dataset-splits":
