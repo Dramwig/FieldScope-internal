@@ -4,6 +4,7 @@ weight_decay: 0.0001
 scheduler: cosine
 gradient_clip_norm: 1.0
 checkpoint_selection: validation_primary_metric
+augmentation: none_fixed_single_view_cache
 seeds: [4121, 7319, 104729]
 representations:
   - z0

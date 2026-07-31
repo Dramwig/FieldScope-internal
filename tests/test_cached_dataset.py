@@ -125,6 +125,8 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
     )
     assert report["status"] == "passed"
     assert Path(report["checkpoint"]).is_file()
+    assert report["history"][0]["train_samples_per_second"] > 0
+    assert report["runtime"]["elapsed_seconds"] > 0
     resumed = train_cache(
         config,
         cache_dir=cache_dir,

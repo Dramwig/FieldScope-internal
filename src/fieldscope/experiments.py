@@ -442,7 +442,7 @@ def _update_meter(
         meter.extend(torch.rad2deg(torch.acos(cosine)).detach().cpu().flatten().tolist())
 
 
-def _compute_meter(meter: Any, task: str) -> dict[str, float]:
+def _compute_meter(meter: Any, task: str) -> dict[str, Any]:
     if task in {"classification", "segmentation", "depth"}:
         return meter.compute()
     values = torch.tensor(meter, dtype=torch.float32)
@@ -535,6 +535,7 @@ def train_cached_readout(
 ) -> dict[str, Any]:
     if epochs < 1:
         raise ValueError("epochs must be positive")
+    run_started = time.perf_counter()
     provenance = code_provenance()
     set_experiment_seed(seed, config.runtime.deterministic)
     train_dataset = _cached_dataset(
@@ -558,6 +559,8 @@ def train_cached_readout(
         config.tokenizer,
         mode=mode,
     ).to(device)
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
     optimizer = torch.optim.AdamW(
         model.parameters(), lr=learning_rate, weight_decay=weight_decay
     )
@@ -590,6 +593,7 @@ def train_cached_readout(
     last_path = output_dir / f"{task}_{representation}_seed{seed}_last.pt"
     report: dict[str, Any] | None = None
     for epoch in range(start_epoch, epochs):
+        epoch_started = time.perf_counter()
         train_loader = DataLoader(
             train_dataset,
             batch_size=readout_batch_size,
@@ -623,7 +627,9 @@ def train_cached_readout(
             batch_size = features.state.shape[0]
             total_loss += float(loss.detach().item()) * batch_size
             total_samples += batch_size
+        train_seconds = time.perf_counter() - epoch_started
         scheduler.step()
+        validation_started = time.perf_counter()
         validation = evaluate_cached_readout(
             model,
             config,
@@ -634,10 +640,14 @@ def train_cached_readout(
             batch_size=readout_batch_size,
             shuffle_seed=seed,
         )
+        validation_seconds = time.perf_counter() - validation_started
         entry = {
             "epoch": epoch + 1,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "train_loss": total_loss / max(1, total_samples),
+            "train_seconds": train_seconds,
+            "train_samples_per_second": total_samples / max(train_seconds, 1e-12),
+            "validation_seconds": validation_seconds,
             "validation": validation,
         }
         history.append(entry)
@@ -684,6 +694,19 @@ def train_cached_readout(
             ),
             "batch_size": readout_batch_size,
             "readout_memory_cache": shared_memory_cache_stats(),
+            "runtime": {
+                "elapsed_seconds": time.perf_counter() - run_started,
+                "cuda_peak_allocated_bytes": (
+                    torch.cuda.max_memory_allocated(device)
+                    if device.type == "cuda"
+                    else None
+                ),
+                "cuda_peak_reserved_bytes": (
+                    torch.cuda.max_memory_reserved(device)
+                    if device.type == "cuda"
+                    else None
+                ),
+            },
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
@@ -722,6 +745,19 @@ def train_cached_readout(
             ),
             "batch_size": readout_batch_size,
             "readout_memory_cache": shared_memory_cache_stats(),
+            "runtime": {
+                "elapsed_seconds": time.perf_counter() - run_started,
+                "cuda_peak_allocated_bytes": (
+                    torch.cuda.max_memory_allocated(device)
+                    if device.type == "cuda"
+                    else None
+                ),
+                "cuda_peak_reserved_bytes": (
+                    torch.cuda.max_memory_reserved(device)
+                    if device.type == "cuda"
+                    else None
+                ),
+            },
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
