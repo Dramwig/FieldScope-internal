@@ -23,7 +23,10 @@ def test_feature_cache_round_trip(tmp_path: Path) -> None:
     manifest = save_features(
         path,
         features,
-        targets={"classification": torch.tensor([1])},
+        targets={
+            "classification": torch.tensor([1]),
+            "segmentation": torch.tensor([[[0, 1], [2, 255]]]),
+        },
         sample_ids=["sample"],
     )
     restored, targets, restored_manifest = load_features(path)
@@ -34,3 +37,8 @@ def test_feature_cache_round_trip(tmp_path: Path) -> None:
     )
     assert targets["classification"].item() == 1
     assert restored_manifest["fingerprint"] == manifest["fingerprint"]
+    assert restored_manifest["format_version"] == 3
+    raw = torch.load(path, weights_only=False)
+    assert "adjacency" not in raw["features"]
+    assert raw["targets"]["classification"].dtype == torch.int32
+    assert raw["targets"]["segmentation"].dtype == torch.uint8

@@ -16,7 +16,7 @@ from fieldscope.graph import (
     sparsify_affinity,
 )
 from fieldscope.path import endpoint_estimate, rectified_state, rectified_tangent
-from fieldscope.probes import generate_structured_probes
+from fieldscope.probes import generate_probes
 
 
 class FieldResponseExtractor:
@@ -43,7 +43,12 @@ class FieldResponseExtractor:
         seed: int,
     ) -> torch.Tensor:
         batch, channels, height, width = state.shape
-        directions = generate_structured_probes(state, self.config.num_directions, seed)
+        directions = generate_probes(
+            state,
+            self.config.num_directions,
+            seed,
+            self.config.probe_type,
+        )
         latent_scale = state.float().flatten(1).std(dim=1).clamp_min(1e-3)
         scale = (self.config.eta * latent_scale).to(state.dtype).reshape(batch, 1, 1, 1, 1)
         plus = state[:, None] + scale * directions

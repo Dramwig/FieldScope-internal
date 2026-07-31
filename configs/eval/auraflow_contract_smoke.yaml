@@ -13,6 +13,7 @@ backend:
 probe:
   times: [0.5]
   num_directions: 1
+  probe_type: structured
   eta: 0.03
   difference: forward
   graph_grid: [4, 4]

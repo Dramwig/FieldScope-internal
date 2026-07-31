@@ -55,6 +55,53 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
         }
 
 
+class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
+    """Replace response signatures/graphs with a deterministic donor sample."""
+
+    def __init__(self, cache_dir: str | Path, seed: int):
+        self.dataset = CachedFeatureDataset(cache_dir)
+        if len(self.dataset) < 2:
+            raise ValueError("Response shuffling requires at least two samples")
+        order = torch.randperm(
+            len(self.dataset),
+            generator=torch.Generator().manual_seed(seed),
+        )
+        donors = order.roll(1)
+        self.donor_for_index = torch.empty_like(order)
+        self.donor_for_index[order] = donors
+        if torch.any(self.donor_for_index == torch.arange(len(self.dataset))):
+            raise AssertionError("Response shuffle unexpectedly contains a fixed point")
+
+    def __len__(self) -> int:
+        return len(self.dataset)
+
+    def __getitem__(self, index: int) -> dict[str, Any]:
+        receiver = self.dataset[index]
+        donor_index = int(self.donor_for_index[index].item())
+        donor = self.dataset[donor_index]
+        receiver_features = receiver["features"]
+        donor_features = donor["features"]
+        features = FieldFeatures(
+            state=receiver_features.state,
+            response=donor_features.response,
+            affinity=donor_features.affinity,
+            adjacency=donor_features.adjacency,
+            grid_size=receiver_features.grid_size,
+            baselines=receiver_features.baselines,
+            graphs=receiver_features.graphs,
+            metadata={
+                **receiver_features.metadata,
+                "response_donor_sample_id": donor["sample_id"],
+            },
+        )
+        features.validate()
+        return {
+            "features": features,
+            "targets": receiver["targets"],
+            "sample_id": receiver["sample_id"],
+        }
+
+
 def collate_cached(samples: list[dict[str, Any]]) -> dict[str, Any]:
     if not samples:
         raise ValueError("Cannot collate an empty batch")
@@ -69,4 +116,3 @@ def collate_cached(samples: list[dict[str, Any]]) -> dict[str, Any]:
         },
         "sample_ids": [sample["sample_id"] for sample in samples],
     }
-

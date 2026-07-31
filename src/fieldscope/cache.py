@@ -12,8 +12,9 @@ from uuid import uuid4
 import torch
 
 from fieldscope.contracts import FieldFeatures
+from fieldscope.graph import sparsify_affinity
 
-FORMAT_VERSION = 2
+FORMAT_VERSION = 3
 
 
 def feature_fingerprint(features: FieldFeatures, *, format_version: int = FORMAT_VERSION) -> str:
@@ -45,6 +46,19 @@ def save_features(
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     cpu = features.detached_cpu()
+    compressed_targets: dict[str, torch.Tensor] = {}
+    for name, value in (targets or {}).items():
+        tensor = value.detach().cpu()
+        if (
+            name == "segmentation"
+            and tensor.numel()
+            and tensor.min() >= 0
+            and tensor.max() <= 255
+        ):
+            tensor = tensor.to(torch.uint8)
+        elif name == "classification":
+            tensor = tensor.to(torch.int32)
+        compressed_targets[name] = tensor
     manifest = {
         "format_version": FORMAT_VERSION,
         "fingerprint": feature_fingerprint(cpu),
@@ -54,6 +68,11 @@ def save_features(
         "response_dim": cpu.response.shape[-1],
         "metadata": cpu.metadata,
         "sample_ids": sample_ids,
+        "target_dtypes": {
+            name: str(value.dtype).removeprefix("torch.")
+            for name, value in compressed_targets.items()
+        },
+        "derived_adjacency": True,
     }
     payload = {
         "manifest": manifest,
@@ -61,13 +80,14 @@ def save_features(
             "state": cpu.state,
             "response": cpu.response,
             "affinity": cpu.affinity,
-            "adjacency": cpu.adjacency,
             "baselines": cpu.baselines,
-            "graphs": cpu.graphs,
+            "graphs": {
+                name: value
+                for name, value in cpu.graphs.items()
+                if not name.endswith("_adjacency")
+            },
         },
-        "targets": {
-            name: value.detach().cpu() for name, value in (targets or {}).items()
-        },
+        "targets": compressed_targets,
     }
     temporary = destination.with_name(
         f".{destination.name}.tmp-{os.getpid()}-{uuid4().hex}"
@@ -87,18 +107,36 @@ def load_features(
     payload = torch.load(path, map_location=map_location, weights_only=False)
     manifest = payload["manifest"]
     format_version = int(manifest.get("format_version", 0))
-    if format_version not in {1, FORMAT_VERSION}:
+    if format_version not in {1, 2, FORMAT_VERSION}:
         raise ValueError(f"Unsupported cache format: {manifest.get('format_version')}")
     raw = payload["features"]
+    metadata = manifest.get("metadata", {})
+    probe = metadata.get("probe", {})
+    adjacency = raw.get("adjacency")
+    if adjacency is None:
+        adjacency = sparsify_affinity(
+            raw["affinity"],
+            tuple(manifest["grid_size"]),
+            int(probe["topk"]),
+            int(probe["local_radius"]),
+        )
+    graphs = dict(raw.get("graphs", {}))
+    if "dit_attention" in graphs and "dit_attention_adjacency" not in graphs:
+        graphs["dit_attention_adjacency"] = sparsify_affinity(
+            graphs["dit_attention"],
+            tuple(manifest["grid_size"]),
+            int(probe["topk"]),
+            int(probe["local_radius"]),
+        )
     features = FieldFeatures(
         state=raw["state"],
         response=raw["response"],
         affinity=raw["affinity"],
-        adjacency=raw["adjacency"],
+        adjacency=adjacency,
         grid_size=tuple(manifest["grid_size"]),
         baselines=raw.get("baselines", {}),
-        graphs=raw.get("graphs", {}),
-        metadata=manifest.get("metadata", {}),
+        graphs=graphs,
+        metadata=metadata,
     )
     features.validate()
     expected = manifest["fingerprint"]

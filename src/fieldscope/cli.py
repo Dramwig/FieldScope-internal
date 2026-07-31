@@ -29,6 +29,7 @@ from fieldscope.experiments import (
     diagnose_segmentation_cache,
     evaluate_checkpoint,
     extract_dataset_cache,
+    run_readout_matrix,
     set_experiment_seed,
     train_cached_readout,
 )
@@ -358,6 +359,8 @@ def _build_parser() -> argparse.ArgumentParser:
             "state_graph",
             "dit_hidden_local",
             "dit_hidden_attention",
+            "response_shuffled",
+            "full_shuffled",
             "z0",
             "zt",
             "velocity",
@@ -402,6 +405,34 @@ def _build_parser() -> argparse.ArgumentParser:
     summary_parser.add_argument("--metric", required=True)
     summary_parser.add_argument("--reference")
     summary_parser.add_argument("--output", required=True, type=Path)
+
+    matrix_parser = subparsers.add_parser(
+        "run-readout-matrix",
+        help="Run a resumable representation-by-seed train/val/test matrix",
+    )
+    matrix_parser.add_argument("--config", required=True, type=Path)
+    matrix_parser.add_argument("--train-cache-dir", required=True, type=Path)
+    matrix_parser.add_argument("--val-cache-dir", required=True, type=Path)
+    matrix_parser.add_argument("--test-cache-dir", required=True, type=Path)
+    matrix_parser.add_argument("--output-dir", required=True, type=Path)
+    matrix_parser.add_argument(
+        "--task",
+        required=True,
+        choices=["classification", "segmentation", "depth", "normals"],
+    )
+    matrix_parser.add_argument(
+        "--representation",
+        required=True,
+        action="append",
+    )
+    matrix_parser.add_argument("--seed", required=True, type=int, action="append")
+    matrix_parser.add_argument("--epochs", required=True, type=int)
+    matrix_parser.add_argument("--batch-size", required=True, type=int)
+    matrix_parser.add_argument("--learning-rate", type=float, default=1e-3)
+    matrix_parser.add_argument("--weight-decay", type=float, default=1e-4)
+    matrix_parser.add_argument("--reference")
+    matrix_parser.add_argument("--num-classes", type=int)
+    matrix_parser.add_argument("--segmentation-classes", type=int)
 
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
@@ -501,6 +532,35 @@ def main(argv: list[str] | None = None) -> int:
             reference=args.reference,
         )
         _json_dump(args.output, report)
+    elif args.command == "run-readout-matrix":
+        config = load_config(args.config)
+        if args.num_classes is not None or args.segmentation_classes is not None:
+            config = replace(
+                config,
+                tokenizer=replace(
+                    config.tokenizer,
+                    num_classes=args.num_classes or config.tokenizer.num_classes,
+                    segmentation_classes=(
+                        args.segmentation_classes
+                        or config.tokenizer.segmentation_classes
+                    ),
+                ),
+            )
+        report = run_readout_matrix(
+            config,
+            train_cache_dir=args.train_cache_dir,
+            val_cache_dir=args.val_cache_dir,
+            test_cache_dir=args.test_cache_dir,
+            output_dir=args.output_dir,
+            task=args.task,
+            representations=list(args.representation),
+            seeds=list(args.seed),
+            epochs=args.epochs,
+            learning_rate=args.learning_rate,
+            weight_decay=args.weight_decay,
+            batch_size=args.batch_size,
+            reference=args.reference,
+        )
     elif args.command == "inspect-cache":
         _, _, report = load_features(args.cache)
     else:

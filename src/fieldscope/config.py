@@ -59,6 +59,7 @@ class BackendConfig:
 class ProbeConfig:
     times: tuple[float, ...] = (0.2, 0.5, 0.8)
     num_directions: int = 4
+    probe_type: str = "structured"
     eta: float = 0.03
     difference: str = "central"
     graph_grid: tuple[int, int] = (8, 8)
@@ -76,6 +77,10 @@ class ProbeConfig:
             raise ValueError("probe.times must be sorted in ascending clean-time order")
         if self.num_directions < 1:
             raise ValueError("probe.num_directions must be positive")
+        if self.probe_type not in {"structured", "gaussian", "spatially_shuffled"}:
+            raise ValueError(
+                "probe.probe_type must be structured, gaussian, or spatially_shuffled"
+            )
         if self.eta <= 0:
             raise ValueError("probe.eta must be positive")
         if self.difference not in {"central", "forward"}:

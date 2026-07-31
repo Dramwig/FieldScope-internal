@@ -115,3 +115,46 @@ def generate_structured_probes(
 
     return torch.stack(probes, dim=1)
 
+
+def generate_probes(
+    reference: torch.Tensor,
+    num_directions: int,
+    seed: int,
+    probe_type: str,
+) -> torch.Tensor:
+    """Generate structured, Gaussian, or spatially destroyed probe controls."""
+
+    if probe_type == "structured":
+        return generate_structured_probes(reference, num_directions, seed)
+    if probe_type == "gaussian":
+        generator = torch.Generator(device=reference.device).manual_seed(seed)
+        probes = torch.randn(
+            (
+                reference.shape[0],
+                num_directions,
+                *reference.shape[1:],
+            ),
+            generator=generator,
+            device=reference.device,
+            dtype=reference.dtype,
+        )
+        return _normalize(probes)
+    if probe_type == "spatially_shuffled":
+        probes = generate_structured_probes(reference, num_directions, seed)
+        generator = torch.Generator(device=reference.device).manual_seed(seed + 7919)
+        flat = probes.flatten(-2)
+        for batch_index in range(flat.shape[0]):
+            for direction_index in range(flat.shape[1]):
+                permutation = torch.randperm(
+                    flat.shape[-1],
+                    generator=generator,
+                    device=reference.device,
+                )
+                flat[batch_index, direction_index] = flat[
+                    batch_index,
+                    direction_index,
+                    :,
+                    permutation,
+                ]
+        return flat.reshape_as(probes)
+    raise ValueError(f"Unsupported probe_type: {probe_type}")

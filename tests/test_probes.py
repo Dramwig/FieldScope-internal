@@ -1,6 +1,6 @@
 import torch
 
-from fieldscope.probes import generate_structured_probes
+from fieldscope.probes import generate_probes, generate_structured_probes
 
 
 def test_probes_are_reproducible_and_normalized() -> None:
@@ -12,3 +12,19 @@ def test_probes_are_reproducible_and_normalized() -> None:
     rms = first.square().mean(dim=(-3, -2, -1)).sqrt()
     assert torch.allclose(rms, torch.ones_like(rms), atol=1e-5)
 
+
+def test_probe_controls_are_reproducible_and_distinct() -> None:
+    reference = torch.zeros(1, 4, 8, 8)
+    structured = generate_probes(reference, 4, 23, "structured")
+    gaussian = generate_probes(reference, 4, 23, "gaussian")
+    shuffled = generate_probes(reference, 4, 23, "spatially_shuffled")
+    assert torch.equal(gaussian, generate_probes(reference, 4, 23, "gaussian"))
+    assert torch.equal(
+        shuffled,
+        generate_probes(reference, 4, 23, "spatially_shuffled"),
+    )
+    assert not torch.equal(structured, gaussian)
+    assert not torch.equal(structured, shuffled)
+    for probes in (gaussian, shuffled):
+        rms = probes.square().mean(dim=(-3, -2, -1)).sqrt()
+        assert torch.allclose(rms, torch.ones_like(rms), atol=1e-5)

@@ -18,6 +18,8 @@ representations:
   - full
   - dit_hidden_local
   - dit_hidden_attention
+  - response_shuffled
+  - full_shuffled
 task_epochs:
   cifar10: 50
   imagenet100: 90

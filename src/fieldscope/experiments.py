@@ -18,7 +18,11 @@ from torch.utils.data import DataLoader, Subset
 
 from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
-from fieldscope.cached_dataset import CachedFeatureDataset, collate_cached
+from fieldscope.cached_dataset import (
+    CachedFeatureDataset,
+    ShuffledResponseCachedDataset,
+    collate_cached,
+)
 from fieldscope.config import RunConfig
 from fieldscope.datasets import build_vision_dataset
 from fieldscope.evaluation import (
@@ -32,6 +36,7 @@ from fieldscope.graph import cosine_affinity
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
 from fieldscope.response import FieldResponseExtractor
+from fieldscope.statistics import summarize_run_reports
 
 
 def atomic_json_dump(path: Path, payload: Mapping[str, Any]) -> None:
@@ -273,6 +278,16 @@ def _task_output_size(
     return grid_size
 
 
+def _cached_dataset(
+    cache_dir: Path,
+    representation: str,
+    seed: int,
+) -> CachedFeatureDataset | ShuffledResponseCachedDataset:
+    if representation in {"response_shuffled", "full_shuffled"}:
+        return ShuffledResponseCachedDataset(cache_dir, seed)
+    return CachedFeatureDataset(cache_dir)
+
+
 def _make_meter(task: str, config: RunConfig) -> Any:
     if task == "classification":
         return ClassificationMeter()
@@ -320,8 +335,9 @@ def evaluate_cached_readout(
     representation: str,
     device: torch.device,
     batch_size: int | None = None,
+    shuffle_seed: int = 4121,
 ) -> dict[str, Any]:
-    dataset = CachedFeatureDataset(cache_dir)
+    dataset = _cached_dataset(cache_dir, representation, shuffle_seed)
     loader = DataLoader(
         dataset,
         batch_size=batch_size or config.runtime.batch_size,
@@ -388,8 +404,8 @@ def train_cached_readout(
     if epochs < 1:
         raise ValueError("epochs must be positive")
     set_experiment_seed(seed, config.runtime.deterministic)
-    train_dataset = CachedFeatureDataset(train_cache_dir)
-    val_dataset = CachedFeatureDataset(val_cache_dir)
+    train_dataset = _cached_dataset(train_cache_dir, representation, seed)
+    val_dataset = _cached_dataset(val_cache_dir, representation, seed)
     first = train_dataset[0]
     selected, mode = select_representation(first["features"], representation)
     device = torch.device(config.backend.device)
@@ -474,6 +490,7 @@ def train_cached_readout(
             representation=representation,
             device=device,
             batch_size=readout_batch_size,
+            shuffle_seed=seed,
         )
         entry = {
             "epoch": epoch + 1,
@@ -542,6 +559,7 @@ def train_cached_readout(
             representation=representation,
             device=device,
             batch_size=readout_batch_size,
+            shuffle_seed=seed,
         )
         report = {
             "status": "passed",
@@ -593,6 +611,7 @@ def evaluate_checkpoint(
         representation=payload["representation"],
         device=device,
         batch_size=batch_size,
+        shuffle_seed=int(payload["seed"]),
     )
     return {
         "status": "passed",
@@ -606,6 +625,7 @@ def evaluate_checkpoint(
 
 def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
     dataset = CachedFeatureDataset(cache_dir)
+    shuffled_dataset = ShuffledResponseCachedDataset(cache_dir, seed=4121)
     totals: dict[str, dict[str, float]] = {}
     counts: dict[str, int] = {}
     for index in range(len(dataset)):
@@ -616,6 +636,9 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
             raise ValueError("Segmentation targets are required for graph diagnosis")
         representations = {
             "response": features.affinity.float(),
+            "response_shuffled": shuffled_dataset[index][
+                "features"
+            ].affinity.float(),
             "state": cosine_affinity(features.state.float()),
             **{
                 name: graph.float()
@@ -656,3 +679,118 @@ def diagnose_segmentation_cache(cache_dir: Path) -> dict[str, Any]:
         },
         "valid_samples": counts,
     }
+
+
+def run_readout_matrix(
+    config: RunConfig,
+    *,
+    train_cache_dir: Path,
+    val_cache_dir: Path,
+    test_cache_dir: Path,
+    output_dir: Path,
+    task: str,
+    representations: list[str],
+    seeds: list[int],
+    epochs: int,
+    learning_rate: float,
+    weight_decay: float,
+    batch_size: int,
+    reference: str | None = None,
+) -> dict[str, Any]:
+    """Run and resume a representation/seed matrix through held-out test."""
+
+    if not representations or not seeds:
+        raise ValueError("representations and seeds must be non-empty")
+    metric = {
+        "classification": "top1",
+        "segmentation": "mean_iou",
+        "depth": "abs_rel",
+        "normals": "mean_angular_error",
+    }[task]
+    output_dir.mkdir(parents=True, exist_ok=True)
+    test_reports: list[Path] = []
+    runs: list[dict[str, Any]] = []
+    matrix_path = output_dir / "matrix_report.json"
+    for representation in representations:
+        for seed in seeds:
+            run_dir = output_dir / representation / f"seed-{seed}"
+            training_report_path = (
+                run_dir / f"{task}_{representation}_seed{seed}_report.json"
+            )
+            last_checkpoint = run_dir / f"{task}_{representation}_seed{seed}_last.pt"
+            if training_report_path.is_file():
+                training_report = json.loads(
+                    training_report_path.read_text(encoding="utf-8")
+                )
+            else:
+                training_report = {}
+            if training_report.get("status") != "passed":
+                training_report = train_cached_readout(
+                    config,
+                    train_cache_dir=train_cache_dir,
+                    val_cache_dir=val_cache_dir,
+                    output_dir=run_dir,
+                    task=task,
+                    representation=representation,
+                    epochs=epochs,
+                    learning_rate=learning_rate,
+                    weight_decay=weight_decay,
+                    seed=seed,
+                    resume_checkpoint=(
+                        last_checkpoint if last_checkpoint.is_file() else None
+                    ),
+                    batch_size=batch_size,
+                )
+            best_checkpoint = Path(training_report["best_checkpoint"])
+            test_report_path = run_dir / f"{task}_{representation}_seed{seed}_test.json"
+            if test_report_path.is_file():
+                test_report = json.loads(test_report_path.read_text(encoding="utf-8"))
+            else:
+                test_report = evaluate_checkpoint(
+                    config,
+                    checkpoint=best_checkpoint,
+                    cache_dir=test_cache_dir,
+                    batch_size=batch_size,
+                )
+                atomic_json_dump(test_report_path, test_report)
+            test_reports.append(test_report_path)
+            runs.append(
+                {
+                    "representation": representation,
+                    "seed": seed,
+                    "training_report": str(training_report_path),
+                    "best_checkpoint": str(best_checkpoint),
+                    "test_report": str(test_report_path),
+                    "test_metric": test_report["evaluation"]["metrics"][metric],
+                }
+            )
+            atomic_json_dump(
+                matrix_path,
+                {
+                    "status": "running",
+                    "task": task,
+                    "metric": metric,
+                    "runs": runs,
+                },
+            )
+    summary = summarize_run_reports(
+        test_reports,
+        metric=metric,
+        reference=reference,
+    )
+    report = {
+        "status": "passed",
+        "task": task,
+        "metric": metric,
+        "representations": representations,
+        "seeds": seeds,
+        "epochs": epochs,
+        "batch_size": batch_size,
+        "train_cache_dir": str(train_cache_dir),
+        "val_cache_dir": str(val_cache_dir),
+        "test_cache_dir": str(test_cache_dir),
+        "runs": runs,
+        "summary": summary,
+    }
+    atomic_json_dump(matrix_path, report)
+    return report

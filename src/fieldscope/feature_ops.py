@@ -73,6 +73,10 @@ def select_representation(
         "state_graph",
     }:
         return features, representation
+    if representation == "response_shuffled":
+        return features, "response"
+    if representation == "full_shuffled":
+        return features, "full"
     if representation in {"dit_hidden_local", "dit_hidden_attention"}:
         if "dit_hidden" not in features.baselines:
             raise ValueError("DiT hidden features are absent from this cache")

@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 
 from fieldscope.config import RunConfig
-from fieldscope.experiments import extract_dataset_cache
+from fieldscope.experiments import extract_dataset_cache, run_readout_matrix
 
 
 class _SmallDataset(Dataset[dict[str, Any]]):
@@ -70,3 +70,43 @@ def test_extract_dataset_cache_resumes_verified_shards(
     resumed = extract_dataset_cache(_config(tmp_path), resume=True, **arguments)
     assert resumed["complete"] is True
     assert [shard["status"] for shard in resumed["shards"]] == ["reused", "reused"]
+
+
+def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> None:
+    monkeypatch.setattr(
+        "fieldscope.experiments.build_vision_dataset",
+        lambda *args, **kwargs: _SmallDataset(),
+    )
+    config = _config(tmp_path)
+    caches = {}
+    for split in ("train", "val", "test"):
+        cache_dir = tmp_path / f"cache-{split}"
+        extract_dataset_cache(
+            config,
+            dataset_name="synthetic-test",
+            dataset_root=tmp_path,
+            split=split,
+            output_dir=cache_dir,
+            limit=4,
+        )
+        caches[split] = cache_dir
+    arguments = {
+        "train_cache_dir": caches["train"],
+        "val_cache_dir": caches["val"],
+        "test_cache_dir": caches["test"],
+        "output_dir": tmp_path / "matrix",
+        "task": "classification",
+        "representations": ["state", "full"],
+        "seeds": [3],
+        "epochs": 1,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-4,
+        "batch_size": 2,
+        "reference": "state",
+    }
+    first = run_readout_matrix(config, **arguments)
+    second = run_readout_matrix(config, **arguments)
+    assert first["status"] == "passed"
+    assert second["status"] == "passed"
+    assert len(first["runs"]) == 2
+    assert "classification/full-minus-state" in first["summary"]["comparisons"]

@@ -5,7 +5,7 @@ times:
   - [0.2, 0.5, 0.8]
 directions: [1, 2, 4, 8]
 difference: [forward, central]
-probe_type: [structured, random, spatially_shuffled]
+probe_type: [structured, gaussian, spatially_shuffled]
 representations:
   - state
   - response_local

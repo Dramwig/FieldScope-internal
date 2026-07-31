@@ -6,7 +6,11 @@ from torch.utils.data import DataLoader
 
 from fieldscope.backends.toy import ToyFieldBackend
 from fieldscope.cache import save_features
-from fieldscope.cached_dataset import CachedFeatureDataset, collate_cached
+from fieldscope.cached_dataset import (
+    CachedFeatureDataset,
+    ShuffledResponseCachedDataset,
+    collate_cached,
+)
 from fieldscope.cli import train_cache
 from fieldscope.config import ProbeConfig, RunConfig
 from fieldscope.feature_ops import select_representation, slice_features, stack_features
@@ -123,3 +127,20 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
     )
     assert resumed["status"] == "passed"
     assert resumed["validation"]["num_samples"] == 3
+
+
+def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
+    cache_dir, _ = _write_cache(tmp_path)
+    regular = CachedFeatureDataset(cache_dir)
+    shuffled = ShuffledResponseCachedDataset(cache_dir, seed=17)
+    assert torch.all(
+        shuffled.donor_for_index != torch.arange(len(shuffled))
+    )
+    sample = shuffled[0]
+    assert torch.equal(sample["features"].state, regular[0]["features"].state)
+    assert (
+        sample["features"].metadata["response_donor_sample_id"]
+        != sample["sample_id"]
+    )
+    _, mode = select_representation(sample["features"], "full_shuffled")
+    assert mode == "full"
