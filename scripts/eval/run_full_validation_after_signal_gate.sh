@@ -149,7 +149,11 @@ import sys
 print(json.load(open(sys.argv[1], encoding="utf-8"))["projected_total_bytes"])
 PY
 )"
-checkpoint_and_report_budget_bytes=13958643712
+# Four 20-representation x 3-seed matrices retain both best and last
+# checkpoints. A post-AdamW-step measurement is about 29 MB for classification
+# and 38 MB for segmentation/depth per checkpoint; 20 GiB covers all 480
+# checkpoint files, JSON reports, and filesystem/serialization variation.
+checkpoint_and_report_budget_bytes=21474836480
 voc_test_count="$(
   "$python_bin" - "$preflight_root/voc2012_split_audit.json" <<'PY'
 import json

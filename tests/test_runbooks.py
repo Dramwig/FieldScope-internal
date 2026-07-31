@@ -83,3 +83,18 @@ def test_formal_runbooks_bind_runtime_profile_into_both_evidence_gates() -> None
         script = path.read_text(encoding="utf-8")
         assert "FIELDSCOPE_RUNTIME_PROFILE" in script
         assert '--runtime-profile "$runtime_profile"' in script
+
+
+def test_full_runbook_reserves_conservative_checkpoint_budget() -> None:
+    full = (
+        REPOSITORY_ROOT
+        / "scripts"
+        / "eval"
+        / "run_full_validation_after_signal_gate.sh"
+    ).read_text(encoding="utf-8")
+    assert "checkpoint_and_report_budget_bytes=21474836480" in full
+    assert (
+        'additional-required-bytes '
+        '"$((sparse_projected_bytes + checkpoint_and_report_budget_bytes))"'
+        in full
+    )

@@ -63,7 +63,11 @@ record is not evidence that the FieldScope method is effective.
 - The formal disk gate excludes CIFAR-10 after promotion because CIFAR is a
   signal-only task, budgets the four registered main tasks, five full VOC dense
   caches (main plus causal/condition variants), and reserves an additional
-  13 GiB for 240 best/last checkpoints and machine-readable reports.
+  20 GiB for 240 runs retaining both best and last checkpoints (480 checkpoint
+  files) plus machine-readable reports. This bound was corrected before any real
+  signal or task metric after measuring post-AdamW-state checkpoints at about
+  29 MB for classification and 38 MB for segmentation/depth; the prior 13 GiB
+  bound understated the four-matrix worst case.
 - The formal supervised matrix includes a deterministic sample-ID random-feature
   control with the same tokenizer and active task head; its randomness is derived
   from the readout seed and never consumes labels or image content.
