@@ -1108,6 +1108,13 @@ def evaluate_checkpoint(
         batch_size=batch_size,
         shuffle_seed=int(payload["seed"]),
     )
+    value, _ = _primary_metric(str(payload["task"]), evaluation)
+    if not math.isfinite(value):
+        raise ValueError(
+            "Non-finite held-out test primary metric "
+            f"task={payload['task']} representation={payload['representation']} "
+            f"seed={payload['seed']}"
+        )
     return {
         "status": "passed",
         "checkpoint": str(checkpoint),

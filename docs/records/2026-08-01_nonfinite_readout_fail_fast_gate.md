@@ -19,12 +19,13 @@ Regression tests cover:
 
 - non-finite training loss before any checkpoint is written;
 - finite loss with a non-finite gradient norm before the optimizer step;
-- non-finite validation primary metric before best-checkpoint selection.
+- non-finite validation primary metric before best-checkpoint selection;
+- non-finite held-out test primary metric before a test report is returned.
 
 Local verification on the pre-result revision candidate:
 
 - `ruff check src tests scripts`: passed;
-- `python -m pytest`: 97 passed;
+- `python -m pytest`: 98 passed;
 - toy smoke (`configs/eval/toy_smoke.yaml`, 2 steps): passed;
 - `git diff --check`: passed.
 

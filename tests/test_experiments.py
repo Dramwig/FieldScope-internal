@@ -15,6 +15,7 @@ from fieldscope.contracts import FieldFeatures
 from fieldscope.experiments import (
     _task_loss_targets,
     diagnose_segmentation_cache,
+    evaluate_checkpoint,
     extract_dataset_cache,
     run_readout_matrix,
     train_cached_readout,
@@ -627,6 +628,41 @@ def test_readout_rejects_nonfinite_gradient_before_optimizer_step(
             batch_size=2,
         )
     assert not list(output_dir.glob("*.pt"))
+
+
+def test_held_out_evaluation_rejects_nonfinite_primary_metric(
+    tmp_path: Path, monkeypatch: Any
+) -> None:
+    config, caches = _classification_caches(tmp_path, monkeypatch, "nonfinite-test")
+    report = train_cached_readout(
+        config,
+        train_cache_dir=caches["train"],
+        val_cache_dir=caches["val"],
+        output_dir=tmp_path / "nonfinite-test-training",
+        task="classification",
+        representation="full",
+        epochs=1,
+        learning_rate=1e-3,
+        weight_decay=1e-4,
+        seed=17,
+        batch_size=2,
+    )
+    monkeypatch.setattr(
+        experiments,
+        "evaluate_cached_readout",
+        lambda *args, **kwargs: {
+            "loss": 0.0,
+            "num_samples": 4,
+            "metrics": {"top1": float("nan")},
+        },
+    )
+    with pytest.raises(ValueError, match="Non-finite held-out test primary metric"):
+        evaluate_checkpoint(
+            config,
+            checkpoint=Path(report["best_checkpoint"]),
+            cache_dir=caches["val"],
+            batch_size=2,
+        )
 
 
 def test_sparse_readout_cache_rejects_unsupervised_diagnosis(
