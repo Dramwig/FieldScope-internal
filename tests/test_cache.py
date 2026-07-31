@@ -134,3 +134,37 @@ def test_readout_sparse_cache_is_lossless_and_smaller(tmp_path: Path) -> None:
             sparse_output = model(sparse_selected, output_size=(16, 16))
         for name in dense_output:
             assert torch.equal(dense_output[name], sparse_output[name])
+
+
+def test_dense_cache_can_be_converted_to_readout_sparse(tmp_path: Path) -> None:
+    config = ProbeConfig(
+        times=(0.2, 0.5, 0.8),
+        num_directions=4,
+        graph_grid=(16, 16),
+        topk=2,
+        local_radius=0,
+        probe_batch_size=8,
+        antithetic_noise=True,
+    )
+    features = FieldResponseExtractor(ToyFieldBackend(image_size=32), config).extract(
+        torch.rand(2, 3, 32, 32), noise_seeds=[101, 202]
+    )
+    dense_path = tmp_path / "dense.pt"
+    sparse_path = tmp_path / "converted_sparse.pt"
+    save_features(dense_path, features, storage_policy="dense")
+    loaded_dense, _, _ = load_features(dense_path)
+    assert loaded_dense.metadata["cache_storage_policy"] == "dense"
+
+    sparse_manifest = save_features(
+        sparse_path,
+        loaded_dense,
+        storage_policy="readout_sparse",
+    )
+    converted, _, restored_manifest = load_features(sparse_path)
+
+    assert "cache_storage_policy" not in sparse_manifest["metadata"]
+    assert restored_manifest == sparse_manifest
+    assert converted.metadata["cache_storage_policy"] == "readout_sparse"
+    assert torch.equal(converted.state, features.state.cpu())
+    assert torch.equal(converted.response, features.response.cpu())
+    assert torch.equal(converted.adjacency, features.adjacency.cpu())

@@ -105,6 +105,14 @@ def save_features(
     destination = Path(path)
     destination.parent.mkdir(parents=True, exist_ok=True)
     cpu = features.detached_cpu()
+    # Loading a cache annotates its in-memory features with the source storage
+    # policy. That annotation is operational, not part of the representation,
+    # and must not leak into a cache converted to a different policy.
+    cpu.metadata = {
+        key: value
+        for key, value in cpu.metadata.items()
+        if key != "cache_storage_policy"
+    }
     compressed_targets: dict[str, torch.Tensor] = {}
     for name, value in (targets or {}).items():
         tensor = value.detach().cpu()

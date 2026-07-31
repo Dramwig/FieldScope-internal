@@ -71,6 +71,9 @@ record is not evidence that the FieldScope method is effective.
 - The formal supervised matrix includes a deterministic sample-ID random-feature
   control with the same tokenizer and active task head; its randomness is derived
   from the readout seed and never consumes labels or image content.
+- Cache conversion now strips the loader-only cache storage-policy annotation
+  before fingerprinting. This fixes dense-to-readout-sparse conversion without
+  weakening fingerprint checks; direct formal sparse extraction was unaffected.
 - The shuffled-response control now uses a seeded random pooled derangement rather
   than an index offset. It is one-to-one and fixed-point-free, mixes globally
   randomized shards within cache-local pools of at most 32 shards, and therefore
