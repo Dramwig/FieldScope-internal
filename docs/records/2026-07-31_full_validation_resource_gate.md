@@ -32,3 +32,12 @@
 512 px 数字可用于估算抽取调度，但不能直接按单样本线性外推完整数据集：
 真实数据加载、分片批量、target 类型和长期 GPU 热状态尚未计入。下一步必须在
 真实 CIFAR-10/VOC cache 上测量持续吞吐，再决定完整任务的分片和监控策略。
+
+## 随机 Flow 对照构造门
+
+在代码 revision `b5282eb` 上，以 CPU/BF16 加载 AuraFlow pipeline，释放预训练
+Flow Transformer 后按固定 seed `104729` 重建同架构随机 Transformer。构造通过，
+耗时 `168.342` 秒，峰值 RSS `20410108` KiB；backend 报告
+`random_transformer=true` 且 `frozen=true`。本门未执行 forward，也未测量任务效果。
+机器可读记录见
+`artifacts/reports/2026-07-31_random_auraflow_cpu_init.json`。

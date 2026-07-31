@@ -24,6 +24,7 @@ from fieldscope.cached_dataset import (
     ShardShuffleSampler,
     ShuffledResponseCachedDataset,
     collate_cached,
+    shared_memory_cache_stats,
 )
 from fieldscope.config import RunConfig
 from fieldscope.datasets import build_vision_dataset
@@ -399,10 +400,19 @@ def _cached_dataset(
     cache_dir: Path,
     representation: str,
     seed: int,
+    memory_cache_gib: float = 0.0,
 ) -> CachedFeatureDataset | ShuffledResponseCachedDataset:
+    memory_cache_bytes = int(memory_cache_gib * 1024**3)
     if representation in {"response_shuffled", "full_shuffled"}:
-        return ShuffledResponseCachedDataset(cache_dir, seed)
-    return CachedFeatureDataset(cache_dir)
+        return ShuffledResponseCachedDataset(
+            cache_dir,
+            seed,
+            memory_cache_bytes=memory_cache_bytes,
+        )
+    return CachedFeatureDataset(
+        cache_dir,
+        memory_cache_bytes=memory_cache_bytes,
+    )
 
 
 def _make_meter(task: str, config: RunConfig) -> Any:
@@ -454,7 +464,12 @@ def evaluate_cached_readout(
     batch_size: int | None = None,
     shuffle_seed: int = 4121,
 ) -> dict[str, Any]:
-    dataset = _cached_dataset(cache_dir, representation, shuffle_seed)
+    dataset = _cached_dataset(
+        cache_dir,
+        representation,
+        shuffle_seed,
+        config.runtime.readout_memory_cache_gib,
+    )
     loader = DataLoader(
         dataset,
         batch_size=batch_size or config.runtime.batch_size,
@@ -522,8 +537,18 @@ def train_cached_readout(
         raise ValueError("epochs must be positive")
     provenance = code_provenance()
     set_experiment_seed(seed, config.runtime.deterministic)
-    train_dataset = _cached_dataset(train_cache_dir, representation, seed)
-    val_dataset = _cached_dataset(val_cache_dir, representation, seed)
+    train_dataset = _cached_dataset(
+        train_cache_dir,
+        representation,
+        seed,
+        config.runtime.readout_memory_cache_gib,
+    )
+    val_dataset = _cached_dataset(
+        val_cache_dir,
+        representation,
+        seed,
+        config.runtime.readout_memory_cache_gib,
+    )
     first = train_dataset[0]
     selected, mode = select_representation(first["features"], representation)
     device = torch.device(config.backend.device)
@@ -658,6 +683,7 @@ def train_cached_readout(
                 if parameter.requires_grad
             ),
             "batch_size": readout_batch_size,
+            "readout_memory_cache": shared_memory_cache_stats(),
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),
@@ -695,6 +721,7 @@ def train_cached_readout(
                 if parameter.requires_grad
             ),
             "batch_size": readout_batch_size,
+            "readout_memory_cache": shared_memory_cache_stats(),
             "best_epoch": best_epoch,
             "best_primary_metric": best_value,
             "checkpoint": str(best_path),

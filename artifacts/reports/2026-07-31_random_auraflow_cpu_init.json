@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "evidence_scope": "random_transformer_construction_only",
+  "code_revision": "b5282eb",
+  "machine": "pro6000",
+  "device": "cpu",
+  "elapsed_seconds": 168.34160730801523,
+  "max_rss_kib": 20410108,
+  "backend": {
+    "backend": "auraflow",
+    "model_id": "/root/autodl-tmp/FieldScope/checkpoints/AuraFlow-v0.3",
+    "variant": "fp16",
+    "dtype": "bfloat16",
+    "image_size": 512,
+    "random_transformer": true,
+    "random_transformer_seed": 104729,
+    "frozen": true
+  },
+  "forward_query_executed": false,
+  "method_effectiveness_conclusion": null
+}

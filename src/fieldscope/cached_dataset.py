@@ -14,10 +14,30 @@ from fieldscope.cache import load_features
 from fieldscope.contracts import FieldFeatures
 from fieldscope.feature_ops import slice_features, stack_features
 
+_SHARED_PAYLOADS: OrderedDict[
+    Path,
+    tuple[FieldFeatures, dict[str, torch.Tensor], dict[str, Any]],
+] = OrderedDict()
+_SHARED_PAYLOAD_BYTES: dict[Path, int] = {}
+_SHARED_TOTAL_BYTES = 0
+
+
+def shared_memory_cache_stats() -> dict[str, int]:
+    return {
+        "shards": len(_SHARED_PAYLOADS),
+        "estimated_bytes": _SHARED_TOTAL_BYTES,
+    }
+
 
 class CachedFeatureDataset(Dataset[dict[str, Any]]):
-    def __init__(self, cache_dir: str | Path):
+    def __init__(
+        self,
+        cache_dir: str | Path,
+        *,
+        memory_cache_bytes: int = 0,
+    ):
         self.cache_dir = Path(cache_dir)
+        self.memory_cache_bytes = memory_cache_bytes
         manifest_path = self.cache_dir / "dataset_manifest.json"
         if not manifest_path.is_file():
             raise FileNotFoundError(manifest_path)
@@ -41,11 +61,28 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
     def _load(
         self, path: Path
     ) -> tuple[FieldFeatures, dict[str, torch.Tensor], dict[str, Any]]:
+        global _SHARED_TOTAL_BYTES
+        if self.memory_cache_bytes > 0 and path in _SHARED_PAYLOADS:
+            payload = _SHARED_PAYLOADS.pop(path)
+            _SHARED_PAYLOADS[path] = payload
+            return payload
         if path in self._loaded_payloads:
             payload = self._loaded_payloads.pop(path)
             self._loaded_payloads[path] = payload
             return payload
         payload = load_features(path)
+        if self.memory_cache_bytes > 0:
+            estimated_bytes = path.stat().st_size
+            _SHARED_PAYLOADS[path] = payload
+            _SHARED_PAYLOAD_BYTES[path] = estimated_bytes
+            _SHARED_TOTAL_BYTES += estimated_bytes
+            while (
+                _SHARED_TOTAL_BYTES > self.memory_cache_bytes
+                and len(_SHARED_PAYLOADS) > 1
+            ):
+                evicted_path, _ = _SHARED_PAYLOADS.popitem(last=False)
+                _SHARED_TOTAL_BYTES -= _SHARED_PAYLOAD_BYTES.pop(evicted_path)
+            return payload
         self._loaded_payloads[path] = payload
         while len(self._loaded_payloads) > self._max_loaded_shards:
             self._loaded_payloads.popitem(last=False)
@@ -67,8 +104,17 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
 class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
     """Replace response signatures/graphs with a deterministic donor sample."""
 
-    def __init__(self, cache_dir: str | Path, seed: int):
-        self.dataset = CachedFeatureDataset(cache_dir)
+    def __init__(
+        self,
+        cache_dir: str | Path,
+        seed: int,
+        *,
+        memory_cache_bytes: int = 0,
+    ):
+        self.dataset = CachedFeatureDataset(
+            cache_dir,
+            memory_cache_bytes=memory_cache_bytes,
+        )
         if len(self.dataset) < 2:
             raise ValueError("Response shuffling requires at least two samples")
         self.shard_ranges = self.dataset.shard_ranges

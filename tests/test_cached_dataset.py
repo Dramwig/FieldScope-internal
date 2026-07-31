@@ -11,6 +11,7 @@ from fieldscope.cached_dataset import (
     ShardShuffleSampler,
     ShuffledResponseCachedDataset,
     collate_cached,
+    shared_memory_cache_stats,
 )
 from fieldscope.cli import train_cache
 from fieldscope.config import ProbeConfig, RunConfig
@@ -162,3 +163,16 @@ def test_shard_shuffle_sampler_is_deterministic_and_complete(tmp_path: Path) -> 
     second = list(ShardShuffleSampler(dataset, seed=5))
     assert first == second
     assert sorted(first) == list(range(len(dataset)))
+
+
+def test_shared_memory_cache_reuses_loaded_shards(tmp_path: Path) -> None:
+    cache_dir, _ = _write_cache(tmp_path)
+    before = shared_memory_cache_stats()
+    first = CachedFeatureDataset(cache_dir, memory_cache_bytes=1024**3)
+    _ = first[0]
+    after_first = shared_memory_cache_stats()
+    second = CachedFeatureDataset(cache_dir, memory_cache_bytes=1024**3)
+    _ = second[1]
+    after_second = shared_memory_cache_stats()
+    assert after_first["shards"] == before["shards"] + 1
+    assert after_second == after_first
