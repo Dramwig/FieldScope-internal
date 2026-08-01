@@ -187,12 +187,8 @@ def run_smoke(config: RunConfig, steps: int) -> dict[str, Any]:
             "state": list(features.state.shape),
             "response": list(features.response.shape),
             "affinity": list(features.affinity.shape),
-            "baselines": {
-                name: list(value.shape) for name, value in features.baselines.items()
-            },
-            "graphs": {
-                name: list(value.shape) for name, value in features.graphs.items()
-            },
+            "baselines": {name: list(value.shape) for name, value in features.baselines.items()},
+            "graphs": {name: list(value.shape) for name, value in features.graphs.items()},
         },
         "diagnostics": graph_diagnostics(features),
         "train_steps": steps,
@@ -228,9 +224,7 @@ def _load_image(path: Path, size: int) -> torch.Tensor:
     return torch.from_numpy(array).permute(2, 0, 1)
 
 
-def extract_images(
-    config: RunConfig, image_paths: list[Path], output: Path
-) -> dict[str, Any]:
+def extract_images(config: RunConfig, image_paths: list[Path], output: Path) -> dict[str, Any]:
     if not image_paths:
         raise ValueError("At least one image is required")
     images = torch.stack(
@@ -459,6 +453,8 @@ def _build_parser() -> argparse.ArgumentParser:
     matrix_parser.add_argument("--seed", required=True, type=int, action="append")
     matrix_parser.add_argument("--seed-workers", type=int, default=1)
     matrix_parser.add_argument("--readout-runtime-profile", type=Path)
+    matrix_parser.add_argument("--validate-model-features", action="store_true")
+    matrix_parser.add_argument("--strict-host-sync", action="store_true")
     matrix_parser.add_argument("--epochs", required=True, type=int)
     matrix_parser.add_argument("--batch-size", required=True, type=int)
     matrix_parser.add_argument("--learning-rate", type=float, default=1e-3)
@@ -481,9 +477,7 @@ def _build_parser() -> argparse.ArgumentParser:
         "audit-signal-gate",
         help="Apply the pre-registered promotion rule to completed signal-gate outputs",
     )
-    gate_parser.add_argument(
-        "--cache-dir", required=True, type=Path, action="append"
-    )
+    gate_parser.add_argument("--cache-dir", required=True, type=Path, action="append")
     gate_parser.add_argument("--voc-report", required=True, type=Path)
     gate_parser.add_argument("--cifar-matrix", required=True, type=Path)
     gate_parser.add_argument("--output", required=True, type=Path)
@@ -512,12 +506,8 @@ def _build_parser() -> argparse.ArgumentParser:
         default=[],
         help="Extra target payload as SPLIT=BYTES_PER_SAMPLE",
     )
-    budget_parser.add_argument(
-        "--reserve-gib", type=float, default=10.0
-    )
-    budget_parser.add_argument(
-        "--safety-factor", type=float, default=1.15
-    )
+    budget_parser.add_argument("--reserve-gib", type=float, default=10.0)
+    budget_parser.add_argument("--safety-factor", type=float, default=1.15)
     budget_parser.add_argument("--output", required=True, type=Path)
 
     split_audit_parser = subparsers.add_parser(
@@ -557,9 +547,7 @@ def _build_parser() -> argparse.ArgumentParser:
     evidence_parser.add_argument("--voc-unsupervised", required=True, type=Path)
     evidence_parser.add_argument("--backbone-asset", required=True, type=Path)
     evidence_parser.add_argument("--runtime-profile", required=True, type=Path)
-    evidence_parser.add_argument(
-        "--readout-runtime-profile", required=True, type=Path
-    )
+    evidence_parser.add_argument("--readout-runtime-profile", required=True, type=Path)
     for dataset in ("imagenet100", "voc2012", "ade20k", "nyuv2"):
         evidence_parser.add_argument(
             f"--{dataset}-split-audit",
@@ -618,9 +606,7 @@ def main(argv: list[str] | None = None) -> int:
             report = run_runtime_gate(config)
             _json_dump(args.output, report)
     elif args.command == "extract":
-        report = extract_images(
-            load_config(args.config), list(args.image), args.output
-        )
+        report = extract_images(load_config(args.config), list(args.image), args.output)
     elif args.command == "extract-dataset":
         class_names = None
         if args.classes_file:
@@ -708,8 +694,7 @@ def main(argv: list[str] | None = None) -> int:
                     config.tokenizer,
                     num_classes=args.num_classes or config.tokenizer.num_classes,
                     segmentation_classes=(
-                        args.segmentation_classes
-                        or config.tokenizer.segmentation_classes
+                        args.segmentation_classes or config.tokenizer.segmentation_classes
                     ),
                 ),
             )
@@ -717,16 +702,10 @@ def main(argv: list[str] | None = None) -> int:
         readout_runtime_profile = None
         if args.readout_runtime_profile is not None:
             if seed_workers != 1:
-                raise ValueError(
-                    "Do not combine --seed-workers with --readout-runtime-profile"
-                )
+                raise ValueError("Do not combine --seed-workers with --readout-runtime-profile")
             load_readout_runtime_gate_report(config, args.readout_runtime_profile)
-            readout_runtime_profile = readout_runtime_profile_identity(
-                args.readout_runtime_profile
-            )
-            seed_workers = int(
-                readout_runtime_profile["selected_profile"]["seed_workers"]
-            )
+            readout_runtime_profile = readout_runtime_profile_identity(args.readout_runtime_profile)
+            seed_workers = int(readout_runtime_profile["selected_profile"]["seed_workers"])
         report = run_readout_matrix_seed_parallel(
             config,
             train_cache_dir=args.train_cache_dir,
@@ -743,6 +722,8 @@ def main(argv: list[str] | None = None) -> int:
             weight_decay=args.weight_decay,
             batch_size=args.batch_size,
             reference=args.reference,
+            validate_model_features=args.validate_model_features,
+            strict_host_sync=args.strict_host_sync,
         )
     elif args.command == "readout-runtime-gate":
         config = load_config(args.config)
@@ -778,9 +759,7 @@ def main(argv: list[str] | None = None) -> int:
         for specification in args.split_extra_bytes_per_sample:
             name, separator, value = specification.partition("=")
             if not separator or not name or not value:
-                raise ValueError(
-                    "--split-extra-bytes-per-sample must use SPLIT=BYTES_PER_SAMPLE"
-                )
+                raise ValueError("--split-extra-bytes-per-sample must use SPLIT=BYTES_PER_SAMPLE")
             if name in additional_bytes_per_sample:
                 raise ValueError(f"Duplicate split extra bytes: {name}")
             additional_bytes_per_sample[name] = int(value)

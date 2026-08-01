@@ -14,15 +14,14 @@ def slice_features(features: FieldFeatures, index: int) -> FieldFeatures:
         affinity=features.affinity[index : index + 1],
         adjacency=features.adjacency[index : index + 1],
         grid_size=features.grid_size,
-        baselines={
-            name: tensor[index : index + 1] for name, tensor in features.baselines.items()
-        },
-        graphs={
-            name: tensor[index : index + 1] for name, tensor in features.graphs.items()
-        },
+        baselines={name: tensor[index : index + 1] for name, tensor in features.baselines.items()},
+        graphs={name: tensor[index : index + 1] for name, tensor in features.graphs.items()},
         metadata=dict(features.metadata),
     )
-    sliced.validate()
+    # The source shard is fully validated by ``load_features``. Slicing is a
+    # view-only operation, so only the inexpensive structural invariant needs
+    # to be rechecked here.
+    sliced.validate_structure()
     return sliced
 
 
@@ -33,7 +32,7 @@ def stack_features(items: list[FieldFeatures]) -> FieldFeatures:
     baseline_names = set(items[0].baselines)
     graph_names = set(items[0].graphs)
     for item in items:
-        item.validate()
+        item.validate_structure()
         if (
             item.grid_size != grid_size
             or set(item.baselines) != baseline_names
@@ -51,12 +50,11 @@ def stack_features(items: list[FieldFeatures]) -> FieldFeatures:
             for name in baseline_names
         },
         graphs={
-            name: torch.cat([item.graphs[name] for item in items], dim=0)
-            for name in graph_names
+            name: torch.cat([item.graphs[name] for item in items], dim=0) for name in graph_names
         },
         metadata=dict(items[0].metadata),
     )
-    stacked.validate()
+    stacked.validate_structure()
     return stacked
 
 
@@ -87,7 +85,7 @@ def select_representation(
                 "tokenizer_mode": mode,
             },
         )
-        selected.validate()
+        selected.validate_structure()
         return selected, mode
 
     if representation in {
@@ -151,9 +149,7 @@ def select_representation(
                 else features.affinity
             ),
             adjacency=(
-                features.graphs["dit_attention_adjacency"]
-                if use_attention
-                else features.adjacency
+                features.graphs["dit_attention_adjacency"] if use_attention else features.adjacency
             ),
             mode="state_graph" if use_attention else "state",
         )

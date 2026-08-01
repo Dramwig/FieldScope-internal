@@ -20,7 +20,7 @@ import torch
 from fieldscope.config import RunConfig
 from fieldscope.experiments import code_provenance
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 REGISTERED_SEED_WORKERS = (1, 2, 3)
 REGISTERED_SEEDS = (4121, 7319, 104729)
 GATE_TASK = "classification"
@@ -31,8 +31,10 @@ MIN_SPEEDUP_FRACTION = 0.05
 MAX_CUDA_RESERVED_FRACTION = 0.70
 MIN_FREE_RAM_RESERVE_BYTES = 64 * 1024**3
 EQUIVALENCE_RULE = (
-    "torch.equal/array_equal/exact scalar equality for model, optimizer, "
-    "scheduler, RNG, timing-stripped history, best selection, and held-out metric"
+    "strict validated synchronous serial versus fast serial, then fast serial versus "
+    "parallel candidates, using torch.equal/array_equal/exact scalar equality for "
+    "model, optimizer, scheduler, RNG, timing-stripped history, best selection, and "
+    "held-out metric"
 )
 REGISTERED_FORMAL_WORKLOADS = (
     {
@@ -217,6 +219,10 @@ def readout_runtime_profile_identity(path: str | Path) -> dict[str, Any]:
         raise ValueError("Readout runtime profile batch size mismatch")
     if float(payload.get("minimum_speedup_fraction", float("nan"))) != (MIN_SPEEDUP_FRACTION):
         raise ValueError("Readout runtime profile speed threshold mismatch")
+    if float(payload.get("minimum_fast_path_speedup_fraction", float("nan"))) != (
+        MIN_SPEEDUP_FRACTION
+    ):
+        raise ValueError("Readout runtime fast-path speed threshold mismatch")
     if float(payload.get("maximum_cuda_reserved_fraction", float("nan"))) != (
         MAX_CUDA_RESERVED_FRACTION
     ):
@@ -225,6 +231,41 @@ def readout_runtime_profile_identity(path: str | Path) -> dict[str, Any]:
         raise ValueError("Readout runtime profile RAM threshold mismatch")
     if seed_workers not in REGISTERED_SEED_WORKERS:
         raise ValueError("Readout runtime profile selected unregistered workers")
+    strict_reference = payload.get("strict_reference")
+    if not isinstance(strict_reference, Mapping):
+        raise ValueError("Readout runtime strict reference is missing")
+    if strict_reference.get("status") != "completed":
+        raise ValueError("Readout runtime strict reference did not complete")
+    if int(strict_reference.get("seed_workers", -1)) != 1:
+        raise ValueError("Readout runtime strict reference worker count mismatch")
+    strict_elapsed = float(strict_reference.get("elapsed_seconds", float("nan")))
+    if not math.isfinite(strict_elapsed) or strict_elapsed <= 0:
+        raise ValueError("Readout runtime strict reference elapsed time is invalid")
+    strict_speedup = float(
+        strict_reference.get("fast_serial_speedup_fraction_vs_strict", float("nan"))
+    )
+    if not math.isfinite(strict_speedup):
+        raise ValueError("Readout runtime strict reference speedup is invalid")
+    strict_equivalence = strict_reference.get("equivalence_to_fast_serial")
+    if not isinstance(strict_equivalence, Mapping):
+        raise ValueError("Readout runtime strict reference equivalence is missing")
+    strict_run_details = strict_equivalence.get("runs")
+    if not isinstance(strict_run_details, Mapping):
+        raise ValueError("Readout runtime strict reference run registry is missing")
+    expected_labels = {f"{GATE_REPRESENTATION}/seed-{seed}" for seed in REGISTERED_SEEDS}
+    if set(strict_run_details) != expected_labels:
+        raise ValueError("Readout runtime strict reference run registry mismatch")
+    for detail in strict_run_details.values():
+        if not isinstance(detail, Mapping):
+            raise ValueError("Readout runtime strict reference detail mismatch")
+        if not (
+            detail.get("checkpoint_semantics_exact") is True
+            and detail.get("held_out_metric_exact") is True
+            and detail.get("exact") is True
+        ):
+            raise ValueError("Readout runtime strict reference is not exact")
+    if strict_equivalence.get("exact") is not True:
+        raise ValueError("Readout runtime strict reference is not exact")
     candidate_list = payload.get("candidates", [])
     candidates = {int(candidate.get("seed_workers", -1)): candidate for candidate in candidate_list}
     if len(candidates) != len(candidate_list) or set(candidates) != set(REGISTERED_SEED_WORKERS):
@@ -299,6 +340,11 @@ def readout_runtime_profile_identity(path: str | Path) -> dict[str, Any]:
             raise ValueError("Readout runtime candidate eligibility mismatch")
     if serial_elapsed is None:
         raise ValueError("Serial readout runtime candidate elapsed time is missing")
+    expected_strict_speedup = strict_elapsed / serial_elapsed - 1.0
+    if strict_speedup != expected_strict_speedup:
+        raise ValueError("Readout runtime strict reference speedup summary mismatch")
+    if strict_speedup < MIN_SPEEDUP_FRACTION:
+        raise ValueError("Readout runtime fast path is not sufficiently faster than strict")
     for workers, candidate in candidates.items():
         if candidate.get("status") != "completed" or workers == 1:
             continue
@@ -529,6 +575,7 @@ def _run_candidate(
     test_cache_dir: Path,
     output_root: Path,
     workers: int,
+    strict_reference: bool = False,
 ) -> tuple[float, Path]:
     command = [
         sys.executable,
@@ -562,9 +609,14 @@ def _run_candidate(
         "--seed-workers",
         str(workers),
     ]
+    if strict_reference:
+        if workers != 1:
+            raise ValueError("Strict readout reference must use one worker")
+        command.extend(("--validate-model-features", "--strict-host-sync"))
     for seed in REGISTERED_SEEDS:
         command.extend(("--seed", str(seed)))
-    log_path = output_root.parent / f"workers-{workers}.log"
+    label = "strict-reference" if strict_reference else f"workers-{workers}"
+    log_path = output_root.parent / f"{label}.log"
     started = time.perf_counter()
     with log_path.open("w", encoding="utf-8") as log:
         completed = subprocess.run(
@@ -600,6 +652,16 @@ def run_readout_runtime_gate(
     gate_root.mkdir(parents=True, exist_ok=False)
     available_ram = _available_ram_bytes()
     candidates = []
+    strict_root = (gate_root / "strict-reference").resolve()
+    strict_elapsed, strict_log = _run_candidate(
+        config_path=config_path.resolve(),
+        train_cache_dir=train_cache_dir.resolve(),
+        val_cache_dir=val_cache_dir.resolve(),
+        test_cache_dir=test_cache_dir.resolve(),
+        output_root=strict_root,
+        workers=1,
+        strict_reference=True,
+    )
     reference_root: Path | None = None
     reference_seconds: float | None = None
     for workers in REGISTERED_SEED_WORKERS:
@@ -631,6 +693,12 @@ def run_readout_runtime_gate(
             reference_root = candidate_root
             reference_seconds = elapsed
             equivalence = {"exact": True, "runs": {}}
+            strict_equivalence = _compare_candidate(strict_root, candidate_root)
+            if strict_equivalence["exact"] is not True:
+                raise RuntimeError("Fast readout execution does not match the strict reference")
+            fast_path_speedup = strict_elapsed / reference_seconds - 1.0
+            if fast_path_speedup < MIN_SPEEDUP_FRACTION:
+                raise RuntimeError("Fast readout execution is not sufficiently faster than strict")
         else:
             equivalence = _compare_candidate(reference_root, candidate_root)
         memory = _candidate_memory(candidate_root, workers, config)
@@ -677,6 +745,17 @@ def run_readout_runtime_gate(
         **provenance,
         "evidence_scope": "readout_seed_parallel_exactness_and_throughput_only",
         "method_effectiveness_conclusion": None,
+        "strict_reference": {
+            "status": "completed",
+            "seed_workers": 1,
+            "elapsed_seconds": strict_elapsed,
+            "fast_serial_speedup_fraction_vs_strict": (
+                strict_elapsed / reference_seconds - 1.0
+            ),
+            "equivalence_to_fast_serial": strict_equivalence,
+            "matrix_report": str(strict_root / "matrix_report.json"),
+            "log": str(strict_log.resolve()),
+        },
         "readout_execution_contract_sha256": readout_execution_contract_sha256(config),
         "formal_workload_envelope": formal_readout_workload_envelope(config),
         "registered_seed_workers": list(REGISTERED_SEED_WORKERS),
@@ -686,6 +765,7 @@ def run_readout_runtime_gate(
         "epochs": GATE_EPOCHS,
         "batch_size": GATE_BATCH_SIZE,
         "minimum_speedup_fraction": MIN_SPEEDUP_FRACTION,
+        "minimum_fast_path_speedup_fraction": MIN_SPEEDUP_FRACTION,
         "maximum_cuda_reserved_fraction": MAX_CUDA_RESERVED_FRACTION,
         "minimum_free_ram_reserve_bytes": MIN_FREE_RAM_RESERVE_BYTES,
         "available_ram_bytes": available_ram,

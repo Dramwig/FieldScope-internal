@@ -45,24 +45,18 @@ def _response_shuffle_assignment(
     shard_order = torch.randperm(len(shard_ranges), generator=generator)
     pool_count = max(
         1,
-        (len(shard_ranges) + _MAX_SHARDS_PER_RESPONSE_POOL - 1)
-        // _MAX_SHARDS_PER_RESPONSE_POOL,
+        (len(shard_ranges) + _MAX_SHARDS_PER_RESPONSE_POOL - 1) // _MAX_SHARDS_PER_RESPONSE_POOL,
     )
     shard_pools = torch.tensor_split(shard_order, pool_count)
     donor_for_index = torch.empty(length, dtype=torch.long)
     pool_for_index = torch.empty(length, dtype=torch.long)
     for pool_index, shard_pool in enumerate(shard_pools):
         pooled_indices = torch.cat(
-            [
-                torch.arange(*shard_ranges[int(shard_index)])
-                for shard_index in shard_pool.tolist()
-            ]
+            [torch.arange(*shard_ranges[int(shard_index)]) for shard_index in shard_pool.tolist()]
         )
         if pooled_indices.numel() < 2:
             raise AssertionError("Response shuffle pool has fewer than two samples")
-        cycle = pooled_indices[
-            torch.randperm(pooled_indices.numel(), generator=generator)
-        ]
+        cycle = pooled_indices[torch.randperm(pooled_indices.numel(), generator=generator)]
         donor_for_index[cycle] = cycle.roll(1)
         pool_for_index[pooled_indices] = pool_index
     if not torch.equal(
@@ -82,9 +76,7 @@ def cached_control_contract_for_cache(
     representation: str,
     seed: int,
 ) -> dict[str, Any]:
-    manifest = json.loads(
-        (Path(cache_dir) / "dataset_manifest.json").read_text(encoding="utf-8")
-    )
+    manifest = json.loads((Path(cache_dir) / "dataset_manifest.json").read_text(encoding="utf-8"))
     num_samples = sum(int(shard["num_samples"]) for shard in manifest["shards"])
     if representation in {"response_shuffled", "full_shuffled"}:
         donor_for_index, _, pool_count = _response_shuffle_assignment(
@@ -150,9 +142,7 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
     def __len__(self) -> int:
         return len(self.index)
 
-    def _load(
-        self, path: Path
-    ) -> tuple[FieldFeatures, dict[str, torch.Tensor], dict[str, Any]]:
+    def _load(self, path: Path) -> tuple[FieldFeatures, dict[str, torch.Tensor], dict[str, Any]]:
         global _SHARED_TOTAL_BYTES
         if self.memory_cache_bytes > 0 and path in _SHARED_PAYLOADS:
             payload = _SHARED_PAYLOADS.pop(path)
@@ -168,10 +158,7 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
             _SHARED_PAYLOADS[path] = payload
             _SHARED_PAYLOAD_BYTES[path] = estimated_bytes
             _SHARED_TOTAL_BYTES += estimated_bytes
-            while (
-                _SHARED_TOTAL_BYTES > self.memory_cache_bytes
-                and len(_SHARED_PAYLOADS) > 1
-            ):
+            while _SHARED_TOTAL_BYTES > self.memory_cache_bytes and len(_SHARED_PAYLOADS) > 1:
                 evicted_path, _ = _SHARED_PAYLOADS.popitem(last=False)
                 _SHARED_TOTAL_BYTES -= _SHARED_PAYLOAD_BYTES.pop(evicted_path)
             return payload
@@ -186,9 +173,7 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
         sample_ids = manifest.get("sample_ids") or []
         return {
             "features": slice_features(features, local_index),
-            "targets": {
-                name: tensor[local_index] for name, tensor in targets.items()
-            },
+            "targets": {name: tensor[local_index] for name, tensor in targets.items()},
             "sample_id": sample_ids[local_index] if local_index < len(sample_ids) else str(index),
         }
 
@@ -250,7 +235,7 @@ class ShuffledResponseCachedDataset(Dataset[dict[str, Any]]):
                 "response_shuffle_permutation_sha256": self.donor_permutation_sha256,
             },
         )
-        features.validate()
+        features.validate_structure()
         return {
             "features": features,
             "targets": receiver["targets"],
@@ -303,7 +288,7 @@ class RandomFeatureCachedDataset(Dataset[dict[str, Any]]):
                 "random_feature_policy": "sample_id_sha256_seeded_v1",
             },
         )
-        features.validate()
+        features.validate_structure()
         return {
             "features": features,
             "targets": sample["targets"],
@@ -368,16 +353,78 @@ def collate_cached(
     tokenizer_mode = None
     if representation is not None:
         selected = [
-            select_representation(features, representation)
-            for features in selected_features
+            select_representation(features, representation) for features in selected_features
         ]
         modes = {mode for _, mode in selected}
         if len(modes) != 1:
             raise ValueError("Cached samples selected inconsistent tokenizer modes")
         selected_features = [features for features, _ in selected]
         tokenizer_mode = modes.pop()
+        first = selected_features[0]
+        batch_size = len(selected_features)
+        patches = first.grid_size[0] * first.grid_size[1]
+        uses_state = tokenizer_mode in {
+            "state",
+            "state_graph",
+            "state_nograph",
+            "full",
+            "full_local",
+            "full_nograph",
+        }
+        uses_response = tokenizer_mode in {
+            "response",
+            "response_local",
+            "response_nograph",
+            "full",
+            "full_local",
+            "full_nograph",
+        }
+        uses_content_graph = tokenizer_mode in {
+            "state_graph",
+            "response",
+            "full",
+        }
+
+        def stack_or_empty(name: str, enabled: bool) -> torch.Tensor:
+            source = getattr(first, name)
+            if not enabled:
+                return source.new_empty((1, 1, 0)).expand(
+                    batch_size,
+                    patches,
+                    0,
+                )
+            return torch.cat(
+                [getattr(features, name) for features in selected_features],
+                dim=0,
+            )
+
+        if uses_content_graph:
+            adjacency = torch.cat(
+                [features.adjacency for features in selected_features],
+                dim=0,
+            )
+        else:
+            adjacency = first.adjacency.new_zeros((1, 1, 1)).expand(
+                batch_size,
+                patches,
+                patches,
+            )
+        compact_features = FieldFeatures(
+            state=stack_or_empty("state", uses_state),
+            response=stack_or_empty("response", uses_response),
+            affinity=adjacency,
+            adjacency=adjacency,
+            grid_size=first.grid_size,
+            baselines={},
+            graphs={},
+            metadata=dict(first.metadata),
+        )
+        compact_features.validate_structure()
+        batch_features = compact_features
+    else:
+        batch_features = stack_features(selected_features)
     return {
-        "features": stack_features(selected_features),
+        "features": batch_features,
         "targets": {
             name: torch.stack([sample["targets"][name] for sample in samples])
             for name in target_names

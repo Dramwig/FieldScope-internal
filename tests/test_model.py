@@ -3,6 +3,11 @@ import torch
 from fieldscope.backends.toy import ToyFieldBackend
 from fieldscope.config import ProbeConfig, TokenizerConfig
 from fieldscope.feature_ops import select_representation
+from fieldscope.graph import (
+    fixed_grid_adjacency,
+    fixed_normalized_grid_adjacency,
+    normalize_adjacency,
+)
 from fieldscope.losses import (
     graph_stability_loss,
     multitask_loss,
@@ -73,6 +78,49 @@ def test_model_can_execute_only_the_requested_task_head() -> None:
     predictions = model(features, output_size=(16, 16), task="classification")
     assert set(predictions) == {"classification"}
     assert predictions["classification"].shape == (2, 4)
+
+
+def test_cached_local_adjacency_matches_direct_normalization_exactly() -> None:
+    device = torch.device("cpu")
+    direct = normalize_adjacency(fixed_grid_adjacency((4, 4), 3, device, torch.float32))
+    cached = fixed_normalized_grid_adjacency(
+        (4, 4),
+        3,
+        device,
+        torch.float32,
+    )
+    assert torch.equal(direct, cached)
+    assert cached.stride(0) == 0
+
+
+def test_model_fast_path_matches_validated_forward_exactly() -> None:
+    features = _features()
+    selected, mode = select_representation(features, "full_local")
+    model = FieldScopeModel(
+        selected.state.shape[-1],
+        selected.response.shape[-1],
+        TokenizerConfig(
+            hidden_dim=16,
+            input_dim=16,
+            num_layers=1,
+            num_classes=4,
+            segmentation_classes=3,
+        ),
+        mode=mode,
+    ).eval()
+    validated = model(
+        selected,
+        output_size=(4, 4),
+        task="classification",
+        validate_features=True,
+    )
+    fast = model(
+        selected,
+        output_size=(4, 4),
+        task="classification",
+        validate_features=False,
+    )
+    assert torch.equal(validated["classification"], fast["classification"])
 
 
 def test_consistency_losses() -> None:

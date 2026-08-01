@@ -9,6 +9,18 @@ _PROJECTIONS: dict[
     tuple[int, int, str, int | None, torch.dtype, int],
     torch.Tensor,
 ] = {}
+_GRID_ADJACENCIES: dict[
+    tuple[tuple[int, int], str, int | None, torch.dtype, int],
+    torch.Tensor,
+] = {}
+_NORMALIZED_GRID_ADJACENCIES: dict[
+    tuple[tuple[int, int], str, int | None, torch.dtype, int],
+    torch.Tensor,
+] = {}
+_IDENTITY_ADJACENCIES: dict[
+    tuple[int, str, int | None, torch.dtype],
+    torch.Tensor,
+] = {}
 
 
 def patch_pool(tensor: torch.Tensor, grid_size: tuple[int, int]) -> torch.Tensor:
@@ -53,11 +65,14 @@ def fixed_gaussian_sketch(
     projection = _PROJECTIONS.get(key)
     if projection is None:
         generator = torch.Generator(device="cpu").manual_seed(seed)
-        projection = torch.randn(
-            (input_dim, output_dim),
-            generator=generator,
-            dtype=torch.float32,
-        ) / output_dim**0.5
+        projection = (
+            torch.randn(
+                (input_dim, output_dim),
+                generator=generator,
+                dtype=torch.float32,
+            )
+            / output_dim**0.5
+        )
         projection = projection.to(device=features.device, dtype=features.dtype)
         _PROJECTIONS[key] = projection
     return torch.matmul(features, projection)
@@ -82,15 +97,16 @@ def pooled_attention_affinity(
         grid_size,
     )
     patches = grid_size[0] * grid_size[1]
-    pooled_query = pooled_query.reshape(batch, heads, head_dim, patches).transpose(
-        2, 3
-    )
+    pooled_query = pooled_query.reshape(batch, heads, head_dim, patches).transpose(2, 3)
     pooled_key = pooled_key.reshape(batch, heads, head_dim, patches).transpose(2, 3)
-    logits = torch.einsum(
-        "bhpd,bhqd->bhpq",
-        pooled_query.float(),
-        pooled_key.float(),
-    ) / head_dim**0.5
+    logits = (
+        torch.einsum(
+            "bhpd,bhqd->bhpq",
+            pooled_query.float(),
+            pooled_key.float(),
+        )
+        / head_dim**0.5
+    )
     attention = logits.softmax(dim=-1).mean(dim=1)
     return 0.5 * (attention + attention.transpose(1, 2))
 
@@ -164,9 +180,46 @@ def fixed_grid_adjacency(
 ) -> torch.Tensor:
     """Content-independent local graph for matched state-only baselines."""
 
-    mask = _local_mask(grid_size, radius, device)
-    adjacency = mask.to(dtype=dtype).unsqueeze(0).expand(batch_size, -1, -1).clone()
-    return adjacency
+    key = (grid_size, device.type, device.index, dtype, radius)
+    adjacency = _GRID_ADJACENCIES.get(key)
+    if adjacency is None:
+        mask = _local_mask(grid_size, radius, device)
+        adjacency = mask.to(dtype=dtype).unsqueeze(0)
+        _GRID_ADJACENCIES[key] = adjacency
+    return adjacency.expand(batch_size, -1, -1)
+
+
+def fixed_normalized_grid_adjacency(
+    grid_size: tuple[int, int],
+    batch_size: int,
+    device: torch.device,
+    dtype: torch.dtype,
+    radius: int = 1,
+) -> torch.Tensor:
+    """Return the cached normalized local graph for matched baselines."""
+
+    key = (grid_size, device.type, device.index, dtype, radius)
+    adjacency = _NORMALIZED_GRID_ADJACENCIES.get(key)
+    if adjacency is None:
+        adjacency = normalize_adjacency(fixed_grid_adjacency(grid_size, 1, device, dtype, radius))
+        _NORMALIZED_GRID_ADJACENCIES[key] = adjacency
+    return adjacency.expand(batch_size, -1, -1)
+
+
+def fixed_identity_adjacency(
+    patches: int,
+    batch_size: int,
+    device: torch.device,
+    dtype: torch.dtype,
+) -> torch.Tensor:
+    """Return a cached batched identity adjacency."""
+
+    key = (patches, device.type, device.index, dtype)
+    adjacency = _IDENTITY_ADJACENCIES.get(key)
+    if adjacency is None:
+        adjacency = torch.eye(patches, device=device, dtype=dtype).unsqueeze(0)
+        _IDENTITY_ADJACENCIES[key] = adjacency
+    return adjacency.expand(batch_size, -1, -1)
 
 
 def spectral_binary_partition(adjacency: torch.Tensor) -> torch.Tensor:
@@ -183,9 +236,7 @@ def spectral_binary_partition(adjacency: torch.Tensor) -> torch.Tensor:
     return (fiedler > threshold).long().to(output_device)
 
 
-def boundary_strength(
-    affinity: torch.Tensor, grid_size: tuple[int, int]
-) -> torch.Tensor:
+def boundary_strength(affinity: torch.Tensor, grid_size: tuple[int, int]) -> torch.Tensor:
     """Estimate per-patch boundary strength from 4-neighbour dissimilarity."""
 
     batch, patches, _ = affinity.shape

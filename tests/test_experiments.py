@@ -527,6 +527,94 @@ def _assert_nested_equal(first: Any, second: Any) -> None:
         assert first == second
 
 
+def test_fast_cached_readout_matches_fully_validated_checkpoint(
+    tmp_path: Path,
+    monkeypatch: Any,
+) -> None:
+    config, caches = _classification_caches(tmp_path, monkeypatch, "fast-path")
+    common = {
+        "config": config,
+        "train_cache_dir": caches["train"],
+        "val_cache_dir": caches["val"],
+        "task": "classification",
+        "representation": "full_local",
+        "epochs": 2,
+        "learning_rate": 1e-3,
+        "weight_decay": 1e-4,
+        "seed": 17,
+        "batch_size": 2,
+    }
+    validated = train_cached_readout(
+        output_dir=tmp_path / "validated",
+        validate_model_features=True,
+        **common,
+    )
+    fast = train_cached_readout(
+        output_dir=tmp_path / "fast",
+        validate_model_features=False,
+        **common,
+    )
+    validated_checkpoint = torch.load(
+        validated["last_checkpoint"],
+        map_location="cpu",
+        weights_only=False,
+    )
+    fast_checkpoint = torch.load(
+        fast["last_checkpoint"],
+        map_location="cpu",
+        weights_only=False,
+    )
+    for key in validated_checkpoint:
+        if key == "history":
+            for first, second in zip(
+                validated_checkpoint[key],
+                fast_checkpoint[key],
+                strict=True,
+            ):
+                first = {
+                    name: value
+                    for name, value in first.items()
+                    if name
+                    not in {
+                        "train_seconds",
+                        "train_samples_per_second",
+                        "validation_seconds",
+                    }
+                }
+                second = {
+                    name: value
+                    for name, value in second.items()
+                    if name
+                    not in {
+                        "train_seconds",
+                        "train_samples_per_second",
+                        "validation_seconds",
+                    }
+                }
+                _assert_nested_equal(first, second)
+        else:
+            _assert_nested_equal(validated_checkpoint[key], fast_checkpoint[key])
+
+    validated_evaluation = evaluate_checkpoint(
+        config,
+        checkpoint=Path(validated["last_checkpoint"]),
+        cache_dir=caches["val"],
+        batch_size=2,
+        validate_model_features=True,
+    )
+    fast_evaluation = evaluate_checkpoint(
+        config,
+        checkpoint=Path(validated["last_checkpoint"]),
+        cache_dir=caches["val"],
+        batch_size=2,
+        validate_model_features=False,
+    )
+    _assert_nested_equal(
+        validated_evaluation["evaluation"],
+        fast_evaluation["evaluation"],
+    )
+
+
 def test_readout_resume_matches_uninterrupted_training(tmp_path: Path, monkeypatch: Any) -> None:
     monkeypatch.setattr(
         "fieldscope.experiments.build_vision_dataset",

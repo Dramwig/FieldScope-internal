@@ -17,6 +17,7 @@ from fieldscope.readout_runtime_gate import (
     MAX_CUDA_RESERVED_FRACTION,
     MIN_FREE_RAM_RESERVE_BYTES,
     MIN_SPEEDUP_FRACTION,
+    SCHEMA_VERSION,
     formal_readout_workload_envelope,
     readout_execution_contract_sha256,
     readout_runtime_profile_identity,
@@ -323,7 +324,7 @@ def _readout_profile(
     config = RunConfig.from_mapping(config_mapping)
     path = root / "readout_runtime_profile.json"
     payload = {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "status": "passed",
         **provenance,
         "evidence_scope": "readout_seed_parallel_exactness_and_throughput_only",
@@ -338,9 +339,29 @@ def _readout_profile(
         "epochs": 20,
         "batch_size": 128,
         "minimum_speedup_fraction": MIN_SPEEDUP_FRACTION,
+        "minimum_fast_path_speedup_fraction": MIN_SPEEDUP_FRACTION,
         "maximum_cuda_reserved_fraction": MAX_CUDA_RESERVED_FRACTION,
         "minimum_free_ram_reserve_bytes": MIN_FREE_RAM_RESERVE_BYTES,
         "available_ram_bytes": 700 * 1024**3,
+        "strict_reference": {
+            "status": "completed",
+            "seed_workers": 1,
+            "elapsed_seconds": 2.0,
+            "fast_serial_speedup_fraction_vs_strict": 1.0,
+            "equivalence_to_fast_serial": {
+                "exact": True,
+                "runs": {
+                    f"full/seed-{seed}": {
+                        "exact": True,
+                        "checkpoint_semantics_exact": True,
+                        "held_out_metric_exact": True,
+                    }
+                    for seed in SEEDS
+                },
+            },
+            "matrix_report": "strict-reference/matrix_report.json",
+            "log": "strict-reference.log",
+        },
         "candidates": [
             {
                 "seed_workers": 1,

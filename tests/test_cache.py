@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 import torch
 
 from fieldscope.backends.toy import ToyFieldBackend
@@ -45,6 +46,27 @@ def test_feature_cache_round_trip(tmp_path: Path) -> None:
     assert "adjacency" not in raw["features"]
     assert raw["targets"]["classification"].dtype == torch.int32
     assert raw["targets"]["segmentation"].dtype == torch.uint8
+
+
+def test_cache_load_boundary_rejects_nonfinite_features(tmp_path: Path) -> None:
+    config = ProbeConfig(
+        times=(0.5,),
+        num_directions=2,
+        graph_grid=(2, 2),
+        probe_batch_size=4,
+        antithetic_noise=False,
+    )
+    features = FieldResponseExtractor(ToyFieldBackend(image_size=32), config).extract(
+        torch.rand(1, 3, 32, 32)
+    )
+    path = tmp_path / "nonfinite.pt"
+    save_features(path, features)
+    payload = torch.load(path, weights_only=False)
+    payload["features"]["state"][0, 0, 0] = float("nan")
+    torch.save(payload, path)
+
+    with pytest.raises(ValueError, match="non-finite"):
+        load_features(path)
 
 
 def test_readout_sparse_cache_is_lossless_and_smaller(tmp_path: Path) -> None:

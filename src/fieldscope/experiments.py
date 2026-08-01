@@ -34,6 +34,7 @@ from fieldscope.cached_dataset import (
     shared_memory_cache_stats,
 )
 from fieldscope.config import RunConfig, runtime_profile_identity
+from fieldscope.contracts import FieldFeatures
 from fieldscope.dataset_audit import sample_ids_sha256
 from fieldscope.datasets import build_vision_dataset
 from fieldscope.evaluation import (
@@ -564,6 +565,70 @@ def _task_trainable_parameters(model: FieldScopeModel, task: str) -> int:
     )
 
 
+def _readout_features_to_device(
+    features: FieldFeatures,
+    mode: str,
+    device: torch.device,
+    *,
+    validate_model_features: bool,
+) -> FieldFeatures:
+    """Transfer only tensors consumed by the selected tokenizer mode."""
+
+    if validate_model_features:
+        return features.to(device, dtype=torch.float32)
+    uses_state = mode in {
+        "state",
+        "state_graph",
+        "state_nograph",
+        "full",
+        "full_local",
+        "full_nograph",
+    }
+    uses_response = mode in {
+        "response",
+        "response_local",
+        "response_nograph",
+        "full",
+        "full_local",
+        "full_nograph",
+    }
+    uses_content_graph = mode in {"state_graph", "response", "full"}
+    return FieldFeatures(
+        state=(
+            features.state.to(device=device, dtype=torch.float32) if uses_state else features.state
+        ),
+        response=(
+            features.response.to(device=device, dtype=torch.float32)
+            if uses_response
+            else features.response
+        ),
+        affinity=features.affinity,
+        adjacency=(
+            features.adjacency.to(device=device, dtype=torch.float32)
+            if uses_content_graph
+            else features.adjacency
+        ),
+        grid_size=features.grid_size,
+        baselines={},
+        graphs={},
+        metadata=dict(features.metadata),
+    )
+
+
+def _assert_finite_training_value(
+    value: torch.Tensor,
+    message: str,
+    *,
+    strict_host_sync: bool,
+) -> None:
+    finite = torch.isfinite(value.detach())
+    if value.device.type == "cuda" and not strict_host_sync:
+        torch._assert_async(finite, message)
+        return
+    if not bool(finite.item()):
+        raise ValueError(message)
+
+
 def _cached_dataset(
     cache_dir: Path,
     representation: str,
@@ -637,6 +702,7 @@ def evaluate_cached_readout(
     device: torch.device,
     batch_size: int | None = None,
     shuffle_seed: int = 4121,
+    validate_model_features: bool = False,
 ) -> dict[str, Any]:
     dataset = _cached_dataset(
         cache_dir,
@@ -656,7 +722,13 @@ def evaluate_cached_readout(
     total_samples = 0
     model.eval()
     for cached_batch in loader:
-        features = cached_batch["features"].to(device, dtype=torch.float32)
+        mode = str(cached_batch["tokenizer_mode"])
+        features = _readout_features_to_device(
+            cached_batch["features"],
+            mode,
+            device,
+            validate_model_features=validate_model_features,
+        )
         targets = {name: value.to(device) for name, value in cached_batch["targets"].items()}
         if task not in targets:
             raise ValueError(f"Requested task {task!r} is absent from cache")
@@ -664,6 +736,7 @@ def evaluate_cached_readout(
             features,
             output_size=_task_output_size(task, targets, features.grid_size),
             task=task,
+            validate_features=validate_model_features,
         )
         loss_targets = _task_loss_targets(
             task,
@@ -731,6 +804,8 @@ def train_cached_readout(
     seed: int,
     resume_checkpoint: Path | None = None,
     batch_size: int | None = None,
+    validate_model_features: bool = False,
+    strict_host_sync: bool = False,
 ) -> dict[str, Any]:
     if epochs < 1:
         raise ValueError("epochs must be positive")
@@ -836,10 +911,23 @@ def train_cached_readout(
             collate_fn=partial(collate_cached, representation=representation),
         )
         model.train()
-        total_loss = 0.0
+        loss_values = torch.empty(
+            len(train_loader),
+            device=device,
+            dtype=torch.float32,
+        )
+        batch_sizes: list[int] = []
         total_samples = 0
-        for cached_batch in train_loader:
-            features = cached_batch["features"].to(device, dtype=torch.float32)
+        for batch_index, cached_batch in enumerate(train_loader):
+            batch_mode = str(cached_batch["tokenizer_mode"])
+            if batch_mode != mode:
+                raise ValueError("Cached batch tokenizer mode changed within a run")
+            features = _readout_features_to_device(
+                cached_batch["features"],
+                batch_mode,
+                device,
+                validate_model_features=validate_model_features,
+            )
             targets = {name: tensor.to(device) for name, tensor in cached_batch["targets"].items()}
             if task not in targets:
                 raise ValueError(f"Requested task {task!r} is absent from cache")
@@ -848,6 +936,7 @@ def train_cached_readout(
                 features,
                 output_size=_task_output_size(task, targets, features.grid_size),
                 task=task,
+                validate_features=validate_model_features,
             )
             loss_targets = _task_loss_targets(
                 task,
@@ -855,24 +944,40 @@ def train_cached_readout(
                 tuple(predictions[task].shape[-2:]),
             )
             loss, _ = multitask_loss(predictions, loss_targets)
-            if not bool(torch.isfinite(loss.detach()).item()):
-                raise ValueError(
+            _assert_finite_training_value(
+                loss,
+                (
                     "Non-finite training loss "
                     f"task={task} representation={representation} seed={seed} "
                     f"epoch={epoch + 1}"
-                )
+                ),
+                strict_host_sync=strict_host_sync,
+            )
             loss.backward()
             gradient_norm = torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-            if not math.isfinite(float(gradient_norm.detach().item())):
-                raise ValueError(
+            _assert_finite_training_value(
+                gradient_norm,
+                (
                     "Non-finite gradient norm "
                     f"task={task} representation={representation} seed={seed} "
                     f"epoch={epoch + 1}"
-                )
+                ),
+                strict_host_sync=strict_host_sync,
+            )
             optimizer.step()
             batch_size = features.state.shape[0]
-            total_loss += float(loss.detach().item()) * batch_size
+            loss_values[batch_index] = loss.detach().to(dtype=torch.float32)
+            batch_sizes.append(batch_size)
             total_samples += batch_size
+        epoch_loss_values = loss_values.cpu().tolist()
+        total_loss = sum(
+            value * current_batch_size
+            for value, current_batch_size in zip(
+                epoch_loss_values,
+                batch_sizes,
+                strict=True,
+            )
+        )
         train_seconds = time.perf_counter() - epoch_started
         scheduler.step()
         validation_started = time.perf_counter()
@@ -885,6 +990,7 @@ def train_cached_readout(
             device=device,
             batch_size=readout_batch_size,
             shuffle_seed=seed,
+            validate_model_features=validate_model_features,
         )
         validation_seconds = time.perf_counter() - validation_started
         entry = {
@@ -989,6 +1095,7 @@ def train_cached_readout(
             device=device,
             batch_size=readout_batch_size,
             shuffle_seed=seed,
+            validate_model_features=validate_model_features,
         )
         report = {
             "status": "passed",
@@ -1044,6 +1151,7 @@ def evaluate_checkpoint(
     checkpoint: Path,
     cache_dir: Path,
     batch_size: int | None = None,
+    validate_model_features: bool = False,
 ) -> dict[str, Any]:
     device = torch.device(config.backend.device)
     provenance = code_provenance()
@@ -1085,6 +1193,7 @@ def evaluate_checkpoint(
         device=device,
         batch_size=batch_size,
         shuffle_seed=int(payload["seed"]),
+        validate_model_features=validate_model_features,
     )
     value, _ = _primary_metric(str(payload["task"]), evaluation)
     if not math.isfinite(value):
@@ -1200,6 +1309,8 @@ def run_readout_matrix(
     batch_size: int,
     reference: str | None = None,
     matrix_report_path: Path | None = None,
+    validate_model_features: bool = False,
+    strict_host_sync: bool = False,
 ) -> dict[str, Any]:
     """Run and resume a representation/seed matrix through held-out test."""
 
@@ -1276,6 +1387,8 @@ def run_readout_matrix(
                     seed=seed,
                     resume_checkpoint=(last_checkpoint if last_checkpoint.is_file() else None),
                     batch_size=batch_size,
+                    validate_model_features=validate_model_features,
+                    strict_host_sync=strict_host_sync,
                 )
             best_checkpoint = Path(training_report["best_checkpoint"])
             if not best_checkpoint.is_file():
@@ -1311,6 +1424,7 @@ def run_readout_matrix(
                     checkpoint=best_checkpoint,
                     cache_dir=test_cache_dir,
                     batch_size=batch_size,
+                    validate_model_features=validate_model_features,
                 )
                 atomic_json_dump(test_report_path, test_report)
             test_reports.append(test_report_path)
@@ -1396,6 +1510,8 @@ def run_readout_matrix_seed_parallel(
     reference: str | None = None,
     seed_workers: int = 1,
     readout_runtime_profile: Mapping[str, Any] | None = None,
+    validate_model_features: bool = False,
+    strict_host_sync: bool = False,
 ) -> dict[str, Any]:
     """Run independent seeds in spawned processes, then audit one full matrix.
 
@@ -1428,6 +1544,8 @@ def run_readout_matrix_seed_parallel(
             weight_decay=weight_decay,
             batch_size=batch_size,
             reference=reference,
+            validate_model_features=validate_model_features,
+            strict_host_sync=strict_host_sync,
         )
     else:
         if seed_workers > len(seeds):
@@ -1447,6 +1565,8 @@ def run_readout_matrix_seed_parallel(
             "weight_decay": weight_decay,
             "batch_size": batch_size,
             "reference": reference,
+            "validate_model_features": validate_model_features,
+            "strict_host_sync": strict_host_sync,
         }
         with ProcessPoolExecutor(
             max_workers=seed_workers,
@@ -1475,6 +1595,8 @@ def run_readout_matrix_seed_parallel(
             weight_decay=weight_decay,
             batch_size=batch_size,
             reference=reference,
+            validate_model_features=validate_model_features,
+            strict_host_sync=strict_host_sync,
         )
     if readout_runtime_profile is not None:
         report = {**report, "readout_runtime_profile": dict(readout_runtime_profile)}

@@ -10,9 +10,15 @@ from torch import nn
 from fieldscope.contracts import FieldFeatures
 from fieldscope.graph import (
     fixed_gaussian_sketch,
-    fixed_grid_adjacency,
+    fixed_identity_adjacency,
+    fixed_normalized_grid_adjacency,
     normalize_adjacency,
 )
+
+_POSITIONS: dict[
+    tuple[tuple[int, int], int, str, int | None, torch.dtype],
+    torch.Tensor,
+] = {}
 
 
 def sinusoidal_2d_position(
@@ -20,6 +26,10 @@ def sinusoidal_2d_position(
 ) -> torch.Tensor:
     """Create deterministic [P,D] two-dimensional sinusoidal positions."""
 
+    key = (grid_size, hidden_dim, device.type, device.index, dtype)
+    cached = _POSITIONS.get(key)
+    if cached is not None:
+        return cached
     height, width = grid_size
     quarter = max(1, hidden_dim // 4)
     frequencies = torch.exp(
@@ -39,7 +49,9 @@ def sinusoidal_2d_position(
     ).reshape(height * width, -1)
     if position.shape[-1] < hidden_dim:
         position = torch.nn.functional.pad(position, (0, hidden_dim - position.shape[-1]))
-    return position[:, :hidden_dim].to(dtype=dtype)
+    position = position[:, :hidden_dim].to(dtype=dtype)
+    _POSITIONS[key] = position
+    return position
 
 
 class GraphMessageLayer(nn.Module):
@@ -93,9 +105,7 @@ class FieldTokenizer(nn.Module):
             "response_nograph",
             "state_graph",
         }:
-            raise ValueError(
-                "unsupported tokenizer mode"
-            )
+            raise ValueError("unsupported tokenizer mode")
         self.mode = mode
         self.state_dim = state_dim
         self.response_dim = response_dim
@@ -108,8 +118,14 @@ class FieldTokenizer(nn.Module):
         nn.init.normal_(self.pool_query, std=hidden_dim**-0.5)
         self.output_norm = nn.LayerNorm(hidden_dim)
 
-    def forward(self, features: FieldFeatures) -> TokenizerOutput:
-        features.validate()
+    def forward(
+        self,
+        features: FieldFeatures,
+        *,
+        validate_features: bool = True,
+    ) -> TokenizerOutput:
+        if validate_features:
+            features.validate()
         if self.mode in {"state", "state_graph", "state_nograph"}:
             inputs = fixed_gaussian_sketch(
                 features.state,
@@ -140,21 +156,21 @@ class FieldTokenizer(nn.Module):
         )
         nodes = nodes + position.unsqueeze(0)
         if self.mode in {"state_nograph", "response_nograph", "full_nograph"}:
-            adjacency = torch.eye(
+            adjacency = fixed_identity_adjacency(
                 nodes.shape[1],
-                device=nodes.device,
-                dtype=nodes.dtype,
-            ).unsqueeze(0).expand(nodes.shape[0], -1, -1)
+                nodes.shape[0],
+                nodes.device,
+                nodes.dtype,
+            )
         elif self.mode in {"state", "response_local", "full_local"}:
-            adjacency = fixed_grid_adjacency(
+            adjacency = fixed_normalized_grid_adjacency(
                 features.grid_size,
                 nodes.shape[0],
                 nodes.device,
                 nodes.dtype,
             )
         else:
-            adjacency = features.adjacency.to(dtype=nodes.dtype)
-        adjacency = normalize_adjacency(adjacency)
+            adjacency = normalize_adjacency(features.adjacency.to(dtype=nodes.dtype))
         for layer in self.layers:
             nodes = layer(nodes, adjacency)
         nodes = self.output_norm(nodes)

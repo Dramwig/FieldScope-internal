@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 
+import pytest
 import torch
 from torch.utils.data import DataLoader
 
@@ -114,9 +115,7 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
     cache_dir, config = _write_cache(tmp_path)
     dataset = CachedFeatureDataset(cache_dir)
     assert len(dataset) == 3
-    batch = next(
-        iter(DataLoader(dataset, batch_size=2, shuffle=False, collate_fn=collate_cached))
-    )
+    batch = next(iter(DataLoader(dataset, batch_size=2, shuffle=False, collate_fn=collate_cached)))
     assert batch["features"].state.shape[0] == 2
     report = train_cache(
         config,
@@ -161,9 +160,7 @@ def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
     shuffled = ShuffledResponseCachedDataset(cache_dir, seed=17)
     repeated = ShuffledResponseCachedDataset(cache_dir, seed=17)
     different = ShuffledResponseCachedDataset(cache_dir, seed=19)
-    assert torch.all(
-        shuffled.donor_for_index != torch.arange(len(shuffled))
-    )
+    assert torch.all(shuffled.donor_for_index != torch.arange(len(shuffled)))
     assert torch.equal(
         shuffled.donor_for_index.sort().values,
         torch.arange(len(shuffled)),
@@ -176,10 +173,7 @@ def test_shuffled_response_dataset_has_no_self_donors(tmp_path: Path) -> None:
     )
     sample = shuffled[0]
     assert torch.equal(sample["features"].state, regular[0]["features"].state)
-    assert (
-        sample["features"].metadata["response_donor_sample_id"]
-        != sample["sample_id"]
-    )
+    assert sample["features"].metadata["response_donor_sample_id"] != sample["sample_id"]
     assert sample["features"].metadata["response_shuffle_policy"] == (
         "seeded_random_pooled_derangement_v2"
     )
@@ -206,8 +200,97 @@ def test_representation_collation_drops_unused_cached_fields(tmp_path: Path) -> 
     )
     assert batch["tokenizer_mode"] == "state"
     assert batch["features"].state.shape[-1] == 4
+    assert batch["features"].response.shape[-1] == 0
+    assert batch["features"].adjacency.untyped_storage().nbytes() == 4
     assert batch["features"].baselines == {}
     assert batch["features"].graphs == {}
+
+    full = collate_cached(
+        [dataset[0], dataset[1]],
+        representation="full",
+    )
+    assert full["features"].state.shape[-1] > 0
+    assert full["features"].response.shape[-1] > 0
+    assert full["features"].adjacency.untyped_storage().nbytes() > 4
+
+    local = collate_cached(
+        [dataset[0], dataset[1]],
+        representation="full_local",
+    )
+    assert local["features"].state.shape[-1] > 0
+    assert local["features"].response.shape[-1] > 0
+    assert local["features"].adjacency.untyped_storage().nbytes() == 4
+
+
+@pytest.mark.parametrize(
+    ("representation", "expected_mode"),
+    [
+        ("random_feature_local", "state"),
+        ("z0", "state"),
+        ("zt", "state"),
+        ("trajectory", "state"),
+        ("velocity", "state"),
+        ("mismatch", "state"),
+        ("endpoint", "state"),
+        ("state", "state"),
+        ("state_nograph", "state_nograph"),
+        ("state_graph", "state_graph"),
+        ("response_nograph", "response_nograph"),
+        ("response_local", "response_local"),
+        ("response", "response"),
+        ("full_nograph", "full_nograph"),
+        ("full_local", "full_local"),
+        ("full", "full"),
+        ("dit_hidden_local", "state"),
+        ("dit_hidden_attention", "state_graph"),
+        ("response_shuffled", "response"),
+        ("full_shuffled", "full"),
+    ],
+)
+def test_compact_collation_preserves_all_consumed_registered_tensors(
+    tmp_path: Path,
+    representation: str,
+    expected_mode: str,
+) -> None:
+    cache_dir, _ = _write_cache(tmp_path)
+    dataset = CachedFeatureDataset(cache_dir)
+    samples = [dataset[0], dataset[1]]
+    selected = [
+        select_representation(sample["features"], representation)[0]
+        for sample in samples
+    ]
+    standard = stack_features(selected)
+    compact_batch = collate_cached(samples, representation=representation)
+    compact = compact_batch["features"]
+
+    assert compact_batch["tokenizer_mode"] == expected_mode
+    assert compact.grid_size == standard.grid_size
+    if expected_mode in {
+        "state",
+        "state_graph",
+        "state_nograph",
+        "full",
+        "full_local",
+        "full_nograph",
+    }:
+        assert torch.equal(compact.state, standard.state)
+    else:
+        assert compact.state.shape[-1] == 0
+    if expected_mode in {
+        "response",
+        "response_local",
+        "response_nograph",
+        "full",
+        "full_local",
+        "full_nograph",
+    }:
+        assert torch.equal(compact.response, standard.response)
+    else:
+        assert compact.response.shape[-1] == 0
+    if expected_mode in {"state_graph", "response", "full"}:
+        assert torch.equal(compact.adjacency, standard.adjacency)
+    else:
+        assert compact.adjacency.untyped_storage().nbytes() == 4
 
 
 def test_shard_shuffle_sampler_is_deterministic_and_complete(tmp_path: Path) -> None:

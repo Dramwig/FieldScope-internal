@@ -43,6 +43,11 @@ class FieldScopeModel(nn.Module):
         features: FieldFeatures,
         output_size: tuple[int, int],
         task: str | None = None,
+        *,
+        validate_features: bool = True,
     ) -> dict[str, torch.Tensor]:
-        tokens = self.tokenizer(features)
+        tokens = self.tokenizer(
+            features,
+            validate_features=validate_features,
+        )
         return self.heads(tokens, features.grid_size, output_size, task=task)

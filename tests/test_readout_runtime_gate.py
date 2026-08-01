@@ -10,6 +10,7 @@ from fieldscope.readout_runtime_gate import (
     MAX_CUDA_RESERVED_FRACTION,
     MIN_FREE_RAM_RESERVE_BYTES,
     MIN_SPEEDUP_FRACTION,
+    SCHEMA_VERSION,
     _exact_equal,
     _semantic_checkpoint,
     formal_readout_workload_envelope,
@@ -52,7 +53,7 @@ def _profile(config: RunConfig) -> dict:
         "code_dirty": False,
     }
     return {
-        "schema_version": 1,
+        "schema_version": SCHEMA_VERSION,
         "status": "passed",
         **provenance,
         "evidence_scope": "readout_seed_parallel_exactness_and_throughput_only",
@@ -67,9 +68,22 @@ def _profile(config: RunConfig) -> dict:
         "epochs": 20,
         "batch_size": 128,
         "minimum_speedup_fraction": MIN_SPEEDUP_FRACTION,
+        "minimum_fast_path_speedup_fraction": MIN_SPEEDUP_FRACTION,
         "maximum_cuda_reserved_fraction": MAX_CUDA_RESERVED_FRACTION,
         "minimum_free_ram_reserve_bytes": MIN_FREE_RAM_RESERVE_BYTES,
         "available_ram_bytes": 128 * 1024**3,
+        "strict_reference": {
+            "status": "completed",
+            "seed_workers": 1,
+            "elapsed_seconds": 12.0,
+            "fast_serial_speedup_fraction_vs_strict": 12.0 / 10.0 - 1.0,
+            "equivalence_to_fast_serial": {
+                "exact": True,
+                "runs": _exact_run_details(),
+            },
+            "matrix_report": "strict-reference/matrix_report.json",
+            "log": "strict-reference.log",
+        },
         "candidates": [
             {
                 "seed_workers": 1,
@@ -125,6 +139,44 @@ def _exact_run_details() -> dict[str, dict[str, bool]]:
         }
         for seed in (4121, 7319, 104729)
     }
+
+
+def test_readout_runtime_profile_requires_exact_strict_reference(tmp_path: Path) -> None:
+    config = _config()
+    path = tmp_path / "readout.json"
+
+    payload = _profile(config)
+    del payload["strict_reference"]
+    _write_profile(path, payload)
+    with pytest.raises(ValueError, match="strict reference is missing"):
+        readout_runtime_profile_identity(path)
+
+    payload = _profile(config)
+    payload["strict_reference"]["equivalence_to_fast_serial"]["exact"] = False
+    _write_profile(path, payload)
+    with pytest.raises(ValueError, match="strict reference is not exact"):
+        readout_runtime_profile_identity(path)
+
+    payload = _profile(config)
+    del payload["strict_reference"]["equivalence_to_fast_serial"]["runs"][
+        "full/seed-104729"
+    ]
+    _write_profile(path, payload)
+    with pytest.raises(ValueError, match="strict reference run registry mismatch"):
+        readout_runtime_profile_identity(path)
+
+    payload = _profile(config)
+    payload["strict_reference"]["fast_serial_speedup_fraction_vs_strict"] = 0.1
+    _write_profile(path, payload)
+    with pytest.raises(ValueError, match="strict reference speedup summary mismatch"):
+        readout_runtime_profile_identity(path)
+
+    payload = _profile(config)
+    payload["strict_reference"]["elapsed_seconds"] = 10.1
+    payload["strict_reference"]["fast_serial_speedup_fraction_vs_strict"] = 10.1 / 10.0 - 1.0
+    _write_profile(path, payload)
+    with pytest.raises(ValueError, match="not sufficiently faster"):
+        readout_runtime_profile_identity(path)
 
 
 def test_readout_runtime_profile_rejects_unregistered_or_ineligible_selection(
@@ -304,11 +356,17 @@ def test_candidate_failures_fall_back_to_exact_serial_profile(
 
     def fake_candidate(**kwargs):
         workers = kwargs["workers"]
+        if kwargs.get("strict_reference"):
+            return 12.0, tmp_path / "strict-reference.log"
         if workers > 1:
             raise RuntimeError(f"workers={workers} OOM")
         return 10.0, tmp_path / "workers-1.log"
 
     monkeypatch.setattr("fieldscope.readout_runtime_gate._run_candidate", fake_candidate)
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._compare_candidate",
+        lambda *_args: {"exact": True, "runs": _exact_run_details()},
+    )
     monkeypatch.setattr(
         "fieldscope.readout_runtime_gate._candidate_memory",
         lambda *_args: {

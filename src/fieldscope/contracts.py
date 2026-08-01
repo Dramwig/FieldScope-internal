@@ -47,7 +47,9 @@ class FieldFeatures:
     graphs: dict[str, torch.Tensor] = field(default_factory=dict)
     metadata: dict[str, Any] = field(default_factory=dict)
 
-    def validate(self) -> None:
+    def validate_structure(self) -> None:
+        """Validate shapes and names without scanning tensor values."""
+
         if self.state.ndim != 3 or self.response.ndim != 3:
             raise ValueError("state and response must have shape [B,P,D]")
         batch, patches, _ = self.state.shape
@@ -65,6 +67,11 @@ class FieldFeatures:
         for name, tensor in self.graphs.items():
             if tensor.shape != (batch, patches, patches):
                 raise ValueError(f"Graph {name!r} does not match batch/patch dimensions")
+
+    def validate(self) -> None:
+        """Validate the complete structure and finite-value contract."""
+
+        self.validate_structure()
         tensors = [
             self.state,
             self.response,
@@ -89,12 +96,10 @@ class FieldFeatures:
             adjacency=self.adjacency.to(device=device, dtype=dtype),
             grid_size=self.grid_size,
             baselines={
-                name: value.to(device=device, dtype=dtype)
-                for name, value in self.baselines.items()
+                name: value.to(device=device, dtype=dtype) for name, value in self.baselines.items()
             },
             graphs={
-                name: value.to(device=device, dtype=dtype)
-                for name, value in self.graphs.items()
+                name: value.to(device=device, dtype=dtype) for name, value in self.graphs.items()
             },
             metadata=dict(self.metadata),
         )
