@@ -85,6 +85,11 @@ def test_extension_runbook_is_fail_closed_and_keeps_registered_scope() -> None:
     assert "build-extension-ablation-configs" in extension
     assert "audit-extension-evidence" in extension
     assert "--resume" in extension
+    assert "imagenet_checkpoint_budget_bytes=8589934592" in extension
+    assert (
+        '"$((imagenet_projected_bytes + imagenet_checkpoint_budget_bytes))"'
+        in extension
+    )
 
 
 def test_supervisor_tracks_conditional_final_stages_and_final_verdicts() -> None:

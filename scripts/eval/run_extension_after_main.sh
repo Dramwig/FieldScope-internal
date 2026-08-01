@@ -122,7 +122,8 @@ PY
   "${ablation_target_arguments[@]}" \
   --filesystem-path "$extension_cache_root" \
   --storage-policy dense \
-  --additional-required-bytes "$imagenet_projected_bytes" \
+  --additional-required-bytes \
+    "$((imagenet_projected_bytes + imagenet_checkpoint_budget_bytes))" \
   --reserve-gib 10 \
   --safety-factor 1.15 \
   --output "$preflight_root/combined_extension_cache_budget.json"
