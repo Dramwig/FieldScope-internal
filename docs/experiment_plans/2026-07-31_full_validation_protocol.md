@@ -70,8 +70,12 @@ ImageNet-100 类集合固定为可用 ImageNet-1k train 目录中 WordNet ID
 字典序前 100 类，并逐项写入 cache manifest。每类 train 样本按 seed 4121
 固定抽取 10% 作为 internal validation，官方 validation 仅作最终 test。现有
 `imagenet_256_10pct` 只能用于规模门；最终 ImageNet-100 结果必须使用这些类的
-完整训练样本。ImageNet-1k、ADE20K、NYUv2 在资产版本、划分和哈希完成记录前
-保持 TODO。
+完整训练样本。ADE20K、NYUv2 在资产版本、划分和哈希完成记录前保持 TODO。
+ImageNet-1k 扩展固定使用服务器上已经逐文件导出的 256 px RGB ImageFolder，
+其来源 snapshot、完整 split 数和 manifest SHA-256 见
+`docs/experiment_conditions/2026-08-01_imagenet1k_extension_asset.md`。正式扩展仍须在
+FieldScope 固定 revision 上重新执行资产审计和 split 审计；资产存在不等于扩展结果
+已经运行或方法有效。
 
 VOC 2012 与 ADE20K 同样从官方 training split 以 seed 4121 固定抽取 10%
 internal validation，官方 validation 仅作最终 test。NYUv2 使用官方 795/654
@@ -158,6 +162,56 @@ epoch 数和选模规则：
 
 任何资源缩减、数据缺失或协议偏离都写入 `docs/records/`，并在结果表标明，
 不得静默替换最终设置。
+
+## 实现澄清：扩展门的固定范围与判定
+
+本节在任何真实 signal、正式主任务或因果结果产生前冻结，用于避免看到
+ImageNet-100 或 VOC 指标后再挑扩展设置。扩展门仅在主任务审计输出
+`main_tasks_supported_pending_causal_audits` 时启动；完整负向主任务已经形成限定结论，
+不再消耗 ImageNet-1k 与高成本消融算力。
+
+ImageNet-1k 分类扩展固定如下：
+
+- 数据是记录中 snapshot 对应的全部 1,281,167 张官方 train 与 50,000 张官方
+  validation 导出；train 仍按 seed 4121 在每类内固定留出 10% internal validation，
+  官方 validation 只作一次 final test；
+- 输入、probe、图、冻结主干和 cache 合约与 512 px 主配置完全相同；
+- readout 使用与 ImageNet-100 相同的 90 epoch、batch 128、AdamW 配置，类别数改为
+  1,000；执行完整 20 表示 × 3 seed 矩阵，不根据主任务结果删减对照；
+- `response` 或 `full` 至少有一个必须同时超过每 seed 最强静态/hidden 对照、对应
+  no-graph 与 fixed-local 对照及 shuffled-response 对照，三 seed 平均差为正、至少
+  2/3 seed 同向且配对 t 区间 95% 下界大于零，才记为 ImageNet-1k 扩展支持；
+- 正式抽取前按实测 sparse cache bytes/sample、完整 split 数、checkpoint 上界和
+  10 GiB 保留空间执行 fail-closed 资源门。`resource_blocked` 只能作为明确限制记录，
+  不得自动改成 ImageNet-100、10% 子集、256 px、少表示或少 seed。
+
+高成本消融固定为完整 VOC 2012 official validation/test 的 paired-image 无监督诊断。
+以主 512 px 配置为中心，每个 cache 只改变一个因素，固定执行：
+
+- 单时间 `[0.2]`、`[0.5]`、`[0.8]`；
+- probe directions `R=1,2,4`；
+- forward difference；
+- Gaussian probe；
+- `eta=0.015,0.06`；
+- graph global top-k `0,8,32`；
+- graph local radius `0,2`。
+
+主配置自身作为共同基线，因此新增 15 个 cache。每个变体都报告 response 的
+boundary AP 与 pairwise AUROC、逐图差值、paired-image bootstrap 95% 区间、运行时间、
+峰值显存和 cache 完整性；不得用 test 标签选择新主配置，也不得只报告优于主配置的
+方向。空间打乱、随机 Flow、两种文本条件以及 no-graph/fixed-local/input-state 对照已经
+由主矩阵和最终因果门覆盖，不在这里重复计作 15 个 one-factor cache。
+
+LoRA 保留为“冻结表示是否必须适配”的解释性诊断，而不是核心有效性门：冻结主干失败
+时，LoRA 正向结果不能把原结论改为成立；冻结主干成功时，未运行 LoRA 也不改变四项
+核心判定。由于当前协议没有预注册 LoRA 的监督任务、rank、目标模块与优化预算，禁止
+在看到结果后临时选择这些设置并写成 confirmatory evidence；若执行，必须另立先于结果
+的诊断协议与 revision，并明确标为 exploratory。
+
+扩展报告只有在 ImageNet-1k 资产/split/cache、60 个 readout run 和 15 个 VOC 消融
+cache 全部完成、有限且同 revision 时才可标记 `complete`。ImageNet-1k 未达到上述增益门
+或某些消融方向退化属于完整的 `mixed_or_negative` 扩展证据；缺 run、坏 cache、revision
+错配或非有限指标属于 `incomplete`，不得与负向科学结果混同。
 
 ## 实现澄清：关系图归因对照
 
