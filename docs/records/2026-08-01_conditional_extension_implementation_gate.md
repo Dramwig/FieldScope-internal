@@ -44,11 +44,11 @@ gate was implemented.
 ## Local validation facts
 
 - `ruff check src tests scripts`: passed.
-- `python -m pytest`: 141 tests passed.
+- `python -m pytest`: 142 tests passed.
 - toy smoke with two optimization steps: passed; cache reload exact equality was
   true.
 - `git diff --check`: passed.
-- The five new/changed Bash runbooks passed `bash -n` on `pro6000` by streaming
+- The six new/changed Bash runbooks passed `bash -n` on `pro6000` by streaming
   their local contents to the server shell; this did not deploy or execute them.
 
 These facts establish that the conditional execution and audit path is available.
