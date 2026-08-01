@@ -52,6 +52,13 @@ from fieldscope.statistics import bootstrap_mean_interval, summarize_run_reports
 
 _REPOSITORY_ROOT = Path(__file__).resolve().parents[2]
 
+READOUT_TRAINING_COVERAGE_CONTRACT = {
+    "sampler": "shard_shuffle_full_permutation_v1",
+    "epoch_seed": "run_seed_plus_zero_based_epoch_v1",
+    "drop_last": False,
+    "optimizer_steps": "one_per_batch_v1",
+}
+
 
 def git_revision() -> str | None:
     try:
@@ -854,6 +861,7 @@ def train_cached_readout(
     best_value: float | None = None
     best_epoch = 0
     readout_batch_size = batch_size or config.runtime.batch_size
+    optimizer_steps_per_epoch = math.ceil(len(train_dataset) / readout_batch_size)
     if resume_checkpoint is not None:
         payload = torch.load(resume_checkpoint, map_location=device, weights_only=False)
         if payload.get("task") != task:
@@ -874,6 +882,10 @@ def train_cached_readout(
             raise ValueError("Resume checkpoint batch size does not match")
         if int(payload.get("target_epochs", -1)) != epochs:
             raise ValueError("Resume checkpoint target epochs do not match")
+        if payload.get("training_coverage_contract") != READOUT_TRAINING_COVERAGE_CONTRACT:
+            raise ValueError("Resume checkpoint training coverage contract does not match")
+        if int(payload.get("optimizer_steps_per_epoch", -1)) != optimizer_steps_per_epoch:
+            raise ValueError("Resume checkpoint optimizer-step budget does not match")
         if payload.get("code_revision") != provenance["code_revision"]:
             raise ValueError("Resume checkpoint revision does not match current code")
         if payload.get("code_tree_sha256") != provenance["code_tree_sha256"]:
@@ -918,6 +930,7 @@ def train_cached_readout(
         )
         batch_sizes: list[int] = []
         total_samples = 0
+        optimizer_steps = 0
         for batch_index, cached_batch in enumerate(train_loader):
             batch_mode = str(cached_batch["tokenizer_mode"])
             if batch_mode != mode:
@@ -965,10 +978,24 @@ def train_cached_readout(
                 strict_host_sync=strict_host_sync,
             )
             optimizer.step()
+            optimizer_steps += 1
             batch_size = features.state.shape[0]
             loss_values[batch_index] = loss.detach().to(dtype=torch.float32)
             batch_sizes.append(batch_size)
             total_samples += batch_size
+        if total_samples != len(train_dataset):
+            raise RuntimeError(
+                "Training epoch sample coverage mismatch "
+                f"task={task} representation={representation} seed={seed} "
+                f"epoch={epoch + 1} actual={total_samples} expected={len(train_dataset)}"
+            )
+        if optimizer_steps != optimizer_steps_per_epoch:
+            raise RuntimeError(
+                "Training epoch optimizer-step mismatch "
+                f"task={task} representation={representation} seed={seed} "
+                f"epoch={epoch + 1} actual={optimizer_steps} "
+                f"expected={optimizer_steps_per_epoch}"
+            )
         epoch_loss_values = loss_values.cpu().tolist()
         total_loss = sum(
             value * current_batch_size
@@ -997,6 +1024,8 @@ def train_cached_readout(
             "epoch": epoch + 1,
             "learning_rate": optimizer.param_groups[0]["lr"],
             "train_loss": total_loss / max(1, total_samples),
+            "train_samples": total_samples,
+            "optimizer_steps": optimizer_steps,
             "train_seconds": train_seconds,
             "train_samples_per_second": total_samples / max(train_seconds, 1e-12),
             "validation_seconds": validation_seconds,
@@ -1031,6 +1060,14 @@ def train_cached_readout(
             "weight_decay": weight_decay,
             "batch_size": readout_batch_size,
             "target_epochs": epochs,
+            "training_coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+            "optimizer_steps_per_epoch": optimizer_steps_per_epoch,
+            "completed_optimizer_steps": sum(
+                int(item["optimizer_steps"]) for item in history
+            ),
+            "completed_training_sample_exposures": sum(
+                int(item["train_samples"]) for item in history
+            ),
             "train_cache": train_cache,
             "validation_cache": validation_cache,
             "train_control_contract": train_control_contract,
@@ -1061,6 +1098,14 @@ def train_cached_readout(
             "validation_control_contract": validation_control_contract,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
+            "training_coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+            "optimizer_steps_per_epoch": optimizer_steps_per_epoch,
+            "completed_optimizer_steps": sum(
+                int(item["optimizer_steps"]) for item in history
+            ),
+            "completed_training_sample_exposures": sum(
+                int(item["train_samples"]) for item in history
+            ),
             "trainable_parameters": _task_trainable_parameters(model, task),
             "batch_size": readout_batch_size,
             "readout_memory_cache": shared_memory_cache_stats(),
@@ -1079,6 +1124,9 @@ def train_cached_readout(
             "best_checkpoint": str(best_path),
             "best_checkpoint_sha256": file_sha256(best_path),
             "last_checkpoint": str(last_path),
+            "last_checkpoint_sha256": (
+                file_sha256(last_path) if epoch + 1 == epochs else None
+            ),
             "history": history,
         }
         atomic_json_dump(
@@ -1113,6 +1161,14 @@ def train_cached_readout(
             "validation_control_contract": validation_control_contract,
             "train_samples": len(train_dataset),
             "validation_samples": len(val_dataset),
+            "training_coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+            "optimizer_steps_per_epoch": optimizer_steps_per_epoch,
+            "completed_optimizer_steps": sum(
+                int(item["optimizer_steps"]) for item in history
+            ),
+            "completed_training_sample_exposures": sum(
+                int(item["train_samples"]) for item in history
+            ),
             "trainable_parameters": _task_trainable_parameters(model, task),
             "batch_size": readout_batch_size,
             "readout_memory_cache": shared_memory_cache_stats(),
@@ -1131,6 +1187,7 @@ def train_cached_readout(
             "best_checkpoint": str(best_path),
             "best_checkpoint_sha256": file_sha256(best_path),
             "last_checkpoint": str(resume_checkpoint),
+            "last_checkpoint_sha256": file_sha256(resume_checkpoint),
             "history": history,
             "validation": validation,
         }
@@ -1437,6 +1494,12 @@ def run_readout_matrix(
                     "best_checkpoint_sha256": best_checkpoint_sha256,
                     "test_report": str(test_report_path),
                     "test_metric": test_report["evaluation"]["metrics"][metric],
+                    "completed_optimizer_steps": training_report[
+                        "completed_optimizer_steps"
+                    ],
+                    "completed_training_sample_exposures": training_report[
+                        "completed_training_sample_exposures"
+                    ],
                 }
             )
             atomic_json_dump(
@@ -1471,6 +1534,12 @@ def run_readout_matrix(
         "train_cache": train_cache,
         "validation_cache": validation_cache,
         "test_cache": test_cache,
+        "completed_optimizer_steps": sum(
+            int(run["completed_optimizer_steps"]) for run in runs
+        ),
+        "completed_training_sample_exposures": sum(
+            int(run["completed_training_sample_exposures"]) for run in runs
+        ),
         "runs": runs,
         "summary": summary,
     }

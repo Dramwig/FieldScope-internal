@@ -1,5 +1,6 @@
 import hashlib
 import json
+import math
 from pathlib import Path
 from statistics import mean
 from types import SimpleNamespace
@@ -11,6 +12,7 @@ import torch
 from fieldscope.cached_dataset import cached_control_contract_for_cache
 from fieldscope.config import RunConfig
 from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
+from fieldscope.experiments import READOUT_TRAINING_COVERAGE_CONTRACT
 from fieldscope.readout_runtime_gate import (
     EQUIVALENCE_RULE,
     GATE_REPRESENTATION,
@@ -455,6 +457,42 @@ def _matrix(
             checkpoint.parent.mkdir(parents=True, exist_ok=True)
             checkpoint.write_bytes(b"checkpoint")
             checkpoint_sha256 = hashlib.sha256(checkpoint.read_bytes()).hexdigest()
+            train_samples = counts[0]
+            optimizer_steps_per_epoch = math.ceil(train_samples / batch_size)
+            completed_optimizer_steps = optimizer_steps_per_epoch * epochs
+            completed_training_sample_exposures = train_samples * epochs
+            history = [
+                {
+                    "epoch": epoch,
+                    "train_samples": train_samples,
+                    "optimizer_steps": optimizer_steps_per_epoch,
+                }
+                for epoch in range(1, epochs + 1)
+            ]
+            last_checkpoint = run_root / "last.pt"
+            torch.save(
+                {
+                    "epoch": epochs,
+                    "target_epochs": epochs,
+                    "batch_size": batch_size,
+                    "training_coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+                    "optimizer_steps_per_epoch": optimizer_steps_per_epoch,
+                    "completed_optimizer_steps": completed_optimizer_steps,
+                    "completed_training_sample_exposures": (
+                        completed_training_sample_exposures
+                    ),
+                    "history": history,
+                    "train_cache": cache_identities["train"],
+                    "validation_cache": cache_identities["val"],
+                    "code_revision": provenance["code_revision"],
+                    "code_tree_sha256": provenance["code_tree_sha256"],
+                    "optimizer": {
+                        "state": {0: {"step": torch.tensor(completed_optimizer_steps)}}
+                    },
+                },
+                last_checkpoint,
+            )
+            last_checkpoint_sha256 = hashlib.sha256(last_checkpoint.read_bytes()).hexdigest()
             value = _value(
                 dataset,
                 representation,
@@ -480,9 +518,19 @@ def _matrix(
                     "validation_cache": cache_identities["val"],
                     "train_control_contract": control_contracts["train"],
                     "validation_control_contract": control_contracts["val"],
+                    "train_samples": train_samples,
+                    "training_coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+                    "optimizer_steps_per_epoch": optimizer_steps_per_epoch,
+                    "completed_optimizer_steps": completed_optimizer_steps,
+                    "completed_training_sample_exposures": (
+                        completed_training_sample_exposures
+                    ),
                     "trainable_parameters": 123456,
                     "best_checkpoint": str(checkpoint),
                     "best_checkpoint_sha256": checkpoint_sha256,
+                    "last_checkpoint": str(last_checkpoint),
+                    "last_checkpoint_sha256": last_checkpoint_sha256,
+                    "history": history,
                 },
             )
             _write_json(
@@ -511,6 +559,10 @@ def _matrix(
                     "best_checkpoint": str(checkpoint),
                     "best_checkpoint_sha256": checkpoint_sha256,
                     "test_metric": value,
+                    "completed_optimizer_steps": completed_optimizer_steps,
+                    "completed_training_sample_exposures": (
+                        completed_training_sample_exposures
+                    ),
                 }
             )
     matrix = matrix_root / "matrix_report.json"
@@ -535,6 +587,12 @@ def _matrix(
             "validation_cache": cache_identities["val"],
             "test_cache": cache_identities["test"],
             "readout_runtime_profile": readout_runtime_profile,
+            "completed_optimizer_steps": sum(
+                int(run["completed_optimizer_steps"]) for run in runs
+            ),
+            "completed_training_sample_exposures": sum(
+                int(run["completed_training_sample_exposures"]) for run in runs
+            ),
             "runs": runs,
         },
     )
@@ -703,6 +761,13 @@ def test_full_evidence_supports_only_complete_cross_task_result(
     assert report["requires_causal_audits"] is True
     assert report["unsupervised"]["passed"] is True
     assert report["supervised"]["full"]["supports_cross_task_hypothesis"] is True
+    assert report["training_execution"]["required_optimizer_steps"] == 51_013_200
+    assert report["training_execution"]["reported_completed_optimizer_steps"] == 51_013_200
+    assert report["training_execution"]["required_training_sample_exposures"] == 725_922_600
+    assert (
+        report["training_execution"]["reported_completed_training_sample_exposures"]
+        == 725_922_600
+    )
     comparison = report["supervised"]["full"]["tasks"]["imagenet100"]["graph_controls"]
     assert comparison["ci95"][0] > 0
     assert comparison["paired_sign_flip_pvalue"] == 0.25
@@ -752,6 +817,39 @@ def test_full_evidence_is_incomplete_for_stale_or_nonfinite_run(
     assert report["status"] == "incomplete"
     assert report["verdict"] == "incomplete"
     assert any("non-finite test metric" in problem for problem in report["problems"])
+
+
+def test_full_evidence_rejects_incomplete_optimizer_step_coverage(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
+        tmp_path,
+        monkeypatch,
+        passing=True,
+    )
+    matrix = json.loads(matrices["imagenet100"].read_text(encoding="utf-8"))
+    training_path = Path(matrix["runs"][0]["training_report"])
+    training = json.loads(training_path.read_text(encoding="utf-8"))
+    training["history"][-1]["optimizer_steps"] -= 1
+    training["completed_optimizer_steps"] -= 1
+    last_checkpoint = Path(training["last_checkpoint"])
+    last_payload = torch.load(last_checkpoint, map_location="cpu", weights_only=False)
+    last_payload["optimizer"]["state"][0]["step"] -= 1
+    torch.save(last_payload, last_checkpoint)
+    training["last_checkpoint_sha256"] = hashlib.sha256(last_checkpoint.read_bytes()).hexdigest()
+    training_path.write_text(json.dumps(training), encoding="utf-8")
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
+    )
+    assert report["status"] == "incomplete"
+    assert report["verdict"] == "incomplete"
+    assert any("training epoch optimizer-step mismatch" in item for item in report["problems"])
+    assert any("last checkpoint AdamW step-state mismatch" in item for item in report["problems"])
 
 
 def test_full_evidence_rejects_tampered_response_shuffle_contract(

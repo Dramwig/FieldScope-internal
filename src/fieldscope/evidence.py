@@ -14,7 +14,12 @@ from fieldscope.cache import load_features
 from fieldscope.cached_dataset import cached_control_contract_for_cache
 from fieldscope.config import RunConfig, runtime_profile_identity
 from fieldscope.dataset_audit import sample_ids_sha256
-from fieldscope.experiments import cache_identity, code_provenance, file_sha256
+from fieldscope.experiments import (
+    READOUT_TRAINING_COVERAGE_CONTRACT,
+    cache_identity,
+    code_provenance,
+    file_sha256,
+)
 from fieldscope.readout_runtime_gate import (
     load_readout_runtime_gate_report,
     readout_runtime_profile_identity,
@@ -289,6 +294,13 @@ def _read_json(path: Path) -> dict[str, Any]:
     if not isinstance(payload, dict):
         raise TypeError(f"Expected a JSON object in {path}")
     return payload
+
+
+def _integer_or(value: Any, default: int) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
 
 
 def _json_compatible(value: Any) -> Any:
@@ -588,6 +600,8 @@ def _validate_matrix(
         "test": _resolve_report_path(str(report.get("test_cache_dir", "")), repository_root),
     }
     expected_control_contracts: dict[tuple[str, int, str], dict[str, Any]] = {}
+    completed_optimizer_steps = 0
+    completed_training_sample_exposures = 0
 
     def expected_control_contract(
         representation: str,
@@ -660,6 +674,135 @@ def _validate_matrix(
                     representation, seed, "validation"
                 ):
                     problems.append(f"validation control contract mismatch {source}")
+                train_samples = int(payload.get("train_samples", -1))
+                payload_train_cache = payload.get("train_cache")
+                cache_train_samples = (
+                    int(payload_train_cache.get("num_samples", -2))
+                    if isinstance(payload_train_cache, Mapping)
+                    else -2
+                )
+                if train_samples < 1 or train_samples != cache_train_samples:
+                    problems.append(f"training sample-count contract mismatch {source}")
+                expected_steps_per_epoch = (
+                    math.ceil(train_samples / expected_budget["batch_size"])
+                    if train_samples > 0
+                    else -1
+                )
+                if (
+                    payload.get("training_coverage_contract")
+                    != READOUT_TRAINING_COVERAGE_CONTRACT
+                ):
+                    problems.append(f"training coverage contract mismatch {source}")
+                if (
+                    int(payload.get("optimizer_steps_per_epoch", -1))
+                    != expected_steps_per_epoch
+                ):
+                    problems.append(f"training per-epoch optimizer-step mismatch {source}")
+                history = payload.get("history")
+                if not isinstance(history, list) or len(history) != expected_budget["epochs"]:
+                    problems.append(f"training history epoch coverage mismatch {source}")
+                    history = []
+                history_optimizer_steps = 0
+                history_sample_exposures = 0
+                for epoch_index, entry in enumerate(history, start=1):
+                    if not isinstance(entry, Mapping):
+                        problems.append(f"training history entry is invalid {source}")
+                        continue
+                    if int(entry.get("epoch", -1)) != epoch_index:
+                        problems.append(f"training history epoch sequence mismatch {source}")
+                    if int(entry.get("train_samples", -1)) != train_samples:
+                        problems.append(f"training epoch sample coverage mismatch {source}")
+                    if int(entry.get("optimizer_steps", -1)) != expected_steps_per_epoch:
+                        problems.append(f"training epoch optimizer-step mismatch {source}")
+                    history_optimizer_steps += int(entry.get("optimizer_steps", 0))
+                    history_sample_exposures += int(entry.get("train_samples", 0))
+                expected_optimizer_steps = (
+                    expected_steps_per_epoch * expected_budget["epochs"]
+                )
+                expected_sample_exposures = train_samples * expected_budget["epochs"]
+                if (
+                    history_optimizer_steps != expected_optimizer_steps
+                    or int(payload.get("completed_optimizer_steps", -1))
+                    != expected_optimizer_steps
+                ):
+                    problems.append(f"training completed optimizer-step mismatch {source}")
+                if (
+                    history_sample_exposures != expected_sample_exposures
+                    or int(payload.get("completed_training_sample_exposures", -1))
+                    != expected_sample_exposures
+                ):
+                    problems.append(f"training completed sample-exposure mismatch {source}")
+                completed_optimizer_steps += max(0, expected_optimizer_steps)
+                completed_training_sample_exposures += max(0, expected_sample_exposures)
+                if int(run.get("completed_optimizer_steps", -1)) != expected_optimizer_steps:
+                    problems.append(f"matrix run optimizer-step mismatch {source}")
+                if (
+                    int(run.get("completed_training_sample_exposures", -1))
+                    != expected_sample_exposures
+                ):
+                    problems.append(f"matrix run sample-exposure mismatch {source}")
+                last_checkpoint = _resolve_report_path(
+                    str(payload.get("last_checkpoint", "")),
+                    repository_root,
+                )
+                if not last_checkpoint.is_file():
+                    problems.append(f"missing last checkpoint {last_checkpoint}")
+                else:
+                    last_checkpoint_sha256 = file_sha256(last_checkpoint)
+                    if payload.get("last_checkpoint_sha256") != last_checkpoint_sha256:
+                        problems.append(f"last checkpoint SHA-256 mismatch {last_checkpoint}")
+                    try:
+                        last_payload = torch.load(
+                            last_checkpoint,
+                            map_location="cpu",
+                            weights_only=False,
+                        )
+                    except Exception as error:  # noqa: BLE001 - artifact audit boundary
+                        problems.append(f"invalid last checkpoint {last_checkpoint}: {error}")
+                    else:
+                        if not isinstance(last_payload, Mapping):
+                            problems.append(f"invalid last checkpoint payload {last_checkpoint}")
+                            last_payload = {}
+                        checkpoint_contract = {
+                            "epoch": expected_budget["epochs"],
+                            "target_epochs": expected_budget["epochs"],
+                            "batch_size": expected_budget["batch_size"],
+                            "training_coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+                            "optimizer_steps_per_epoch": expected_steps_per_epoch,
+                            "completed_optimizer_steps": expected_optimizer_steps,
+                            "completed_training_sample_exposures": expected_sample_exposures,
+                            "history": history,
+                            "train_cache": payload.get("train_cache"),
+                            "validation_cache": payload.get("validation_cache"),
+                            "code_revision": provenance["code_revision"],
+                            "code_tree_sha256": provenance["code_tree_sha256"],
+                        }
+                        for name, expected in checkpoint_contract.items():
+                            if last_payload.get(name) != expected:
+                                problems.append(
+                                    f"last checkpoint {name} contract mismatch {last_checkpoint}"
+                                )
+                        optimizer_payload = last_payload.get("optimizer")
+                        optimizer_states = (
+                            optimizer_payload.get("state", {})
+                            if isinstance(optimizer_payload, Mapping)
+                            else {}
+                        )
+                        try:
+                            optimizer_state_steps = {
+                                int(state["step"].item())
+                                if isinstance(state.get("step"), torch.Tensor)
+                                else int(state["step"])
+                                for state in optimizer_states.values()
+                                if isinstance(state, Mapping) and "step" in state
+                            }
+                        except (TypeError, ValueError):
+                            optimizer_state_steps = set()
+                        if optimizer_state_steps != {expected_optimizer_steps}:
+                            problems.append(
+                                "last checkpoint AdamW step-state mismatch "
+                                f"{last_checkpoint}"
+                            )
                 try:
                     parameter_counts.add(int(payload["trainable_parameters"]))
                 except (KeyError, TypeError, ValueError):
@@ -733,6 +876,13 @@ def _validate_matrix(
         problems.append(f"matrix has {len(unexpected_runs)} unexpected runs {path}")
     if len(parameter_counts) != 1:
         problems.append(f"readout parameter counts are not matched {path}")
+    if int(report.get("completed_optimizer_steps", -1)) != completed_optimizer_steps:
+        problems.append(f"matrix completed optimizer-step total mismatch {path}")
+    if (
+        int(report.get("completed_training_sample_exposures", -1))
+        != completed_training_sample_exposures
+    ):
+        problems.append(f"matrix completed sample-exposure total mismatch {path}")
     for split, path_key, identity_key in (
         ("train", "train_cache_dir", "train_cache"),
         ("val", "val_cache_dir", "validation_cache"),
@@ -764,6 +914,22 @@ def _validate_matrix(
         "maximize": maximize,
         "trainable_parameter_count": next(iter(parameter_counts), None),
         "run_count": len(seen),
+        "required_optimizer_steps": (
+            math.ceil(expected_counts["train"] / expected_budget["batch_size"])
+            * expected_budget["epochs"]
+            * len(_REPRESENTATIONS)
+            * len(_SEEDS)
+        ),
+        "reported_completed_optimizer_steps": report.get("completed_optimizer_steps"),
+        "required_training_sample_exposures": (
+            expected_counts["train"]
+            * expected_budget["epochs"]
+            * len(_REPRESENTATIONS)
+            * len(_SEEDS)
+        ),
+        "reported_completed_training_sample_exposures": report.get(
+            "completed_training_sample_exposures"
+        ),
     }
     return observations, task_report, problems
 
@@ -1294,6 +1460,25 @@ def audit_full_evidence(
         "problems": sorted(set(problems)),
         "required_seeds": sorted(_SEEDS),
         "required_representations": sorted(_REPRESENTATIONS),
+        "training_execution": {
+            "coverage_contract": READOUT_TRAINING_COVERAGE_CONTRACT,
+            "required_optimizer_steps": sum(
+                int(task.get("required_optimizer_steps", 0))
+                for task in task_reports.values()
+            ),
+            "reported_completed_optimizer_steps": sum(
+                _integer_or(task.get("reported_completed_optimizer_steps"), 0)
+                for task in task_reports.values()
+            ),
+            "required_training_sample_exposures": sum(
+                int(task.get("required_training_sample_exposures", 0))
+                for task in task_reports.values()
+            ),
+            "reported_completed_training_sample_exposures": sum(
+                _integer_or(task.get("reported_completed_training_sample_exposures"), 0)
+                for task in task_reports.values()
+            ),
+        },
         "tasks": task_reports,
         "backbone_asset": backbone_asset,
         "split_audits": split_audits,

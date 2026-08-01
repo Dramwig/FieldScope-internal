@@ -128,6 +128,12 @@ def test_cached_dataset_collate_and_train(tmp_path: Path) -> None:
     )
     assert report["status"] == "passed"
     assert Path(report["checkpoint"]).is_file()
+    assert report["train_samples"] == 3
+    assert report["optimizer_steps_per_epoch"] == 2
+    assert report["completed_optimizer_steps"] == 2
+    assert report["completed_training_sample_exposures"] == 3
+    assert report["history"][0]["train_samples"] == 3
+    assert report["history"][0]["optimizer_steps"] == 2
     assert report["history"][0]["train_samples_per_second"] > 0
     assert report["runtime"]["elapsed_seconds"] > 0
     resumed = train_cache(

@@ -372,6 +372,8 @@ def test_readout_matrix_runs_and_resumes(tmp_path: Path, monkeypatch: Any) -> No
     assert first["status"] == "passed"
     assert second["status"] == "passed"
     assert len(first["runs"]) == 2
+    assert first["completed_optimizer_steps"] == 4
+    assert first["completed_training_sample_exposures"] == 8
     assert "classification/full-minus-state" in first["summary"]["comparisons"]
 
 
@@ -458,7 +460,14 @@ def test_seed_parallel_matrix_matches_serial_checkpoints(tmp_path: Path, monkeyp
                 parallel_checkpoint["history"],
                 strict=True,
             ):
-                for key in ("epoch", "learning_rate", "train_loss", "validation"):
+                for key in (
+                    "epoch",
+                    "learning_rate",
+                    "train_loss",
+                    "train_samples",
+                    "optimizer_steps",
+                    "validation",
+                ):
                     _assert_nested_equal(serial_epoch[key], parallel_epoch[key])
 
 
@@ -682,10 +691,16 @@ def test_readout_resume_matches_uninterrupted_training(tmp_path: Path, monkeypat
         _assert_nested_equal(continuous_payload[key], resumed_payload[key])
     assert continuous_payload["best_epoch"] == resumed_payload["best_epoch"]
     assert continuous_payload["best_primary_metric"] == resumed_payload["best_primary_metric"]
+    assert continuous_payload["completed_optimizer_steps"] == 6
+    assert resumed_payload["completed_optimizer_steps"] == 6
+    assert continuous_payload["completed_training_sample_exposures"] == 12
+    assert resumed_payload["completed_training_sample_exposures"] == 12
     for first, second in zip(continuous["history"], resumed["history"], strict=True):
         assert first["epoch"] == second["epoch"]
         assert first["learning_rate"] == second["learning_rate"]
         assert first["train_loss"] == second["train_loss"]
+        assert first["train_samples"] == second["train_samples"] == 4
+        assert first["optimizer_steps"] == second["optimizer_steps"] == 2
         assert first["validation"] == second["validation"]
 
 
