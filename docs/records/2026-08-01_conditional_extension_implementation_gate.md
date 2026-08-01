@@ -36,6 +36,10 @@ gate was implemented.
   result. It additionally requires extension evidence after a positive main-task
   result, but does not run the conditional extension after a complete negative
   main result.
+- The revision-bound supervisor is now tracked in `scripts/eval/` rather than
+  existing only as a machine-local log helper. It recognizes the causal, final,
+  and extension top-level stages, carries the read-only ImageNet-1k path into the
+  full waiter, and terminates only on the unified final verdict.
 
 ## Local validation facts
 

@@ -72,6 +72,19 @@ def test_extension_runbook_is_fail_closed_and_keeps_registered_scope() -> None:
     assert "--resume" in extension
 
 
+def test_supervisor_tracks_conditional_final_stages_and_final_verdicts() -> None:
+    supervisor = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_validation_supervisor.sh"
+    ).read_text(encoding="utf-8")
+    assert "FIELDSCOPE_IMAGENET1K_ROOT" in supervisor
+    assert "run_final_conclusion_after_main.sh" in supervisor
+    assert "run_extension_after_main.sh" in supervisor
+    assert "final_evidence_decision.json" in supervisor
+    assert "supports_core_hypothesis_with_scaling_extension" in supervisor
+    assert "supports_core_hypothesis_limited_scaling" in supervisor
+    assert "flock -n 9" in supervisor
+
+
 def test_signal_runbook_runs_runtime_gate_before_real_cache_extraction() -> None:
     signal = (REPOSITORY_ROOT / "scripts" / "eval" / "run_signal_gate_after_gpu.sh").read_text(
         encoding="utf-8"
