@@ -390,6 +390,7 @@ def _validate_cache_manifest(
     shard_samples = 0
     shard_sample_ids: list[str] = []
     expected_target = {
+        "imagenet": "classification",
         "imagenet100": "classification",
         "voc2012": "segmentation",
         "ade20k": "segmentation",
@@ -561,8 +562,11 @@ def _validate_matrix(
     provenance: Mapping[str, Any],
     repository_root: Path,
     expected_runtime_profile: Mapping[str, Any] | None = None,
+    *,
+    task_contract: tuple[str, str, bool, dict[str, int]] | None = None,
+    readout_budget: dict[str, int] | None = None,
 ) -> tuple[dict[str, dict[int, float]], dict[str, Any], list[str]]:
-    task, metric, maximize, expected_counts = _TASKS[dataset]
+    task, metric, maximize, expected_counts = task_contract or _TASKS[dataset]
     problems: list[str] = []
     if not path.is_file():
         return {}, {"dataset": dataset, "path": str(path)}, [f"missing {path}"]
@@ -581,7 +585,7 @@ def _validate_matrix(
         problems.append(f"matrix seeds mismatch {path}")
     if set(report.get("representations", [])) != _REPRESENTATIONS:
         problems.append(f"matrix representations mismatch {path}")
-    expected_budget = _READOUT_BUDGETS[dataset]
+    expected_budget = readout_budget or _READOUT_BUDGETS[dataset]
     if int(report.get("epochs", -1)) != expected_budget["epochs"]:
         problems.append(f"matrix epoch budget mismatch {path}")
     if int(report.get("batch_size", -1)) != expected_budget["batch_size"]:

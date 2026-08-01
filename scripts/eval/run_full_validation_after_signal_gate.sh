@@ -268,4 +268,4 @@ if [[ "$verdict" != "main_tasks_supported_pending_causal_audits" && "$verdict" !
   echo "unexpected main evidence verdict=$verdict" >&2
   exit 10
 fi
-exec bash scripts/eval/run_causal_validation_after_main.sh
+exec bash scripts/eval/run_final_conclusion_after_main.sh

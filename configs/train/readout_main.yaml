@@ -30,6 +30,7 @@ representations:
 task_epochs:
   cifar10: 50
   imagenet100: 90
+  imagenet: 90
   voc2012: 80
   ade20k: 80
   nyuv2: 80

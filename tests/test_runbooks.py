@@ -43,12 +43,33 @@ def test_causal_runbook_runs_after_complete_positive_or_negative_main_result() -
     causal = (
         REPOSITORY_ROOT / "scripts" / "eval" / "run_causal_validation_after_main.sh"
     ).read_text(encoding="utf-8")
+    final = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_final_conclusion_after_main.sh"
+    ).read_text(encoding="utf-8")
     for script in (full, causal):
         assert '"limited_or_negative"' in script
         assert '"main_tasks_supported_pending_causal_audits"' in script
         assert '== "incomplete"' in script
         assert "echo +" not in script
-    assert "exec bash scripts/eval/run_causal_validation_after_main.sh" in full
+    assert "exec bash scripts/eval/run_final_conclusion_after_main.sh" in full
+    assert "bash scripts/eval/run_causal_validation_after_main.sh" in final
+    assert "bash scripts/eval/run_extension_after_main.sh" in final
+    assert 'if [[ "$main_verdict" == "main_tasks_supported_pending_causal_audits" ]]' in final
+    assert "audit-final-evidence" in final
+
+
+def test_extension_runbook_is_fail_closed_and_keeps_registered_scope() -> None:
+    extension = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_extension_after_main.sh"
+    ).read_text(encoding="utf-8")
+    assert "audit-imagenet1k-asset" in extension
+    assert "--dataset imagenet" in extension
+    assert "plan-cache-budget" in extension
+    assert "refusing to shrink the registered scope" in extension
+    assert "train_imagenet_readout.sh" in extension
+    assert "build-extension-ablation-configs" in extension
+    assert "audit-extension-evidence" in extension
+    assert "--resume" in extension
 
 
 def test_signal_runbook_runs_runtime_gate_before_real_cache_extraction() -> None:

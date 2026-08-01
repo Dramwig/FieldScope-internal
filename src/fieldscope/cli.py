@@ -36,6 +36,12 @@ from fieldscope.experiments import (
     set_experiment_seed,
     train_cached_readout,
 )
+from fieldscope.extension import (
+    audit_extension_evidence,
+    audit_final_evidence,
+    audit_imagenet1k_asset,
+    build_high_cost_ablation_configs,
+)
 from fieldscope.gates import audit_signal_gate
 from fieldscope.losses import multitask_loss
 from fieldscope.model import FieldScopeModel
@@ -517,7 +523,7 @@ def _build_parser() -> argparse.ArgumentParser:
     split_audit_parser.add_argument(
         "--dataset",
         required=True,
-        choices=["cifar10", "voc2012", "imagenet100", "ade20k", "nyuv2"],
+        choices=["cifar10", "voc2012", "imagenet", "imagenet100", "ade20k", "nyuv2"],
     )
     split_audit_parser.add_argument("--root", required=True, type=Path)
     split_audit_parser.add_argument("--image-size", type=int, default=256)
@@ -577,6 +583,69 @@ def _build_parser() -> argparse.ArgumentParser:
     ):
         causal_parser.add_argument(f"--{variant}", required=True, type=Path)
     causal_parser.add_argument("--output", required=True, type=Path)
+
+    imagenet_asset_parser = subparsers.add_parser(
+        "audit-imagenet1k-asset",
+        help="Verify the registered full ImageNet-1k server export",
+    )
+    imagenet_asset_parser.add_argument("--root", required=True, type=Path)
+    imagenet_asset_parser.add_argument("--manifest", required=True, type=Path)
+    imagenet_asset_parser.add_argument("--export-summary", required=True, type=Path)
+    imagenet_asset_parser.add_argument("--output", required=True, type=Path)
+
+    ablation_config_parser = subparsers.add_parser(
+        "build-extension-ablation-configs",
+        help="Materialize the registered 15 one-factor high-cost configs",
+    )
+    ablation_config_parser.add_argument("--base-config", required=True, type=Path)
+    ablation_config_parser.add_argument("--output-dir", required=True, type=Path)
+    ablation_config_parser.add_argument("--output", required=True, type=Path)
+
+    extension_evidence_parser = subparsers.add_parser(
+        "audit-extension-evidence",
+        help="Audit conditional ImageNet-1k and high-cost ablation evidence",
+    )
+    extension_evidence_parser.add_argument("--main-evidence", required=True, type=Path)
+    extension_evidence_parser.add_argument("--imagenet-matrix", required=True, type=Path)
+    extension_evidence_parser.add_argument(
+        "--imagenet-asset-audit", required=True, type=Path
+    )
+    extension_evidence_parser.add_argument(
+        "--imagenet-split-audit", required=True, type=Path
+    )
+    extension_evidence_parser.add_argument(
+        "--main-runtime-profile", required=True, type=Path
+    )
+    extension_evidence_parser.add_argument(
+        "--readout-runtime-profile", required=True, type=Path
+    )
+    extension_evidence_parser.add_argument("--base-voc-report", required=True, type=Path)
+    extension_evidence_parser.add_argument("--base-config", required=True, type=Path)
+    extension_evidence_parser.add_argument(
+        "--ablation-registry", required=True, type=Path
+    )
+    extension_evidence_parser.add_argument(
+        "--ablation-report",
+        required=True,
+        action="append",
+        help="Registered ablation report as NAME=PATH",
+    )
+    extension_evidence_parser.add_argument(
+        "--ablation-runtime-profile",
+        required=True,
+        action="append",
+        help="Registered ablation runtime profile as NAME=PATH",
+    )
+    extension_evidence_parser.add_argument("--output", required=True, type=Path)
+
+    final_evidence_parser = subparsers.add_parser(
+        "audit-final-evidence",
+        help="Combine main, causal, and conditionally required extension evidence",
+    )
+    final_evidence_parser.add_argument("--main-evidence", required=True, type=Path)
+    final_evidence_parser.add_argument("--causal-evidence", required=True, type=Path)
+    final_evidence_parser.add_argument("--extension-evidence", type=Path)
+    final_evidence_parser.add_argument("--output", required=True, type=Path)
 
     inspect_parser = subparsers.add_parser("inspect-cache", help="Print cache manifest")
     inspect_parser.add_argument("--cache", required=True, type=Path)
@@ -837,6 +906,63 @@ def main(argv: list[str] | None = None) -> int:
                 "neutral_prompt": args.neutral_prompt,
                 "unrelated_prompt": args.unrelated_prompt,
             },
+        )
+        _json_dump(args.output, report)
+        if report["verdict"] == "incomplete":
+            exit_code = 2
+    elif args.command == "audit-imagenet1k-asset":
+        report = audit_imagenet1k_asset(
+            dataset_root=args.root,
+            manifest_path=args.manifest,
+            export_summary_path=args.export_summary,
+        )
+        _json_dump(args.output, report)
+        if report["status"] != "passed":
+            exit_code = 2
+    elif args.command == "build-extension-ablation-configs":
+        report = build_high_cost_ablation_configs(args.base_config, args.output_dir)
+        _json_dump(args.output, report)
+    elif args.command == "audit-extension-evidence":
+        ablation_reports: dict[str, Path] = {}
+        for specification in args.ablation_report:
+            name, separator, path = specification.partition("=")
+            if not separator or not name or not path or name in ablation_reports:
+                raise ValueError("--ablation-report must contain unique NAME=PATH values")
+            ablation_reports[name] = Path(path)
+        ablation_runtime_profiles: dict[str, Path] = {}
+        for specification in args.ablation_runtime_profile:
+            name, separator, path = specification.partition("=")
+            if (
+                not separator
+                or not name
+                or not path
+                or name in ablation_runtime_profiles
+            ):
+                raise ValueError(
+                    "--ablation-runtime-profile must contain unique NAME=PATH values"
+                )
+            ablation_runtime_profiles[name] = Path(path)
+        report = audit_extension_evidence(
+            main_evidence_path=args.main_evidence,
+            imagenet_matrix_path=args.imagenet_matrix,
+            imagenet_asset_audit_path=args.imagenet_asset_audit,
+            imagenet_split_audit_path=args.imagenet_split_audit,
+            main_runtime_profile_path=args.main_runtime_profile,
+            readout_runtime_profile_path=args.readout_runtime_profile,
+            base_voc_report_path=args.base_voc_report,
+            base_config_path=args.base_config,
+            ablation_registry_path=args.ablation_registry,
+            ablation_report_paths=ablation_reports,
+            ablation_runtime_profile_paths=ablation_runtime_profiles,
+        )
+        _json_dump(args.output, report)
+        if report["verdict"] == "incomplete":
+            exit_code = 2
+    elif args.command == "audit-final-evidence":
+        report = audit_final_evidence(
+            main_evidence_path=args.main_evidence,
+            causal_evidence_path=args.causal_evidence,
+            extension_evidence_path=args.extension_evidence,
         )
         _json_dump(args.output, report)
         if report["verdict"] == "incomplete":

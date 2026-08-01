@@ -24,4 +24,20 @@ graph_local_radius: [0, 1, 2]
 causal_controls: [response_shuffled_across_images, random_flow]
 conditions: ["", "a neutral photograph", "an unrelated scene"]
 backbone_adaptation: [frozen, lora_diagnostic_only]
-status: planned_not_all_modes_implemented
+confirmatory_high_cost_extension:
+  trigger: main_tasks_supported_pending_causal_audits
+  dataset: voc2012_official_validation_as_test
+  baseline: configs/model/auraflow_v03.yaml
+  one_factor_variants:
+    times: [[0.2], [0.5], [0.8]]
+    directions: [1, 2, 4]
+    difference: [forward]
+    probe_type: [gaussian]
+    eta: [0.015, 0.06]
+    graph_topk: [0, 8, 32]
+    graph_local_radius: [0, 2]
+  variant_count: 15
+  report_all_directions: true
+  completion_gate: finite_same_revision_full_1449_image_caches
+lora_status: exploratory_requires_separate_pre_result_protocol
+status: conditional_extension_implemented
