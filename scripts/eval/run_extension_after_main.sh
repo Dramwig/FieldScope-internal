@@ -17,6 +17,12 @@ main_runtime_profile="${FIELDSCOPE_RUNTIME_PROFILE:-$PWD/outputs/runtime_gate/au
 readout_runtime_profile="${FIELDSCOPE_READOUT_RUNTIME_PROFILE:-$PWD/outputs/runtime_gate/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
 imagenet_manifest="$(dirname "$FIELDSCOPE_IMAGENET1K_ROOT")/metadata/image_manifest.jsonl"
 imagenet_summary="$(dirname "$FIELDSCOPE_IMAGENET1K_ROOT")/metadata/export_summary.json"
+resource_poll_seconds="${FIELDSCOPE_EXTENSION_RESOURCE_POLL_SECONDS:-600}"
+
+if ! [[ "$resource_poll_seconds" =~ ^[1-9][0-9]*$ ]]; then
+  echo "FIELDSCOPE_EXTENSION_RESOURCE_POLL_SECONDS must be a positive integer" >&2
+  exit 2
+fi
 
 verify_revision() {
   local actual_revision
@@ -117,27 +123,37 @@ for variant in payload["variants"]:
     print(variant["name"])
 PY
 )
-"$python_bin" -m fieldscope.cli plan-cache-budget \
-  --measurement-cache "$FIELDSCOPE_DATASETS_ROOT/feature_cache/${cache_tag}_dense/voc2012_test" \
-  "${ablation_target_arguments[@]}" \
-  --filesystem-path "$extension_cache_root" \
-  --storage-policy dense \
-  --additional-required-bytes \
-    "$((imagenet_projected_bytes + imagenet_checkpoint_budget_bytes))" \
-  --reserve-gib 10 \
-  --safety-factor 1.15 \
-  --output "$preflight_root/combined_extension_cache_budget.json"
-fits="$(
-  "$python_bin" - "$preflight_root/combined_extension_cache_budget.json" <<'PY'
+write_combined_extension_budget() {
+  "$python_bin" -m fieldscope.cli plan-cache-budget \
+    --measurement-cache "$FIELDSCOPE_DATASETS_ROOT/feature_cache/${cache_tag}_dense/voc2012_test" \
+    "${ablation_target_arguments[@]}" \
+    --filesystem-path "$extension_cache_root" \
+    --storage-policy dense \
+    --additional-required-bytes \
+      "$((imagenet_projected_bytes + imagenet_checkpoint_budget_bytes))" \
+    --reserve-gib 10 \
+    --safety-factor 1.15 \
+    --output "$preflight_root/combined_extension_cache_budget.json"
+}
+
+while true; do
+  write_combined_extension_budget
+  fits="$(
+    "$python_bin" - "$preflight_root/combined_extension_cache_budget.json" <<'PY'
 import json
 import sys
 print(str(json.load(open(sys.argv[1], encoding="utf-8"))["fits"]).lower())
 PY
-)"
-if [[ "$fits" != "true" ]]; then
-  echo "extension is resource_blocked; refusing to shrink the registered scope" >&2
-  exit 8
-fi
+  )"
+  if [[ "$fits" == "true" ]]; then
+    break
+  fi
+  echo \
+    "$(date --iso-8601=seconds) extension is resource_blocked; refusing to shrink the registered scope; waiting ${resource_poll_seconds}s" \
+    >&2
+  sleep "$resource_poll_seconds"
+  verify_revision
+done
 
 verify_revision
 export FIELDSCOPE_CONFIG="configs/model/auraflow_v03.yaml"

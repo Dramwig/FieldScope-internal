@@ -90,6 +90,10 @@ def test_extension_runbook_is_fail_closed_and_keeps_registered_scope() -> None:
         '"$((imagenet_projected_bytes + imagenet_checkpoint_budget_bytes))"'
         in extension
     )
+    assert "FIELDSCOPE_EXTENSION_RESOURCE_POLL_SECONDS" in extension
+    assert "write_combined_extension_budget" in extension
+    assert 'if [[ "$fits" == "true" ]]' in extension
+    assert "waiting ${resource_poll_seconds}s" in extension
 
 
 def test_supervisor_tracks_conditional_final_stages_and_final_verdicts() -> None:
