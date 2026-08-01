@@ -17,6 +17,14 @@ if [[ ! -f "$archive" ]]; then
   exit 2
 fi
 actual_bytes="$(stat -c '%s' "$archive")"
+actual_mtime_ns="$(
+  "$python_bin" - "$archive" <<'PY'
+import sys
+from pathlib import Path
+
+print(Path(sys.argv[1]).stat().st_mtime_ns)
+PY
+)"
 if [[ "$actual_bytes" != "$expected_bytes" ]]; then
   echo "archive size mismatch: expected=$expected_bytes actual=$actual_bytes" >&2
   exit 3
@@ -89,6 +97,7 @@ payload = {
     "status": "passed",
     "archive": "$archive",
     "archive_bytes": $actual_bytes,
+    "archive_mtime_ns": $actual_mtime_ns,
     "archive_sha256": "$actual_sha256",
     "archive_members": $actual_members,
     "prepared_root": "$prepared_root",

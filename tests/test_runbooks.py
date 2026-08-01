@@ -36,6 +36,21 @@ def test_full_runbooks_continue_after_complete_negative_signal() -> None:
         assert '"$verdict" != "proceed"' in script
 
 
+def test_full_waiter_reuses_only_same_revision_immutable_asset_report() -> None:
+    waiter = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_when_ready.sh"
+    ).read_text(encoding="utf-8")
+    verifier = (
+        REPOSITORY_ROOT / "scripts" / "data" / "verify_prepare_imagenet100_remote.sh"
+    ).read_text(encoding="utf-8")
+    assert "existing_asset_gate_passed" in waiter
+    assert 'audit.get("code_revision") != revision' in waiter
+    assert 'asset.get("archive_mtime_ns")' not in waiter
+    assert '"archive_mtime_ns": stat.st_mtime_ns' in waiter
+    assert "reusing same-revision ImageNet-100 asset gate" in waiter
+    assert '"archive_mtime_ns": $actual_mtime_ns' in verifier
+
+
 def test_causal_runbook_runs_after_complete_positive_or_negative_main_result() -> None:
     full = (
         REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh"

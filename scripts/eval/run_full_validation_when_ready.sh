@@ -53,7 +53,62 @@ verify_signal_process() {
   fi
 }
 
+existing_asset_gate_passed() {
+  [[ -f "$asset_report" && -f "$asset_audit" && -f "$archive" ]] || return 1
+  "$python_bin" - \
+    "$asset_report" \
+    "$asset_audit" \
+    "$archive" \
+    "$FIELDSCOPE_EXPECTED_REVISION" <<'PY' >/dev/null 2>&1
+import json
+import os
+import pathlib
+import sys
+
+asset = json.load(open(sys.argv[1], encoding="utf-8"))
+audit = json.load(open(sys.argv[2], encoding="utf-8"))
+archive = pathlib.Path(sys.argv[3])
+revision = sys.argv[4]
+stat = archive.stat()
+if asset != {
+    "status": "passed",
+    "archive": str(archive),
+    "archive_bytes": 17_319_391_232,
+    "archive_mtime_ns": stat.st_mtime_ns,
+    "archive_sha256": "c5b57e1f6b6994d709ba5842952e7c669d0dd9b6d5ab2390e603e5fc2ffb0e6d",
+    "archive_members": 134_600,
+    "prepared_root": str(
+        pathlib.Path(os.environ["FIELDSCOPE_DATASETS_ROOT"]) / "prepared/imagenet100"
+    ),
+    "classes": 100,
+    "train_images": 129_395,
+    "official_validation_images": 5_000,
+}:
+    raise SystemExit(1)
+if audit.get("status") != "passed":
+    raise SystemExit(1)
+if audit.get("code_revision") != revision or audit.get("code_dirty") is not False:
+    raise SystemExit(1)
+expected_counts = {"train": 116_455, "val": 12_940, "test": 5_000}
+actual_counts = {
+    split: int(audit.get("splits", {}).get(split, {}).get("count", -1))
+    for split in expected_counts
+}
+if actual_counts != expected_counts:
+    raise SystemExit(1)
+if any(
+    int(value.get("count", -1)) != 0
+    for value in audit.get("pairwise_overlaps", {}).values()
+):
+    raise SystemExit(1)
+PY
+}
+
 verify_revision
+if existing_asset_gate_passed; then
+  asset_ready=true
+  echo "$(date --iso-8601=seconds) reusing same-revision ImageNet-100 asset gate"
+fi
 while [[ "$asset_ready" != true || "$signal_ready" != true ]]; do
   verify_revision
   if [[ "$asset_ready" != true ]]; then
