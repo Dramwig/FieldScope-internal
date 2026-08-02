@@ -27,6 +27,7 @@ from fieldscope.dataset_audit import audit_dataset_splits
 from fieldscope.datasets import SyntheticShapesDataset
 from fieldscope.diagnostics import graph_diagnostics
 from fieldscope.error_analysis import replay_readout_errors
+from fieldscope.error_summary import summarize_readout_errors
 from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
 from fieldscope.experiments import (
     atomic_json_dump,
@@ -429,6 +430,15 @@ def _build_parser() -> argparse.ArgumentParser:
     error_analysis_parser.add_argument("--test-report", required=True, type=Path)
     error_analysis_parser.add_argument("--output", required=True, type=Path)
     error_analysis_parser.add_argument("--batch-size", type=int)
+
+    error_summary_parser = subparsers.add_parser(
+        "summarize-readout-errors",
+        help="Aggregate the complete registered per-sample error-report matrix",
+    )
+    error_summary_parser.add_argument(
+        "--report", required=True, type=Path, action="append"
+    )
+    error_summary_parser.add_argument("--output", required=True, type=Path)
 
     diagnose_parser = subparsers.add_parser("diagnose", help="Diagnose a feature cache")
     diagnose_parser.add_argument("--cache", required=True, type=Path)
@@ -941,6 +951,12 @@ def main(argv: list[str] | None = None) -> int:
             batch_size=args.batch_size,
             command=command,
         )
+        _json_dump(args.output, report)
+        if report["status"] != "passed":
+            exit_code = 2
+    elif args.command == "summarize-readout-errors":
+        command = ["fieldscope", *(argv if argv is not None else sys.argv[1:])]
+        report = summarize_readout_errors(args.report, command=command)
         _json_dump(args.output, report)
         if report["status"] != "passed":
             exit_code = 2

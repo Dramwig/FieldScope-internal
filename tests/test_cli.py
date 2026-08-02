@@ -106,3 +106,33 @@ def test_supervised_error_analysis_cli_binds_all_source_artifacts(
     assert captured["batch_size"] == 4
     assert captured["command"] == ["fieldscope", *arguments]
     assert json.loads(output.read_text(encoding="utf-8"))["changes_main_verdict"] is False
+
+
+def test_supervised_error_summary_cli_binds_all_reports(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = {}
+
+    def fake_summary(report_paths, *, command):
+        captured["report_paths"] = report_paths
+        captured["command"] = command
+        return {"status": "passed", "changes_main_verdict": False}
+
+    monkeypatch.setattr("fieldscope.cli.summarize_readout_errors", fake_summary)
+    output = tmp_path / "summary.json"
+    first = tmp_path / "first.json"
+    second = tmp_path / "second.json"
+    arguments = [
+        "summarize-readout-errors",
+        "--report",
+        str(first),
+        "--report",
+        str(second),
+        "--output",
+        str(output),
+    ]
+    assert main(arguments) == 0
+    assert captured["report_paths"] == [first, second]
+    assert captured["command"] == ["fieldscope", *arguments]
+    assert json.loads(output.read_text(encoding="utf-8"))["changes_main_verdict"] is False
