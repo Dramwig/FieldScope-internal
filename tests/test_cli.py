@@ -66,3 +66,43 @@ def test_dataset_audit_cli_returns_nonzero_on_failed_audit(
     )
     assert exit_code == 2
     assert json.loads(output.read_text(encoding="utf-8"))["status"] == "failed"
+
+
+def test_supervised_error_analysis_cli_binds_all_source_artifacts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = {}
+
+    def fake_replay(**kwargs):
+        captured.update(kwargs)
+        return {"status": "passed", "changes_main_verdict": False}
+
+    monkeypatch.setattr("fieldscope.cli.replay_readout_errors", fake_replay)
+    output = tmp_path / "analysis.json"
+    arguments = [
+        "analyze-readout-errors",
+        "--checkpoint",
+        str(tmp_path / "best.pt"),
+        "--cache-dir",
+        str(tmp_path / "cache"),
+        "--matrix-report",
+        str(tmp_path / "matrix.json"),
+        "--training-report",
+        str(tmp_path / "training.json"),
+        "--test-report",
+        str(tmp_path / "test.json"),
+        "--output",
+        str(output),
+        "--batch-size",
+        "4",
+    ]
+    assert main(arguments) == 0
+    assert captured["checkpoint"] == tmp_path / "best.pt"
+    assert captured["cache_dir"] == tmp_path / "cache"
+    assert captured["matrix_report_path"] == tmp_path / "matrix.json"
+    assert captured["training_report_path"] == tmp_path / "training.json"
+    assert captured["test_report_path"] == tmp_path / "test.json"
+    assert captured["batch_size"] == 4
+    assert captured["command"] == ["fieldscope", *arguments]
+    assert json.loads(output.read_text(encoding="utf-8"))["changes_main_verdict"] is False

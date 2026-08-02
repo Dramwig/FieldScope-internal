@@ -26,6 +26,7 @@ from fieldscope.config import RunConfig, load_config
 from fieldscope.dataset_audit import audit_dataset_splits
 from fieldscope.datasets import SyntheticShapesDataset
 from fieldscope.diagnostics import graph_diagnostics
+from fieldscope.error_analysis import replay_readout_errors
 from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
 from fieldscope.experiments import (
     atomic_json_dump,
@@ -416,6 +417,18 @@ def _build_parser() -> argparse.ArgumentParser:
     evaluate_parser.add_argument("--cache-dir", required=True, type=Path)
     evaluate_parser.add_argument("--output", required=True, type=Path)
     evaluate_parser.add_argument("--batch-size", type=int)
+
+    error_analysis_parser = subparsers.add_parser(
+        "analyze-readout-errors",
+        help="Replay a formal checkpoint into provenance-bound per-sample metrics",
+    )
+    error_analysis_parser.add_argument("--checkpoint", required=True, type=Path)
+    error_analysis_parser.add_argument("--cache-dir", required=True, type=Path)
+    error_analysis_parser.add_argument("--matrix-report", required=True, type=Path)
+    error_analysis_parser.add_argument("--training-report", required=True, type=Path)
+    error_analysis_parser.add_argument("--test-report", required=True, type=Path)
+    error_analysis_parser.add_argument("--output", required=True, type=Path)
+    error_analysis_parser.add_argument("--batch-size", type=int)
 
     diagnose_parser = subparsers.add_parser("diagnose", help="Diagnose a feature cache")
     diagnose_parser.add_argument("--cache", required=True, type=Path)
@@ -915,6 +928,18 @@ def main(argv: list[str] | None = None) -> int:
             dataset_root=args.root,
             manifest_path=args.manifest,
             export_summary_path=args.export_summary,
+        )
+        _json_dump(args.output, report)
+    elif args.command == "analyze-readout-errors":
+        command = ["fieldscope", *(argv if argv is not None else sys.argv[1:])]
+        report = replay_readout_errors(
+            checkpoint=args.checkpoint,
+            cache_dir=args.cache_dir,
+            matrix_report_path=args.matrix_report,
+            training_report_path=args.training_report,
+            test_report_path=args.test_report,
+            batch_size=args.batch_size,
+            command=command,
         )
         _json_dump(args.output, report)
         if report["status"] != "passed":
