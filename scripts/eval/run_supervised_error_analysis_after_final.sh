@@ -175,4 +175,28 @@ atomic_json_dump(
     },
 )
 PY
-echo "$(date --iso-8601=seconds) supervised error analysis complete registry=$output_root/registry.json"
+
+completion_audit="$output_root/completion_audit.json"
+(
+  cd "$analyzer_repository"
+  "$python_bin" -m fieldscope.cli audit-research-completion \
+    --source-repository-root "$source_repository" \
+    --final-decision "$final_decision" \
+    --error-registry "$output_root/registry.json" \
+    --output "$completion_audit" \
+    >/dev/null
+)
+"$python_bin" - "$completion_audit" <<'PY'
+import json
+import sys
+
+payload = json.load(open(sys.argv[1], encoding="utf-8"))
+if (
+    payload.get("status") != "passed"
+    or payload.get("execution_complete") is not True
+    or payload.get("changes_scientific_verdict") is not False
+):
+    raise SystemExit("research completion audit contract mismatch")
+PY
+echo \
+  "$(date --iso-8601=seconds) supervised error analysis and completion audit complete audit=$completion_audit"

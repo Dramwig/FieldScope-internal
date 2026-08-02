@@ -169,3 +169,38 @@ def test_supervised_error_pipeline_cli_binds_formal_matrix(
     assert captured["output_dir"] == tmp_path / "analysis"
     assert captured["batch_size"] == 8
     assert captured["command"] == ["fieldscope", *arguments]
+
+
+def test_research_completion_cli_binds_all_evidence(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = {}
+
+    def fake_audit(**kwargs):
+        captured.update(kwargs)
+        return {
+            "status": "passed",
+            "execution_complete": True,
+            "changes_scientific_verdict": False,
+        }
+
+    monkeypatch.setattr("fieldscope.cli.audit_research_completion", fake_audit)
+    output = tmp_path / "completion.json"
+    arguments = [
+        "audit-research-completion",
+        "--source-repository-root",
+        str(tmp_path / "formal"),
+        "--final-decision",
+        str(tmp_path / "final.json"),
+        "--error-registry",
+        str(tmp_path / "registry.json"),
+        "--output",
+        str(output),
+    ]
+
+    assert main(arguments) == 0
+    assert captured["source_repository_root"] == tmp_path / "formal"
+    assert captured["final_decision_path"] == tmp_path / "final.json"
+    assert captured["error_registry_path"] == tmp_path / "registry.json"
+    assert json.loads(output.read_text(encoding="utf-8"))["execution_complete"] is True

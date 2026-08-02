@@ -184,3 +184,6 @@ def test_supervised_error_waiter_runs_all_tasks_only_after_final_decision() -> N
     assert 'len(payload.get("input_reports", [])) != 33' in script
     assert 'len(payload.get("comparisons", {})) != 12' in script
     assert 'output_root / "registry.json"' in script
+    assert "audit-research-completion" in script
+    assert 'completion_audit="$output_root/completion_audit.json"' in script
+    assert 'payload.get("execution_complete") is not True' in script

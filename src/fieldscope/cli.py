@@ -22,6 +22,7 @@ from torch.utils.data import DataLoader
 from fieldscope.assets import audit_backbone_assets
 from fieldscope.backends import build_backend
 from fieldscope.cache import load_features, save_features
+from fieldscope.completion import audit_research_completion
 from fieldscope.config import RunConfig, load_config
 from fieldscope.dataset_audit import audit_dataset_splits
 from fieldscope.datasets import SyntheticShapesDataset
@@ -452,6 +453,17 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     error_pipeline_parser.add_argument("--output-dir", required=True, type=Path)
     error_pipeline_parser.add_argument("--batch-size", type=int)
+
+    completion_parser = subparsers.add_parser(
+        "audit-research-completion",
+        help="Verify that all formal and registered secondary evidence is complete",
+    )
+    completion_parser.add_argument(
+        "--source-repository-root", required=True, type=Path
+    )
+    completion_parser.add_argument("--final-decision", required=True, type=Path)
+    completion_parser.add_argument("--error-registry", required=True, type=Path)
+    completion_parser.add_argument("--output", required=True, type=Path)
 
     diagnose_parser = subparsers.add_parser("diagnose", help="Diagnose a feature cache")
     diagnose_parser.add_argument("--cache", required=True, type=Path)
@@ -983,6 +995,15 @@ def main(argv: list[str] | None = None) -> int:
             batch_size=args.batch_size,
             command=command,
         )
+        if report["status"] != "passed":
+            exit_code = 2
+    elif args.command == "audit-research-completion":
+        report = audit_research_completion(
+            source_repository_root=args.source_repository_root,
+            final_decision_path=args.final_decision,
+            error_registry_path=args.error_registry,
+        )
+        _json_dump(args.output, report)
         if report["status"] != "passed":
             exit_code = 2
     elif args.command == "build-extension-ablation-configs":
