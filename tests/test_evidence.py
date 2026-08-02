@@ -819,6 +819,35 @@ def test_full_evidence_is_incomplete_for_stale_or_nonfinite_run(
     assert any("non-finite test metric" in problem for problem in report["problems"])
 
 
+def test_full_evidence_rejects_unmatched_readout_capacity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = _evidence_inputs(
+        tmp_path,
+        monkeypatch,
+        passing=True,
+    )
+    matrix = json.loads(matrices["imagenet100"].read_text(encoding="utf-8"))
+    training_path = Path(matrix["runs"][0]["training_report"])
+    training = json.loads(training_path.read_text(encoding="utf-8"))
+    training["trainable_parameters"] += 1
+    training_path.write_text(json.dumps(training), encoding="utf-8")
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
+    )
+    assert report["status"] == "incomplete"
+    assert report["verdict"] == "incomplete"
+    assert any(
+        "readout parameter counts are not matched" in problem
+        for problem in report["problems"]
+    )
+
+
 def test_full_evidence_rejects_incomplete_optimizer_step_coverage(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
