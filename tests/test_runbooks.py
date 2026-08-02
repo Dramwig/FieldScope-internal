@@ -164,3 +164,23 @@ def test_full_runbook_reserves_conservative_checkpoint_budget() -> None:
         "additional-required-bytes "
         '"$((sparse_projected_bytes + checkpoint_and_report_budget_bytes))"' in full
     )
+
+
+def test_supervised_error_waiter_runs_all_tasks_only_after_final_decision() -> None:
+    script = (
+        REPOSITORY_ROOT
+        / "scripts"
+        / "eval"
+        / "run_supervised_error_analysis_after_final.sh"
+    ).read_text(encoding="utf-8")
+    assert "final_decision_ready" in script
+    assert "waiting for complete formal final decision" in script
+    assert "run-readout-error-analysis" in script
+    assert "FIELDSCOPE_EXPECTED_SOURCE_REVISION" in script
+    assert "FIELDSCOPE_EXPECTED_ANALYZER_REVISION" in script
+    assert "flock -n 9" in script
+    assert "changes_main_verdict" in script
+    assert 'for dataset in imagenet100 voc2012 ade20k nyuv2' in script
+    assert 'len(payload.get("input_reports", [])) != 33' in script
+    assert 'len(payload.get("comparisons", {})) != 12' in script
+    assert 'output_root / "registry.json"' in script
