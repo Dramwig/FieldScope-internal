@@ -102,6 +102,21 @@ _UNSUPERVISED_CONTROLS = {
     "dit_hidden",
     "dit_attention",
 }
+_GRAPH_DIAGNOSTIC_REPRESENTATIONS = {
+    "response",
+    "response_shuffled",
+    "state",
+    "dit_attention",
+    "mismatch",
+    "velocity",
+    "zt",
+    "trajectory",
+    "z0",
+    "endpoint",
+    "dit_hidden",
+}
+_GRAPH_DECISION_METRICS = ("boundary_average_precision", "pairwise_auroc")
+_MIN_STRUCTURAL_ELIGIBLE_FRACTION = 0.95
 _CAUSAL_VARIANTS = {
     "random_flow": {
         "probe_type": "structured",
@@ -137,6 +152,80 @@ _GRAPH_NAMES_BY_POLICY = {
     "dense": {"dit_attention", "dit_attention_adjacency"},
     "readout_sparse": {"dit_attention_adjacency"},
 }
+
+
+def _structural_metric_eligibility(
+    per_sample: list[Mapping[str, Any]],
+    metric: str,
+    *,
+    source: str,
+) -> tuple[set[str], dict[str, Any], list[str]]:
+    """Separate target-undefined metrics from representation-specific failures."""
+
+    problems: list[str] = []
+    eligible: set[str] = set()
+    excluded: set[str] = set()
+    mixed: set[str] = set()
+    for sample in per_sample:
+        sample_id = str(sample.get("sample_id", ""))
+        representations = sample.get("representations")
+        if not isinstance(representations, Mapping):
+            problems.append(
+                f"missing graph representations source={source} sample_id={sample_id}"
+            )
+            continue
+        if set(representations) != _GRAPH_DIAGNOSTIC_REPRESENTATIONS:
+            problems.append(
+                "graph representation registry mismatch "
+                f"source={source} sample_id={sample_id}"
+            )
+            continue
+        finite: list[bool] = []
+        try:
+            for representation in sorted(_GRAPH_DIAGNOSTIC_REPRESENTATIONS):
+                value = float(representations[representation][metric])
+                finite.append(math.isfinite(value))
+        except (KeyError, TypeError, ValueError):
+            problems.append(
+                f"missing graph metric source={source} metric={metric} "
+                f"sample_id={sample_id}"
+            )
+            continue
+        if all(finite):
+            eligible.add(sample_id)
+        elif any(finite):
+            mixed.add(sample_id)
+            problems.append(
+                "mixed finite/non-finite graph metric "
+                f"source={source} metric={metric} sample_id={sample_id}"
+            )
+        else:
+            excluded.add(sample_id)
+    total = len(per_sample)
+    retained_fraction = len(eligible) / total if total else 0.0
+    if retained_fraction < _MIN_STRUCTURAL_ELIGIBLE_FRACTION:
+        problems.append(
+            "graph metric retained fraction below registered minimum "
+            f"source={source} metric={metric} retained={retained_fraction:.6f} "
+            f"minimum={_MIN_STRUCTURAL_ELIGIBLE_FRACTION:.6f}"
+        )
+    audit = {
+        "metric": metric,
+        "total_samples": total,
+        "eligible_samples": len(eligible),
+        "structurally_undefined_samples": len(excluded),
+        "mixed_finiteness_samples": len(mixed),
+        "retained_fraction": retained_fraction,
+        "minimum_retained_fraction": _MIN_STRUCTURAL_ELIGIBLE_FRACTION,
+        "eligible_sample_ids_sha256": sample_ids_sha256(sorted(eligible)),
+        "structurally_undefined_sample_ids_sha256": sample_ids_sha256(
+            sorted(excluded)
+        ),
+        "mixed_finiteness_sample_ids_sha256": sample_ids_sha256(sorted(mixed)),
+        "all_or_none_finiteness_passed": not mixed,
+        "status": "passed" if not problems else "failed",
+    }
+    return eligible, audit, problems
 
 
 def _validate_runtime_profile(
@@ -1046,11 +1135,29 @@ def _unsupervised_checks(
         manifest = _read_json(cache_dir / "dataset_manifest.json")
         if sample_ids_sha256(sample_ids) != manifest.get("sample_ids_sha256"):
             problems.append("VOC unsupervised sample-ID hash mismatch")
+    indexed = {
+        str(sample.get("sample_id", "")): sample
+        for sample in per_sample
+        if sample.get("sample_id")
+    }
     comparisons: dict[str, Any] = {}
-    for metric in ("boundary_average_precision", "pairwise_auroc"):
+    metric_eligibility: dict[str, Any] = {}
+    for metric in _GRAPH_DECISION_METRICS:
+        eligible, eligibility_audit, eligibility_problems = (
+            _structural_metric_eligibility(
+                per_sample,
+                metric,
+                source="empty_prompt",
+            )
+        )
+        metric_eligibility[metric] = eligibility_audit
+        problems.extend(eligibility_problems)
+        if not eligible:
+            continue
         for control in sorted(_UNSUPERVISED_CONTROLS):
             differences: list[float] = []
-            for sample in per_sample:
+            for sample_id in sorted(eligible):
+                sample = indexed[sample_id]
                 representations = sample.get("representations", {})
                 try:
                     response_value = float(representations["response"][metric])
@@ -1059,10 +1166,13 @@ def _unsupervised_checks(
                     problems.append(f"missing VOC {metric} for {control}")
                     break
                 if not math.isfinite(response_value) or not math.isfinite(control_value):
-                    problems.append(f"non-finite VOC {metric} for {control}")
+                    problems.append(
+                        "eligible VOC metric is non-finite "
+                        f"metric={metric} control={control} sample_id={sample_id}"
+                    )
                     break
                 differences.append(response_value - control_value)
-            if len(differences) != len(per_sample):
+            if len(differences) != len(eligible):
                 continue
             summary = bootstrap_mean_interval(differences, seed=4121, resamples=2000)
             interval = summary["ci95"]
@@ -1070,6 +1180,9 @@ def _unsupervised_checks(
             comparisons[f"response-minus-{control}/{metric}"] = {
                 **summary,
                 "num_images": len(differences),
+                "sample_ids_sha256": eligibility_audit[
+                    "eligible_sample_ids_sha256"
+                ],
                 "paired_bootstrap_ci_excludes_zero": passed,
                 "passed": passed,
             }
@@ -1079,6 +1192,7 @@ def _unsupervised_checks(
         "passed": passed,
         "comparisons": comparisons,
         "num_images": len(per_sample),
+        "metric_eligibility": metric_eligibility,
     }, problems
 
 
@@ -1090,10 +1204,15 @@ def _load_unsupervised_per_sample(
     expected_prompt: str,
     expected_random_transformer: bool,
     expected_runtime_profile: Mapping[str, Any] | None = None,
-) -> tuple[dict[str, Mapping[str, Any]], dict[str, Any], list[str]]:
+) -> tuple[
+    dict[str, Mapping[str, Any]],
+    dict[str, Any],
+    dict[str, set[str]],
+    list[str],
+]:
     problems: list[str] = []
     if not path.is_file():
-        return {}, {"path": str(path)}, [f"missing {path}"]
+        return {}, {"path": str(path)}, {}, [f"missing {path}"]
     report = _read_json(path)
     if report.get("status") != "passed":
         problems.append(f"causal report is not passed {path}")
@@ -1136,7 +1255,27 @@ def _load_unsupervised_per_sample(
         manifest = _read_json(cache_dir / "dataset_manifest.json")
         if sample_ids_sha256(list(indexed)) != manifest.get("sample_ids_sha256"):
             problems.append(f"causal report sample-ID hash mismatch {path}")
-    return indexed, {"path": str(path), "cache_dir": str(cache_dir)}, problems
+    eligibility_sets: dict[str, set[str]] = {}
+    eligibility_audits: dict[str, Any] = {}
+    for metric in _GRAPH_DECISION_METRICS:
+        eligible, audit, eligibility_problems = _structural_metric_eligibility(
+            per_sample,
+            metric,
+            source=str(path),
+        )
+        eligibility_sets[metric] = eligible
+        eligibility_audits[metric] = audit
+        problems.extend(eligibility_problems)
+    return (
+        indexed,
+        {
+            "path": str(path),
+            "cache_dir": str(cache_dir),
+            "metric_eligibility": eligibility_audits,
+        },
+        eligibility_sets,
+        problems,
+    )
 
 
 def audit_causal_evidence(
@@ -1180,35 +1319,42 @@ def audit_causal_evidence(
         problems.append("causal_report_paths do not match the registered variants")
 
     loaded: dict[str, dict[str, Mapping[str, Any]]] = {}
+    eligibility: dict[str, dict[str, set[str]]] = {}
     sources: dict[str, Any] = {}
     main_unsupervised_path = _resolve_report_path(
         str(main_evidence.get("unsupervised", {}).get("path", "")),
         Path(__file__).resolve().parents[2],
     )
-    main_indexed, main_source, main_problems = _load_unsupervised_per_sample(
-        main_unsupervised_path,
-        provenance,
-        expected_probe_type="structured",
-        expected_prompt="",
-        expected_random_transformer=False,
-        expected_runtime_profile=expected_runtime_profile,
+    main_indexed, main_source, main_eligibility, main_problems = (
+        _load_unsupervised_per_sample(
+            main_unsupervised_path,
+            provenance,
+            expected_probe_type="structured",
+            expected_prompt="",
+            expected_random_transformer=False,
+            expected_runtime_profile=expected_runtime_profile,
+        )
     )
     loaded["empty_prompt"] = main_indexed
+    eligibility["empty_prompt"] = main_eligibility
     sources["empty_prompt"] = main_source
     problems.extend(main_problems)
     for variant, contract in _CAUSAL_VARIANTS.items():
         path = causal_report_paths.get(variant)
         if path is None:
             continue
-        indexed, source, variant_problems = _load_unsupervised_per_sample(
-            path,
-            provenance,
-            expected_probe_type=contract["probe_type"],
-            expected_prompt=contract["prompt"],
-            expected_random_transformer=contract["random_transformer"],
-            expected_runtime_profile=expected_runtime_profile,
+        indexed, source, variant_eligibility, variant_problems = (
+            _load_unsupervised_per_sample(
+                path,
+                provenance,
+                expected_probe_type=contract["probe_type"],
+                expected_prompt=contract["prompt"],
+                expected_random_transformer=contract["random_transformer"],
+                expected_runtime_profile=expected_runtime_profile,
+            )
         )
         loaded[variant] = indexed
+        eligibility[variant] = variant_eligibility
         sources[variant] = source
         problems.extend(variant_problems)
 
@@ -1218,10 +1364,22 @@ def audit_causal_evidence(
         for variant, samples in loaded.items():
             if set(samples) != sample_ids:
                 problems.append(f"causal sample IDs do not align for {variant}")
-        for metric in ("boundary_average_precision", "pairwise_auroc"):
+        for metric in _GRAPH_DECISION_METRICS:
+            eligible_ids = eligibility["empty_prompt"][metric]
+            eligibility_mismatch = False
+            for variant in sorted(loaded):
+                if eligibility[variant][metric] != eligible_ids:
+                    problems.append(
+                        "causal structural eligibility does not align "
+                        f"source={variant} metric={metric}"
+                    )
+                    eligibility_mismatch = True
+            if eligibility_mismatch or not eligible_ids:
+                continue
+            eligible_hash = sample_ids_sha256(sorted(eligible_ids))
             for variant in ("random_flow", "spatially_shuffled_probe"):
                 differences: list[float] = []
-                for sample_id in sorted(sample_ids):
+                for sample_id in sorted(eligible_ids):
                     try:
                         main_value = float(
                             loaded["empty_prompt"][sample_id]["representations"]["response"][metric]
@@ -1233,10 +1391,13 @@ def audit_causal_evidence(
                         problems.append(f"missing causal metric {variant}/{metric}")
                         break
                     if not math.isfinite(main_value) or not math.isfinite(control_value):
-                        problems.append(f"non-finite causal metric {variant}/{metric}")
+                        problems.append(
+                            "eligible causal metric is non-finite "
+                            f"source={variant} metric={metric} sample_id={sample_id}"
+                        )
                         break
                     differences.append(main_value - control_value)
-                if len(differences) != len(sample_ids):
+                if len(differences) != len(eligible_ids):
                     continue
                 summary = bootstrap_mean_interval(differences, seed=4121, resamples=2000)
                 interval = summary["ci95"]
@@ -1244,12 +1405,13 @@ def audit_causal_evidence(
                 comparisons[f"pretrained-structured-minus-{variant}/{metric}"] = {
                     **summary,
                     "num_images": len(differences),
+                    "sample_ids_sha256": eligible_hash,
                     "passed": passed,
                 }
             for condition in ("neutral_prompt", "unrelated_prompt"):
                 for control in sorted(_CONDITION_CONTROLS):
                     differences = []
-                    for sample_id in sorted(sample_ids):
+                    for sample_id in sorted(eligible_ids):
                         try:
                             response_value = float(
                                 loaded[condition][sample_id]["representations"]["response"][metric]
@@ -1264,11 +1426,13 @@ def audit_causal_evidence(
                             break
                         if not math.isfinite(response_value) or not math.isfinite(control_value):
                             problems.append(
-                                f"non-finite condition metric {condition}/{control}/{metric}"
+                                "eligible condition metric is non-finite "
+                                f"condition={condition} control={control} metric={metric} "
+                                f"sample_id={sample_id}"
                             )
                             break
                         differences.append(response_value - control_value)
-                    if len(differences) != len(sample_ids):
+                    if len(differences) != len(eligible_ids):
                         continue
                     summary = bootstrap_mean_interval(differences, seed=4121, resamples=2000)
                     interval = summary["ci95"]
@@ -1276,6 +1440,7 @@ def audit_causal_evidence(
                     comparisons[f"{condition}/response-minus-{control}/{metric}"] = {
                         **summary,
                         "num_images": len(differences),
+                        "sample_ids_sha256": eligible_hash,
                         "passed": passed,
                     }
     main_verdict = main_evidence.get("verdict")

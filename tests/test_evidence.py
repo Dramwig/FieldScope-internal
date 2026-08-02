@@ -11,7 +11,11 @@ import torch
 
 from fieldscope.cached_dataset import cached_control_contract_for_cache
 from fieldscope.config import RunConfig
-from fieldscope.evidence import audit_causal_evidence, audit_full_evidence
+from fieldscope.evidence import (
+    _structural_metric_eligibility,
+    audit_causal_evidence,
+    audit_full_evidence,
+)
 from fieldscope.experiments import READOUT_TRAINING_COVERAGE_CONTRACT
 from fieldscope.readout_runtime_gate import (
     EQUIVALENCE_RULE,
@@ -60,13 +64,18 @@ READOUT_BUDGETS = {
     "ade20k": (80, 2),
     "nyuv2": (80, 4),
 }
-UNSUPERVISED_CONTROLS = [
+GRAPH_DIAGNOSTIC_REPRESENTATIONS = [
+    "response",
     "response_shuffled",
     "state",
-    "z0",
-    "velocity",
-    "dit_hidden",
     "dit_attention",
+    "mismatch",
+    "velocity",
+    "zt",
+    "trajectory",
+    "z0",
+    "endpoint",
+    "dit_hidden",
 ]
 
 
@@ -621,7 +630,9 @@ def _unsupervised(
                 "pairwise_auroc": 0.85,
             }
         }
-        for control in UNSUPERVISED_CONTROLS:
+        for control in GRAPH_DIAGNOSTIC_REPRESENTATIONS:
+            if control == "response":
+                continue
             value = 0.5
             if not passing and control == "dit_hidden":
                 value = 0.9
@@ -772,6 +783,92 @@ def test_full_evidence_supports_only_complete_cross_task_result(
     assert comparison["ci95"][0] > 0
     assert comparison["paired_sign_flip_pvalue"] == 0.25
     assert comparison["holm_reject_alpha_0_05"] is False
+
+
+def test_full_evidence_excludes_only_all_representation_undefined_metrics(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    matrices, unsupervised, backbone_asset, split_audits, _, readout_profile = (
+        _evidence_inputs(tmp_path, monkeypatch, passing=True)
+    )
+    payload = json.loads(unsupervised.read_text(encoding="utf-8"))
+    for sample in payload["per_sample"][:16]:
+        for representation in GRAPH_DIAGNOSTIC_REPRESENTATIONS:
+            for metric in ("boundary_average_precision", "pairwise_auroc"):
+                sample["representations"][representation][metric] = float("nan")
+    _write_json(unsupervised, payload)
+
+    report = audit_full_evidence(
+        matrix_paths=matrices,
+        voc_unsupervised_path=unsupervised,
+        backbone_asset_path=backbone_asset,
+        split_audit_paths=split_audits,
+        readout_runtime_profile_path=readout_profile,
+    )
+
+    assert report["status"] == "passed"
+    assert report["verdict"] == "main_tasks_supported_pending_causal_audits"
+    eligibility = report["unsupervised"]["metric_eligibility"]
+    assert eligibility["pairwise_auroc"]["eligible_samples"] == 1433
+    assert (
+        eligibility["boundary_average_precision"]["structurally_undefined_samples"]
+        == 16
+    )
+    comparison = report["unsupervised"]["comparisons"][
+        "response-minus-state/pairwise_auroc"
+    ]
+    assert comparison["num_images"] == 1433
+    assert (
+        comparison["sample_ids_sha256"]
+        == eligibility["pairwise_auroc"]["eligible_sample_ids_sha256"]
+    )
+
+
+def test_structural_metric_eligibility_rejects_mixed_finiteness() -> None:
+    samples = []
+    for index in range(20):
+        representations = {
+            name: {"pairwise_auroc": 0.5}
+            for name in GRAPH_DIAGNOSTIC_REPRESENTATIONS
+        }
+        samples.append(
+            {"sample_id": f"sample-{index:02d}", "representations": representations}
+        )
+    samples[0]["representations"]["response"]["pairwise_auroc"] = float("nan")
+
+    _, audit, problems = _structural_metric_eligibility(
+        samples,
+        "pairwise_auroc",
+        source="synthetic",
+    )
+
+    assert audit["mixed_finiteness_samples"] == 1
+    assert audit["all_or_none_finiteness_passed"] is False
+    assert any("mixed finite/non-finite" in problem for problem in problems)
+
+
+def test_structural_metric_eligibility_requires_95_percent_retention() -> None:
+    samples = []
+    for index in range(20):
+        value = float("nan") if index < 2 else 0.5
+        representations = {
+            name: {"pairwise_auroc": value}
+            for name in GRAPH_DIAGNOSTIC_REPRESENTATIONS
+        }
+        samples.append(
+            {"sample_id": f"sample-{index:02d}", "representations": representations}
+        )
+
+    eligible, audit, problems = _structural_metric_eligibility(
+        samples,
+        "pairwise_auroc",
+        source="synthetic",
+    )
+
+    assert len(eligible) == 18
+    assert audit["retained_fraction"] == 0.9
+    assert any("retained fraction below" in problem for problem in problems)
 
 
 def test_full_evidence_reports_limited_or_negative_without_cross_task_gain(
@@ -1001,14 +1098,9 @@ def _causal_report(
                 "pairwise_auroc": response_value,
             }
         }
-        for control in (
-            "response_shuffled",
-            "state",
-            "z0",
-            "velocity",
-            "dit_hidden",
-            "dit_attention",
-        ):
+        for control in GRAPH_DIAGNOSTIC_REPRESENTATIONS:
+            if control == "response":
+                continue
             representations[control] = {
                 "boundary_average_precision": 0.50,
                 "pairwise_auroc": 0.50,
@@ -1223,6 +1315,82 @@ def test_causal_evidence_finishes_registered_controls_after_negative_main_result
     assert report["supports_strong_claims"] is False
 
 
+def test_causal_evidence_rejects_different_structural_eligibility_masks(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    (
+        matrices,
+        unsupervised,
+        backbone_asset,
+        split_audits,
+        provenance,
+        readout_profile,
+    ) = _evidence_inputs(tmp_path, monkeypatch, passing=True)
+    main_path = tmp_path / "main_evidence.json"
+    _write_json(
+        main_path,
+        audit_full_evidence(
+            matrix_paths=matrices,
+            voc_unsupervised_path=unsupervised,
+            backbone_asset_path=backbone_asset,
+            split_audit_paths=split_audits,
+            readout_runtime_profile_path=readout_profile,
+        ),
+    )
+    causal_reports = {
+        "random_flow": _causal_report(
+            tmp_path,
+            provenance,
+            "random_flow",
+            response_value=0.40,
+            random_transformer=True,
+        ),
+        "spatially_shuffled_probe": _causal_report(
+            tmp_path,
+            provenance,
+            "spatially_shuffled_probe",
+            response_value=0.45,
+            probe_type="spatially_shuffled",
+        ),
+        "neutral_prompt": _causal_report(
+            tmp_path,
+            provenance,
+            "neutral_prompt",
+            response_value=0.80,
+            prompt="a neutral photograph",
+        ),
+        "unrelated_prompt": _causal_report(
+            tmp_path,
+            provenance,
+            "unrelated_prompt",
+            response_value=0.75,
+            prompt="an unrelated scene",
+        ),
+    }
+    random_payload = json.loads(
+        causal_reports["random_flow"].read_text(encoding="utf-8")
+    )
+    for representation in GRAPH_DIAGNOSTIC_REPRESENTATIONS:
+        for metric in ("boundary_average_precision", "pairwise_auroc"):
+            random_payload["per_sample"][0]["representations"][representation][
+                metric
+            ] = float("nan")
+    _write_json(causal_reports["random_flow"], random_payload)
+
+    report = audit_causal_evidence(
+        main_evidence_path=main_path,
+        causal_report_paths=causal_reports,
+    )
+
+    assert report["status"] == "incomplete"
+    assert report["verdict"] == "incomplete"
+    assert any(
+        "causal structural eligibility does not align" in problem
+        for problem in report["problems"]
+    )
+
+
 def test_causal_evidence_marks_nonfinite_metrics_incomplete(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -1282,4 +1450,4 @@ def test_causal_evidence_marks_nonfinite_metrics_incomplete(
     )
     assert report["status"] == "incomplete"
     assert report["verdict"] == "incomplete"
-    assert any("non-finite condition metric" in problem for problem in report["problems"])
+    assert any("mixed finite/non-finite" in problem for problem in report["problems"])
