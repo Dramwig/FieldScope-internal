@@ -1,0 +1,196 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "evidence_scope": "completed_full_voc2012_unsupervised_diagnostic_only",
+  "method_effectiveness_conclusion": null,
+  "machine": "pro6000",
+  "produced_at": "2026-08-02T13:41:59.701792025+08:00",
+  "provenance": {
+    "code_revision": "10224a14a618f54609de43e5ad80e2336dbc0a65",
+    "code_tree_sha256": "f1f25da1e34e12c54f57fe9849e17dfa6631c5f0a2b1d2bc762554de050d8f13",
+    "code_dirty": false,
+    "config": "configs/model/auraflow_v03.yaml",
+    "source_output": "/root/autodl-tmp/FieldScope/FieldScope-internal/outputs/full_validation/auraflow_v03/voc2012_unsupervised.json",
+    "source_output_bytes": 4879572,
+    "source_output_sha256": "27d0d5b6b78e003216623415d1dc2dff74ab3db21fe3fe1d4b85b96d8a62498f",
+    "cache_manifest": "/root/autodl-tmp/FieldScope/datasets/feature_cache/auraflow_v03_dense/voc2012_test/dataset_manifest.json",
+    "cache_manifest_sha256": "c946a2d5c293fe94b18aba8e3b5b10770dc165133222f7e16020557dbd7d2c47",
+    "runtime_profile": "/root/autodl-tmp/FieldScope/FieldScope-internal/outputs/runtime_gate/auraflow_runtime_profile_10224a14a618f54609de43e5ad80e2336dbc0a65.json",
+    "runtime_profile_sha256": "8480d5f6c348ef094c16e13dfe307116dd59df7849539a6807d642f1450c5c3c"
+  },
+  "dataset": {
+    "name": "voc2012",
+    "split": "test",
+    "num_samples": 1449,
+    "per_sample_records": 1449,
+    "sample_ids_sha256": "62239fdc4c3d52c5d73e63496b71e22619596f8f40f5b7115df2c299b7cb1096",
+    "storage_policy": "dense",
+    "shards": 23
+  },
+  "runtime": {
+    "elapsed_seconds": 6527.670290468261,
+    "feature_extraction_seconds": 6509.092269653454,
+    "written_samples_per_second": 0.22261168531217412,
+    "cache_bytes": 1696169281,
+    "cuda_peak_allocated_bytes": 14777379840,
+    "cuda_peak_reserved_bytes": 15447621632
+  },
+  "diagnostic_contract": {
+    "representation_count": 11,
+    "metrics_per_representation": 5,
+    "bootstrap_resamples": 2000,
+    "registered_primary_metrics": [
+      "boundary_average_precision",
+      "pairwise_auroc"
+    ]
+  },
+  "primary_metric_means": {
+    "dit_attention": {
+      "boundary_average_precision": 0.18537720136426378,
+      "pairwise_auroc": 0.6421683637603379
+    },
+    "dit_hidden": {
+      "boundary_average_precision": 0.20316558433293402,
+      "pairwise_auroc": 0.662464034407603
+    },
+    "endpoint": {
+      "boundary_average_precision": 0.19483367650406747,
+      "pairwise_auroc": 0.6475009605215716
+    },
+    "mismatch": {
+      "boundary_average_precision": 0.10017063118278065,
+      "pairwise_auroc": 0.5266702089456105
+    },
+    "response": {
+      "boundary_average_precision": 0.06756686640876688,
+      "pairwise_auroc": 0.5555247658628396
+    },
+    "response_shuffled": {
+      "boundary_average_precision": 0.07164401116822561,
+      "pairwise_auroc": 0.5351212713282506
+    },
+    "state": {
+      "boundary_average_precision": 0.17668199899161557,
+      "pairwise_auroc": 0.6511736970969371
+    },
+    "trajectory": {
+      "boundary_average_precision": 0.17811835142809834,
+      "pairwise_auroc": 0.6412002207803627
+    },
+    "velocity": {
+      "boundary_average_precision": 0.1965770830039986,
+      "pairwise_auroc": 0.6459907101361966
+    },
+    "z0": {
+      "boundary_average_precision": 0.17814032643397376,
+      "pairwise_auroc": 0.6412060311725734
+    },
+    "zt": {
+      "boundary_average_precision": 0.17809819827615883,
+      "pairwise_auroc": 0.6411978500711277
+    }
+  },
+  "source_bootstrap": {
+    "response": {
+      "boundary_average_precision_ci95": [
+        0.06541855950214166,
+        0.06966382715696282
+      ],
+      "pairwise_auroc_ci95": [
+        0.5515846541438665,
+        0.5593733023241193
+      ]
+    },
+    "response_shuffled": {
+      "boundary_average_precision_ci95": [
+        0.06936790583155758,
+        0.07390102708690108
+      ],
+      "pairwise_auroc_ci95": [
+        0.5317479883010622,
+        0.5383454931422871
+      ]
+    }
+  },
+  "exploratory_paired_bootstrap": {
+    "label": "exploratory_posthoc_not_registered_gate_output",
+    "seed": 4121,
+    "resamples": 2000,
+    "response_minus_response_shuffled": {
+      "pairwise_auroc": {
+        "n": 1433,
+        "mean_delta": 0.0204034945346,
+        "ci95": [
+          0.0177402154875,
+          0.0229570958776
+        ]
+      },
+      "boundary_auroc": {
+        "n": 1432,
+        "mean_delta": -0.0148757726901,
+        "ci95": [
+          -0.0197503798645,
+          -0.010057814055
+        ]
+      },
+      "boundary_average_precision": {
+        "n": 1432,
+        "mean_delta": -0.00407714475946,
+        "ci95": [
+          -0.00513053943933,
+          -0.00291208254219
+        ]
+      },
+      "boundary_best_f1": {
+        "n": 1432,
+        "mean_delta": -0.00087386916402,
+        "ci95": [
+          -0.00245023153915,
+          0.000515997093304
+        ]
+      },
+      "foreground_spectral_iou": {
+        "n": 1449,
+        "mean_delta": 0.0183436831914,
+        "ci95": [
+          0.0142178415598,
+          0.0223796639746
+        ]
+      }
+    },
+    "response_minus_controls_primary_metrics": {
+      "state": {
+        "pairwise_auroc_delta": -0.0956489312341,
+        "pairwise_auroc_ci95": [-0.101667314973, -0.089528152709],
+        "boundary_average_precision_delta": -0.109115132583,
+        "boundary_average_precision_ci95": [-0.114665466389, -0.103538725765]
+      },
+      "dit_hidden": {
+        "pairwise_auroc_delta": -0.106939268545,
+        "pairwise_auroc_ci95": [-0.114156726173, -0.100356294455],
+        "boundary_average_precision_delta": -0.135598717924,
+        "boundary_average_precision_ci95": [-0.142170886213, -0.129698332571]
+      },
+      "dit_attention": {
+        "pairwise_auroc_delta": -0.0866435978975,
+        "pairwise_auroc_ci95": [-0.0902326034282, -0.0832330010644],
+        "boundary_average_precision_delta": -0.117810334955,
+        "boundary_average_precision_ci95": [-0.12320957214, -0.112743863648]
+      },
+      "velocity": {
+        "pairwise_auroc_delta": -0.0904659442734,
+        "pairwise_auroc_ci95": [-0.0967411958981, -0.0842925057933],
+        "boundary_average_precision_delta": -0.129010216595,
+        "boundary_average_precision_ci95": [-0.13592329492, -0.122644880224]
+      },
+      "endpoint": {
+        "pairwise_auroc_delta": -0.0919761946587,
+        "pairwise_auroc_ci95": [-0.098750600982, -0.0851714784434],
+        "boundary_average_precision_delta": -0.127266810095,
+        "boundary_average_precision_ci95": [-0.13423729789, -0.120621391227]
+      }
+    }
+  },
+  "observed_pattern": "response exceeds response_shuffled on pairwise AUROC and foreground spectral IoU, but is lower on boundary AUROC and boundary average precision and is lower than every registered static, trajectory, velocity, and hidden-feature control on both registered primary metrics",
+  "research_boundary": "This completed diagnostic does not establish the final FieldScope method conclusion. The four full downstream task matrices and causal audits remain required."
+}
