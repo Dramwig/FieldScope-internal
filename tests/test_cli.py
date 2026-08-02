@@ -139,3 +139,33 @@ def test_supervised_error_summary_cli_binds_all_reports(
     assert captured["report_paths"] == [first, second]
     assert captured["command"] == ["fieldscope", *arguments]
     assert json.loads(output.read_text(encoding="utf-8"))["changes_main_verdict"] is False
+
+
+def test_supervised_error_pipeline_cli_binds_formal_matrix(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    captured = {}
+
+    def fake_pipeline(**kwargs):
+        captured.update(kwargs)
+        return {"status": "passed", "changes_main_verdict": False}
+
+    monkeypatch.setattr("fieldscope.cli.run_readout_error_analysis", fake_pipeline)
+    arguments = [
+        "run-readout-error-analysis",
+        "--matrix-report",
+        str(tmp_path / "matrix.json"),
+        "--source-repository-root",
+        str(tmp_path / "formal"),
+        "--output-dir",
+        str(tmp_path / "analysis"),
+        "--batch-size",
+        "8",
+    ]
+    assert main(arguments) == 0
+    assert captured["matrix_report_path"] == tmp_path / "matrix.json"
+    assert captured["source_repository_root"] == tmp_path / "formal"
+    assert captured["output_dir"] == tmp_path / "analysis"
+    assert captured["batch_size"] == 8
+    assert captured["command"] == ["fieldscope", *arguments]
