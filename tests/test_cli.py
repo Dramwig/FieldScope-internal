@@ -92,6 +92,8 @@ def test_supervised_error_analysis_cli_binds_all_source_artifacts(
         str(tmp_path / "training.json"),
         "--test-report",
         str(tmp_path / "test.json"),
+        "--source-repository-root",
+        str(tmp_path / "formal-source"),
         "--output",
         str(output),
         "--batch-size",
@@ -103,6 +105,7 @@ def test_supervised_error_analysis_cli_binds_all_source_artifacts(
     assert captured["matrix_report_path"] == tmp_path / "matrix.json"
     assert captured["training_report_path"] == tmp_path / "training.json"
     assert captured["test_report_path"] == tmp_path / "test.json"
+    assert captured["source_repository_root"] == tmp_path / "formal-source"
     assert captured["batch_size"] == 4
     assert captured["command"] == ["fieldscope", *arguments]
     assert json.loads(output.read_text(encoding="utf-8"))["changes_main_verdict"] is False

@@ -17,6 +17,7 @@ from fieldscope.error_analysis import (
     _segmentation_record,
     _source_code_tree_sha256,
     audit_replay_core_compatibility,
+    audit_source_repository,
     replay_readout_errors,
 )
 from fieldscope.experiments import (
@@ -97,6 +98,30 @@ def test_replay_core_compatibility_rejects_changed_core(
     monkeypatch.setattr(error_analysis, "_run_git", lambda *_args, **_kwargs: next(outputs))
     with pytest.raises(ValueError, match="Replay core differs"):
         audit_replay_core_compatibility("source")
+
+
+def test_source_repository_audit_binds_clean_revision(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    outputs = iter(["formal-revision", ""])
+    monkeypatch.setattr(error_analysis, "_run_git", lambda *_args, **_kwargs: next(outputs))
+    report = audit_source_repository(
+        "formal-revision",
+        repository_root=tmp_path,
+    )
+    assert report["status"] == "passed"
+    assert report["path"] == str(tmp_path.resolve())
+    assert report["dirty_paths"] == []
+
+
+def test_source_repository_audit_rejects_wrong_revision(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    monkeypatch.setattr(error_analysis, "_run_git", lambda *_args, **_kwargs: "other")
+    with pytest.raises(ValueError, match="Source repository revision mismatch"):
+        audit_source_repository("formal-revision", repository_root=tmp_path)
 
 
 def _write_classification_cache(
@@ -268,6 +293,17 @@ def test_replay_readout_errors_binds_artifacts_and_samples(
             "code_dirty": False,
         },
     )
+    monkeypatch.setattr(
+        error_analysis,
+        "audit_source_repository",
+        lambda revision, *, repository_root: {
+            "status": "passed",
+            "path": str(repository_root),
+            "source_revision": revision,
+            "actual_revision": revision,
+            "dirty_paths": [],
+        },
+    )
     report = replay_readout_errors(
         checkpoint=checkpoint,
         cache_dir=cache_dir,
@@ -283,6 +319,7 @@ def test_replay_readout_errors_binds_artifacts_and_samples(
     assert len(report["per_sample"]) == 3
     assert report["sample_ids_sha256"] == cache_identity(cache_dir)["sample_ids_sha256"]
     assert report["checkpoint"]["sha256"] == checkpoint_sha256
+    assert report["source_repository"]["status"] == "passed"
     assert report["replayed_aggregate_metrics"] == test["evaluation"]["metrics"]
 
     tampered = json.loads(test_path.read_text(encoding="utf-8"))

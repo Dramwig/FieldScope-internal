@@ -428,6 +428,7 @@ def _build_parser() -> argparse.ArgumentParser:
     error_analysis_parser.add_argument("--matrix-report", required=True, type=Path)
     error_analysis_parser.add_argument("--training-report", required=True, type=Path)
     error_analysis_parser.add_argument("--test-report", required=True, type=Path)
+    error_analysis_parser.add_argument("--source-repository-root", type=Path)
     error_analysis_parser.add_argument("--output", required=True, type=Path)
     error_analysis_parser.add_argument("--batch-size", type=int)
 
@@ -948,6 +949,7 @@ def main(argv: list[str] | None = None) -> int:
             matrix_report_path=args.matrix_report,
             training_report_path=args.training_report,
             test_report_path=args.test_report,
+            source_repository_root=args.source_repository_root,
             batch_size=args.batch_size,
             command=command,
         )

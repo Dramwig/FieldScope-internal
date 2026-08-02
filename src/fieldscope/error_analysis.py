@@ -146,6 +146,33 @@ def audit_replay_core_compatibility(
     }
 
 
+def audit_source_repository(
+    source_revision: str,
+    *,
+    repository_root: Path,
+) -> dict[str, Any]:
+    """Bind relative artifact paths to a clean checkout of the formal revision."""
+
+    repository_root = repository_root.resolve()
+    actual_revision = _run_git(repository_root, ["rev-parse", "HEAD"])
+    if actual_revision != source_revision:
+        raise ValueError(
+            "Source repository revision mismatch: "
+            f"expected={source_revision} actual={actual_revision}"
+        )
+    dirty_output = _run_git(repository_root, ["status", "--porcelain"])
+    dirty_paths = [line for line in dirty_output.splitlines() if line]
+    if dirty_paths:
+        raise ValueError("Source repository worktree is dirty")
+    return {
+        "status": "passed",
+        "path": str(repository_root),
+        "source_revision": source_revision,
+        "actual_revision": actual_revision,
+        "dirty_paths": [],
+    }
+
+
 def _read_json_object(path: Path, kind: str) -> dict[str, Any]:
     if not path.is_file():
         raise FileNotFoundError(f"Missing {kind}: {path}")
@@ -155,9 +182,9 @@ def _read_json_object(path: Path, kind: str) -> dict[str, Any]:
     return payload
 
 
-def _resolve_reported_path(value: Any) -> Path:
+def _resolve_reported_path(value: Any, repository_root: Path) -> Path:
     path = Path(str(value))
-    return path.resolve() if path.is_absolute() else (_REPOSITORY_ROOT / path).resolve()
+    return path.resolve() if path.is_absolute() else (repository_root / path).resolve()
 
 
 def _require_equal(actual: Any, expected: Any, message: str) -> None:
@@ -196,6 +223,7 @@ def _validate_source_artifacts(
     matrix_report_path: Path,
     training_report_path: Path,
     test_report_path: Path,
+    source_repository_root: Path,
 ) -> dict[str, Any]:
     matrix = _read_json_object(matrix_report_path, "matrix report")
     training = _read_json_object(training_report_path, "training report")
@@ -250,7 +278,9 @@ def _validate_source_artifacts(
         ("test", test.get("checkpoint")),
     ):
         _require_equal(
-            _resolve_reported_path(reported), checkpoint, f"{kind} checkpoint path mismatch"
+            _resolve_reported_path(reported, source_repository_root),
+            checkpoint,
+            f"{kind} checkpoint path mismatch",
         )
     for kind, reported_sha256 in (
         ("matrix", run.get("best_checkpoint_sha256")),
@@ -263,7 +293,7 @@ def _validate_source_artifacts(
         ("matrix test", run.get("test_report"), test_report_path),
     ):
         _require_equal(
-            _resolve_reported_path(reported_path),
+            _resolve_reported_path(reported_path, source_repository_root),
             expected_path.resolve(),
             f"{kind} report path mismatch",
         )
@@ -456,6 +486,7 @@ def replay_readout_errors(
     matrix_report_path: Path,
     training_report_path: Path,
     test_report_path: Path,
+    source_repository_root: Path | None = None,
     batch_size: int | None = None,
     command: Sequence[str] | None = None,
 ) -> dict[str, Any]:
@@ -464,6 +495,9 @@ def replay_readout_errors(
     started = time.perf_counter()
     checkpoint = checkpoint.resolve()
     cache_dir = cache_dir.resolve()
+    source_repository_root = (
+        source_repository_root or _REPOSITORY_ROOT
+    ).resolve()
     analyzer = code_provenance()
     if analyzer.get("code_dirty") is not False:
         raise ValueError("Supervised error analysis requires a clean analyzer worktree")
@@ -480,6 +514,11 @@ def replay_readout_errors(
         matrix_report_path=matrix_report_path,
         training_report_path=training_report_path,
         test_report_path=test_report_path,
+        source_repository_root=source_repository_root,
+    )
+    source_repository = audit_source_repository(
+        artifacts["source_revision"],
+        repository_root=source_repository_root,
     )
     compatibility = audit_replay_core_compatibility(
         artifacts["source_revision"],
@@ -621,6 +660,7 @@ def replay_readout_errors(
             "config": payload["config"],
         },
         "source_files": artifacts["source_files"],
+        "source_repository": source_repository,
         "test_cache": artifacts["test_cache"],
         "test_control_contract": control_contract,
         "analyzer": {
