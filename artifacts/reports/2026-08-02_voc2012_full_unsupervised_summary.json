@@ -191,6 +191,61 @@
       }
     }
   },
+  "exploratory_error_analysis": {
+    "label": "exploratory_posthoc_not_registered_gate_output",
+    "alignment": {
+      "num_aligned_samples": 1449,
+      "diagnostic_grid": [16, 16]
+    },
+    "response_minus_response_shuffled_sample_summary": {
+      "pairwise_auroc": {
+        "mean_delta": 0.0204034945346,
+        "positive_fraction": 0.6643
+      },
+      "boundary_average_precision": {
+        "mean_delta": -0.00407714475946,
+        "positive_fraction": 0.3834
+      },
+      "foreground_spectral_iou": {
+        "mean_delta": 0.0183436831914,
+        "positive_fraction": 0.5293
+      }
+    },
+    "pearson_correlations": {
+      "foreground_fraction_vs_pairwise_auroc_delta": 0.16984,
+      "foreground_fraction_vs_foreground_spectral_iou_delta": 0.09797,
+      "foreground_fraction_vs_boundary_average_precision_delta": -0.02265,
+      "boundary_density_vs_boundary_average_precision_delta": -0.13318,
+      "boundary_density_vs_foreground_spectral_iou_delta": 0.08784,
+      "boundary_density_vs_pairwise_auroc_delta": 0.02183,
+      "class_count_vs_boundary_average_precision_delta": -0.12726,
+      "class_count_vs_pairwise_auroc_delta": -0.04270
+    },
+    "foreground_fraction_quartiles": {
+      "pairwise_auroc_mean_delta": [0.00304, 0.01717, 0.03186, 0.02953],
+      "pairwise_auroc_positive_fraction": [0.517, 0.631, 0.768, 0.741]
+    },
+    "boundary_density_quartiles": {
+      "boundary_average_precision_mean_delta": [-0.00198, -0.00317, -0.00283, -0.00831],
+      "highest_quartile_boundary_average_precision_positive_fraction": 0.316,
+      "foreground_spectral_iou_mean_delta": [0.00919, 0.01479, 0.01751, 0.03186]
+    },
+    "class_count_groups": {
+      "one_class": {
+        "boundary_average_precision_mean_delta": -0.00227,
+        "pairwise_auroc_mean_delta": 0.02173
+      },
+      "two_classes": {
+        "boundary_average_precision_mean_delta": -0.00753,
+        "pairwise_auroc_mean_delta": 0.01952
+      },
+      "three_or_more_classes": {
+        "boundary_average_precision_mean_delta": -0.00898,
+        "pairwise_auroc_mean_delta": 0.01177
+      }
+    },
+    "exploratory_interpretation": "response appears to encode coarse regional coupling more than precise boundary calibration, with the boundary deficit strongest in dense-boundary and multi-object strata"
+  },
   "observed_pattern": "response exceeds response_shuffled on pairwise AUROC and foreground spectral IoU, but is lower on boundary AUROC and boundary average precision and is lower than every registered static, trajectory, velocity, and hidden-feature control on both registered primary metrics",
   "research_boundary": "This completed diagnostic does not establish the final FieldScope method conclusion. The four full downstream task matrices and causal audits remain required."
 }

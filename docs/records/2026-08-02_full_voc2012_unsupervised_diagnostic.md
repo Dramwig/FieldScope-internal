@@ -75,6 +75,40 @@ reported 95% intervals remaining below zero. The compact values and exact source
 identities are retained in
 `artifacts/reports/2026-08-02_voc2012_full_unsupervised_summary.json`.
 
+## Exploratory failure-mode analysis
+
+A second read-only, post-result analysis aligned all 1,449 diagnostic records
+with the dense-cache targets and used the actual 16 by 16 diagnostic grid. This
+analysis was not preregistered and does not alter the registered gate.
+
+Across samples, response minus response-shuffled was positive for 66.43% of
+finite pairwise-AUROC comparisons, with a mean delta of `+0.020403`. It was
+positive for only 38.34% of boundary-AP comparisons, with a mean delta of
+`-0.004077`, while foreground spectral IoU was positive for 52.93% of samples,
+with a mean delta of `+0.018344`.
+
+The pairwise-AUROC delta increased across foreground-fraction quartiles:
+`+0.00304`, `+0.01717`, `+0.03186`, and `+0.02953`; the corresponding fractions
+of positive samples were 51.7%, 63.1%, 76.8%, and 74.1%. By contrast, the
+boundary-AP delta became most negative in the highest boundary-density quartile:
+`-0.00198`, `-0.00317`, `-0.00283`, and `-0.00831`, with only 31.6% positive in
+the last quartile. Foreground spectral-IoU deltas increased across the same
+boundary-density quartiles from `+0.00919` to `+0.03186`.
+
+Multi-object composition showed the same split. From one-class to two-class and
+three-or-more-class images, the mean boundary-AP deltas were `-0.00227`,
+`-0.00753`, and `-0.00898`; mean pairwise-AUROC deltas were `+0.02173`,
+`+0.01952`, and `+0.01177`. Boundary density correlated negatively with the
+boundary-AP delta (`r=-0.13318`), and class count did likewise (`r=-0.12726`).
+Foreground fraction correlated positively with the pairwise-AUROC delta
+(`r=+0.16984`).
+
+These post-hoc strata suggest that the response representation may contain a
+coarse regional-coupling signal while failing to calibrate precise boundaries,
+especially for dense boundaries and multi-object scenes. This is an exploratory
+interpretation to guide later causal and downstream analyses, not a registered
+method conclusion.
+
 ## Research boundary and continuation
 
 This is one completed subtest. It neither proves nor disproves the full FieldScope
