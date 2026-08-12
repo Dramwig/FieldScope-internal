@@ -66,6 +66,10 @@ tracked_config_path="$(resolve_repository_path "$tracked_config")"
 final_wrapper="${FIELDSCOPE_RECOVERY_FINAL_WRAPPER:-$script_dir/run_fixed_revision_final_recovery.sh}"
 wrapper_root="${FIELDSCOPE_RECOVERY_WRAPPER_ROOT:-$script_dir}"
 
+if [[ -n "${FIELDSCOPE_IMAGENET1K_ROOT:-}" && "$FIELDSCOPE_IMAGENET1K_ROOT" != /* ]]; then
+  FIELDSCOPE_IMAGENET1K_ROOT="$FIELDSCOPE_ROOT/$FIELDSCOPE_IMAGENET1K_ROOT"
+fi
+
 if ! [[ "$readout_cache_gib" =~ ^0([.]0+)?$ ]]; then
   echo "fixed-revision recovery requires exactly 0 GiB shared readout cache" >&2
   exit 2
