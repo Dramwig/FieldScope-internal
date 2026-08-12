@@ -7,11 +7,12 @@ set -euo pipefail
 : "${FIELDSCOPE_EXPECTED_REVISION:?Set FIELDSCOPE_EXPECTED_REVISION}"
 
 repository="${FIELDSCOPE_REPOSITORY:-$FIELDSCOPE_ROOT/FieldScope-internal}"
+repository="$(cd -- "$repository" && pwd -P)"
 python_bin="${FIELDSCOPE_PYTHON:-$FIELDSCOPE_ROOT/.venv/bin/python}"
 cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
 tracked_config="${FIELDSCOPE_TRACKED_CONFIG:-configs/model/auraflow_v03.yaml}"
 external_root="${FIELDSCOPE_RECOVERY_EXTERNAL_ROOT:-$FIELDSCOPE_ROOT/recovery/fixed-revision-readout}"
-output_root="${FIELDSCOPE_RECOVERY_OUTPUT_ROOT:-outputs/full_validation/$cache_tag}"
+output_root="${FIELDSCOPE_RECOVERY_OUTPUT_ROOT:-$repository/outputs/full_validation/$cache_tag}"
 runtime_profile="${FIELDSCOPE_RUNTIME_PROFILE:-$repository/outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
 readout_cache_gib="${FIELDSCOPE_RECOVERY_READOUT_CACHE_GIB:-0}"
 gpu_free_checks_required="${FIELDSCOPE_RECOVERY_GPU_FREE_CHECKS:-5}"
@@ -25,9 +26,45 @@ recovery_log="$log_root/full_validation_recovery_${recovery_tag}.log"
 lock_file="$log_root/full_validation_recovery_${recovery_tag}.lock"
 pid_file="$log_root/full_validation_recovery_${recovery_tag}.pid"
 state_file="$log_root/full_validation_recovery_${recovery_tag}.state.json"
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 config_path="$external_root/auraflow_v03_readout_${readout_cache_gib}g_${config_sha256}.yaml"
 readout_runtime_profile="$external_root/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
 manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
+
+# Normalize paths once.  The recovery script is intentionally runnable from
+# outside the checkout (for the fixed old revision), so no default output or
+# wrapper path may depend on the caller's current working directory.
+if [[ "$output_root" != /* ]]; then
+  output_root="$repository/$output_root"
+fi
+if [[ "$runtime_profile" != /* ]]; then
+  runtime_profile="$repository/$runtime_profile"
+fi
+if [[ "$external_root" != /* ]]; then
+  external_root="$FIELDSCOPE_ROOT/$external_root"
+fi
+if [[ "$log_root" != /* ]]; then
+  log_root="$FIELDSCOPE_ROOT/$log_root"
+fi
+
+config_path="$external_root/auraflow_v03_readout_${readout_cache_gib}g_${config_sha256}.yaml"
+readout_runtime_profile="$external_root/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
+manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
+recovery_log="$log_root/full_validation_recovery_${recovery_tag}.log"
+lock_file="$log_root/full_validation_recovery_${recovery_tag}.lock"
+pid_file="$log_root/full_validation_recovery_${recovery_tag}.pid"
+state_file="$log_root/full_validation_recovery_${recovery_tag}.state.json"
+
+resolve_repository_path() {
+  case "$1" in
+    /*) printf '%s\n' "$1" ;;
+    *) printf '%s/%s\n' "$repository" "$1" ;;
+  esac
+}
+
+tracked_config_path="$(resolve_repository_path "$tracked_config")"
+final_wrapper="${FIELDSCOPE_RECOVERY_FINAL_WRAPPER:-$script_dir/run_fixed_revision_final_recovery.sh}"
+wrapper_root="${FIELDSCOPE_RECOVERY_WRAPPER_ROOT:-$script_dir}"
 
 if ! [[ "$readout_cache_gib" =~ ^0([.]0+)?$ ]]; then
   echo "fixed-revision recovery requires exactly 0 GiB shared readout cache" >&2
@@ -176,7 +213,7 @@ PY
 
 materialize_readout_config() {
   local tracked_path temporary actual_sha
-  tracked_path="$repository/$tracked_config"
+  tracked_path="$tracked_config_path"
   if [[ ! -f "$tracked_path" ]]; then
     echo "missing tracked extraction config: $tracked_path" >&2
     exit 8
@@ -352,7 +389,7 @@ verify_readout_profile() {
   [[ -f "$readout_runtime_profile" ]] || return 1
   (
     cd "$repository"
-    "$python_bin" -m fieldscope.cli readout-runtime-gate \
+    env -u FIELDSCOPE_RUNTIME_PROFILE "$python_bin" -m fieldscope.cli readout-runtime-gate \
       --config "$config_path" \
       --train-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_train" \
       --val-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_val" \
@@ -360,6 +397,21 @@ verify_readout_profile() {
       --output "$readout_runtime_profile" \
       >/dev/null
   )
+}
+
+generate_readout_profile() {
+  local temporary="${readout_runtime_profile}.tmp.$$"
+  rm -f "$temporary"
+  (
+    cd "$repository"
+    env -u FIELDSCOPE_RUNTIME_PROFILE "$python_bin" -m fieldscope.cli readout-runtime-gate \
+      --config "$config_path" \
+      --train-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_train" \
+      --val-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_val" \
+      --test-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_test" \
+      --output "$temporary"
+  )
+  mv -f "$temporary" "$readout_runtime_profile"
 }
 
 wait_for_free_gpu() {
@@ -408,8 +460,10 @@ PY
 
 run_formal_recovery() {
   local dataset
-  export FIELDSCOPE_CONFIG="$tracked_config"
-  export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"
+  # Use absolute paths because the old 020c1de wrappers resolve FIELDSCOPE_CONFIG
+  # relative to their invocation cwd.
+  export FIELDSCOPE_CONFIG="$tracked_config_path"
+  export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config_path"
   export FIELDSCOPE_READOUT_CONFIG="$config_path"
   export FIELDSCOPE_RUNTIME_PROFILE="$runtime_profile"
   export FIELDSCOPE_READOUT_RUNTIME_PROFILE="$readout_runtime_profile"
@@ -420,10 +474,14 @@ run_formal_recovery() {
     verify_repository
     verify_no_formal_worker "$$"
     echo "$(date --iso-8601=seconds) verifying/reusing tracked-config cache dataset=$dataset"
-    bash "scripts/eval/run_${dataset}_extract.sh"
+    env FIELDSCOPE_CONFIG="$tracked_config_path" \
+      FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config_path" \
+      bash "scripts/eval/run_${dataset}_extract.sh"
     verify_cache_manifests "$dataset"
     echo "$(date --iso-8601=seconds) training recovered zero-shared-cache readout matrix dataset=$dataset"
-    bash "scripts/train/train_${dataset}_readout.sh"
+    env FIELDSCOPE_CONFIG="$config_path" \
+      FIELDSCOPE_READOUT_CONFIG="$config_path" \
+      bash "scripts/train/train_${dataset}_readout.sh"
   done
   verify_cache_manifests all
 
@@ -442,7 +500,25 @@ run_formal_recovery() {
     --nyuv2-split-audit "$output_root/preflight/nyuv2_split_audit.json" \
     --output "$output_root/evidence_decision.json"
 
-  exec bash scripts/eval/run_final_conclusion_after_main.sh
+  if [[ ! -f "$final_wrapper" ]]; then
+    echo "missing fixed-revision final recovery wrapper: $final_wrapper" >&2
+    exit 14
+  fi
+  exec env \
+    FIELDSCOPE_ROOT="$FIELDSCOPE_ROOT" \
+    FIELDSCOPE_DATASETS_ROOT="$FIELDSCOPE_DATASETS_ROOT" \
+    FIELDSCOPE_CHECKPOINTS_ROOT="$FIELDSCOPE_CHECKPOINTS_ROOT" \
+    FIELDSCOPE_REPOSITORY="$repository" \
+    FIELDSCOPE_TRACKED_CONFIG="$tracked_config_path" \
+    FIELDSCOPE_READOUT_CONFIG="$config_path" \
+    FIELDSCOPE_RUNTIME_PROFILE="$runtime_profile" \
+    FIELDSCOPE_READOUT_RUNTIME_PROFILE="$readout_runtime_profile" \
+    FIELDSCOPE_CACHE_TAG="$cache_tag" \
+    FIELDSCOPE_PYTHON="$python_bin" \
+    FIELDSCOPE_EXPECTED_REVISION="$FIELDSCOPE_EXPECTED_REVISION" \
+    FIELDSCOPE_IMAGENET1K_ROOT="${FIELDSCOPE_IMAGENET1K_ROOT:-}" \
+    FIELDSCOPE_RECOVERY_WRAPPER_ROOT="$wrapper_root" \
+    bash "$final_wrapper"
 }
 
 mkdir -p "$log_root" "$external_root"
@@ -472,15 +548,7 @@ verify_repository
 verify_no_formal_worker "$$"
 if ! verify_readout_profile; then
   echo "$(date --iso-8601=seconds) generating fresh schema-2 readout runtime profile"
-  (
-    cd "$repository"
-    "$python_bin" -m fieldscope.cli readout-runtime-gate \
-      --config "$config_path" \
-      --train-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_train" \
-      --val-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_val" \
-      --test-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_test" \
-      --output "$readout_runtime_profile"
-  )
+  generate_readout_profile
 fi
 verify_readout_profile
 write_state runtime_profile_passed

@@ -200,7 +200,7 @@ def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
         "temporary cache files present",
         "verify_cache_manifests imagenet100",
         "verify_cache_manifests all",
-        'export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"',
+        'export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config_path"',
         'export FIELDSCOPE_READOUT_CONFIG="$config_path"',
         "readout-runtime-gate",
         "run_final_conclusion_after_main.sh",
@@ -210,6 +210,30 @@ def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
     assert "git checkout" not in script
     assert "git switch" not in script
     assert "rm -rf" not in script
+
+
+def test_fixed_revision_recovery_uses_config_split_final_wrappers() -> None:
+    recovery = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_fixed_revision_readout_recovery.sh"
+    ).read_text(encoding="utf-8")
+    final = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_fixed_revision_final_recovery.sh"
+    ).read_text(encoding="utf-8")
+    extension = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_fixed_revision_extension_recovery.sh"
+    ).read_text(encoding="utf-8")
+    assert 'FIELDSCOPE_CONFIG="$tracked_config_path"' in recovery
+    assert 'FIELDSCOPE_CONFIG="$config_path"' in recovery
+    assert "run_fixed_revision_final_recovery.sh" in recovery
+    assert "run_fixed_revision_extension_recovery.sh" in final
+    assert 'FIELDSCOPE_RUNTIME_PROFILE="$main_runtime_profile"' in extension
+    assert 'FIELDSCOPE_READOUT_CONFIG="$readout_config"' in extension
+    assert 'code_tree_sha256' in final
+    assert (
+        'env -u FIELDSCOPE_RUNTIME_PROFILE "$python_bin" '
+        '-m fieldscope.cli readout-runtime-gate'
+    ) in recovery
+    assert "audit-final-evidence" in final
 
 
 def test_full_runbook_reserves_conservative_checkpoint_budget() -> None:

@@ -18,8 +18,9 @@ shard 在加载后会把稀疏邻接恢复成 dense tensor，因此磁盘大小�
 
 ## 修复内容
 
-- 正式主配置与 `random_flow` 对照配置的 readout LRU 上限降为 8 GiB；其余样本、
-  表示、seed、epoch、batch、优化器和矩阵范围不变。
+- 修复 revision 的正式主配置与 `random_flow` 对照配置的 readout LRU 上限降为
+  8 GiB；固定旧 revision 的受限恢复路径采用仓库外、内容寻址的 0 GiB 配置；其余
+  样本、表示、seed、epoch、batch、优化器和矩阵范围不变。
 - LRU 改为递归计算反序列化后所有唯一 tensor storage 的实际字节数；按真实账本
   驱逐 shard，单个 shard 超过预算时不将其固定在共享缓存中。
 - readout runtime gate 读取 cgroup v1/v2 的内存上限、当前占用和可回收页缓存；
@@ -32,10 +33,13 @@ shard 在加载后会把稀疏邻接恢复成 dense tensor，因此磁盘大小�
 
 ## 验证与部署边界
 
-隔离副本验证结果：`ruff check src tests scripts`、完整 `pytest`（181 tests）、针对性
-内存/runtime/evidence 测试（60 tests）和 toy smoke 均通过。另在现有正式
-ImageNet-100 shard 上只读测得，约 37.4 MB 的 `readout_sparse` 文件加载后保留约
-58.1 MB tensor storage，验证了磁盘大小低估常驻 RAM 的问题。
+隔离副本验证结果：`ruff check src tests scripts`、针对性
+内存/runtime/evidence 测试和 toy smoke 均通过。Windows/PyTorch CPU 全套回归中，
+唯一失败仍是既有 `tests/test_response.py::test_sample_seeded_extraction_is_batch_invariant`
+的 `dit_hidden` baseline bitwise 差异；其余 tensor exact checks 通过，未修改该基线
+行为，也不把它归因于本次恢复编排。另在现有正式 ImageNet-100 shard 上只读测得，
+约 37.4 MB 的 `readout_sparse` 文件加载后保留约 58.1 MB tensor storage，验证了
+磁盘大小低估常驻 RAM 的问题。
 
 本修复只处理资源安全和可审计性，不对 signal gate 的 `failed/stop_or_redesign`
 结果作正向重解释，也不写入论文效果数字。远端正式链路尚未重启。
@@ -49,7 +53,7 @@ manifest、schema 3 runtime profile 和后续完整证据链；旧 revision 的�
 - 特征抽取与现有 cache manifest 继续使用原注册配置（其中 readout cache 字段为
   `160 GiB`），因此现有 ImageNet-100 train/val/test cache 的 extraction signature、
   shard SHA-256 和 provenance 均不改写；
-- 仅 cached-readout 训练使用仓库外、内容寻址的 `8 GiB` 运行配置，并重新执行旧
+- 仅 cached-readout 训练使用仓库外、内容寻址的 `0 GiB` 运行配置，并重新执行旧
   revision 自身的 schema-2 readout runtime gate；矩阵、checkpoint 和测试报告必须嵌入
   这份新 profile 的 identity；
 - 主证据审计会按矩阵中的 readout 配置验证新 profile，同时按 cache identity 验证旧
@@ -59,7 +63,7 @@ manifest、schema 3 runtime profile 和后续完整证据链；旧 revision 的�
   ImageNet-100 train cache 做的隔离只读探针连续加载 20 个 shard 后，进程峰值 RSS 约
   `903368 KiB`，共享 cache 仍为 0；这只证明内存路径可控，不构成运行门或方法效果证据；
 - 若主证据正向触发扩展，ImageNet-1k 同样必须把特征抽取的原注册配置与 readout-only
-  的 8 GiB 配置分开编排；不得直接复用把同一 `FIELDSCOPE_CONFIG` 同时用于抽取与训练的
+  的 0 GiB 配置分开编排；不得直接复用把同一 `FIELDSCOPE_CONFIG` 同时用于抽取与训练的
  旧脚本路径。
 
 固定 revision 路径只有在 GPU 空闲、唯一 worker、全新 runtime-profile/log 标识和所有
@@ -68,9 +72,10 @@ fail-closed 审计均满足时才能启动。本文记录的是经代码审计�
 
 ## 恢复编排实现
 
-本地后续实现新增 `scripts/eval/run_fixed_revision_readout_recovery.sh`，并把通用抽取与
+本地后续实现新增 `scripts/eval/run_fixed_revision_readout_recovery.sh`，以及仓库外调用的
+`run_fixed_revision_final_recovery.sh`、`run_fixed_revision_extension_recovery.sh`；通用抽取与
 readout wrapper 的配置入口拆成 `FIELDSCOPE_EXTRACTION_CONFIG` 与
-`FIELDSCOPE_READOUT_CONFIG`。该实现目前仅完成代码与测试阶段，尚未在远端启动。
+`FIELDSCOPE_READOUT_CONFIG`。这些实现目前仅完成代码与测试阶段，尚未在远端启动。
 
 恢复脚本固定校验以下身份后才允许进入 GPU 等待：
 
