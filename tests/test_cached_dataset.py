@@ -5,6 +5,7 @@ import pytest
 import torch
 from torch.utils.data import DataLoader
 
+import fieldscope.cached_dataset as cached_dataset_module
 from fieldscope.backends.toy import ToyFieldBackend
 from fieldscope.cache import save_features
 from fieldscope.cached_dataset import (
@@ -20,6 +21,13 @@ from fieldscope.cli import train_cache
 from fieldscope.config import ProbeConfig, RunConfig
 from fieldscope.feature_ops import select_representation, slice_features, stack_features
 from fieldscope.response import FieldResponseExtractor
+
+
+@pytest.fixture(autouse=True)
+def _isolate_shared_memory_cache() -> None:
+    cached_dataset_module.reset_shared_memory_cache()
+    yield
+    cached_dataset_module.reset_shared_memory_cache()
 
 
 def _write_cache(tmp_path: Path) -> tuple[Path, RunConfig]:
@@ -319,3 +327,103 @@ def test_shared_memory_cache_reuses_loaded_shards(tmp_path: Path) -> None:
     after_second = shared_memory_cache_stats()
     assert after_first["shards"] == before["shards"] + 1
     assert after_second == after_first
+
+
+def test_shared_memory_cache_counts_loaded_tensor_storage_and_evicts(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    shard_paths = [cache_dir / f"shard-{index:06d}.pt" for index in range(2)]
+    for path in shard_paths:
+        path.write_bytes(b"tiny")
+    (cache_dir / "dataset_manifest.json").write_text(
+        json.dumps(
+            {
+                "format_version": 4,
+                "num_samples": 2,
+                "complete": True,
+                "storage_policy": "readout_sparse",
+                "shards": [
+                    {"path": path.name, "num_samples": 1} for path in shard_paths
+                ],
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    def fake_load(path: Path):
+        value = float(shard_paths.index(Path(path)))
+        tensor = torch.full((256,), value, dtype=torch.float32)
+        features = cached_dataset_module.FieldFeatures(
+            state=tensor.view(1, 1, 256),
+            response=torch.zeros((1, 1, 1)),
+            affinity=torch.zeros((1, 1, 1)),
+            adjacency=torch.zeros((1, 1, 1)),
+            grid_size=(1, 1),
+        )
+        return features, {"classification": torch.zeros(1, dtype=torch.int64)}, {
+            "sample_ids": [Path(path).stem]
+        }
+
+    monkeypatch.setattr(cached_dataset_module, "load_features", fake_load)
+    dataset = CachedFeatureDataset(cache_dir, memory_cache_bytes=1100)
+    _ = dataset[0]
+    first_stats = shared_memory_cache_stats()
+    assert first_stats["resident_tensor_storage_bytes"] > shard_paths[0].stat().st_size
+    assert first_stats["resident_tensor_storage_bytes"] <= 1100
+    _ = dataset[1]
+    second_stats = shared_memory_cache_stats()
+    assert second_stats["shards"] == 1
+    assert second_stats["resident_tensor_storage_bytes"] <= 1100
+    assert shard_paths[1] in cached_dataset_module._SHARED_PAYLOADS
+    assert shard_paths[0] not in cached_dataset_module._SHARED_PAYLOADS
+
+
+def test_shared_memory_cache_does_not_pin_oversized_shard(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir()
+    shard_path = cache_dir / "shard-000000.pt"
+    shard_path.write_bytes(b"tiny")
+    (cache_dir / "dataset_manifest.json").write_text(
+        json.dumps(
+            {
+                "format_version": 4,
+                "num_samples": 1,
+                "complete": True,
+                "storage_policy": "readout_sparse",
+                "shards": [{"path": shard_path.name, "num_samples": 1}],
+            }
+        ),
+        encoding="utf-8",
+    )
+    calls = 0
+
+    def fake_load(_path: Path):
+        nonlocal calls
+        calls += 1
+        tensor = torch.zeros((1024,), dtype=torch.float32)
+        features = cached_dataset_module.FieldFeatures(
+            state=tensor.view(1, 1, 1024),
+            response=torch.zeros((1, 1, 1)),
+            affinity=torch.zeros((1, 1, 1)),
+            adjacency=torch.zeros((1, 1, 1)),
+            grid_size=(1, 1),
+        )
+        return features, {"classification": torch.zeros(1, dtype=torch.int64)}, {
+            "sample_ids": ["sample"]
+        }
+
+    monkeypatch.setattr(cached_dataset_module, "load_features", fake_load)
+    dataset = CachedFeatureDataset(cache_dir, memory_cache_bytes=1024)
+    _ = dataset[0]
+    _ = dataset[0]
+    assert calls == 2
+    assert shared_memory_cache_stats() == {
+        "shards": 0,
+        "resident_tensor_storage_bytes": 0,
+    }

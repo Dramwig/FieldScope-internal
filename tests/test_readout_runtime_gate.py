@@ -72,6 +72,15 @@ def _profile(config: RunConfig) -> dict:
         "maximum_cuda_reserved_fraction": MAX_CUDA_RESERVED_FRACTION,
         "minimum_free_ram_reserve_bytes": MIN_FREE_RAM_RESERVE_BYTES,
         "available_ram_bytes": 128 * 1024**3,
+        "memory_accounting": {
+            "source": "host_sysconf",
+            "host_available_ram_bytes": 128 * 1024**3,
+            "cgroup_memory_limit_bytes": None,
+            "cgroup_memory_current_bytes": None,
+            "cgroup_reclaimable_bytes": None,
+            "cgroup_nonreclaimable_bytes": None,
+            "available_ram_bytes": 128 * 1024**3,
+        },
         "strict_reference": {
             "status": "completed",
             "seed_workers": 1,
@@ -350,8 +359,16 @@ def test_candidate_failures_fall_back_to_exact_serial_profile(
     )
     monkeypatch.setattr("fieldscope.readout_runtime_gate.torch.cuda.is_available", lambda: True)
     monkeypatch.setattr(
-        "fieldscope.readout_runtime_gate._available_ram_bytes",
-        lambda: 128 * 1024**3,
+        "fieldscope.readout_runtime_gate._memory_accounting_snapshot",
+        lambda: {
+            "source": "host_sysconf",
+            "host_available_ram_bytes": 128 * 1024**3,
+            "cgroup_memory_limit_bytes": None,
+            "cgroup_memory_current_bytes": None,
+            "cgroup_reclaimable_bytes": None,
+            "cgroup_nonreclaimable_bytes": None,
+            "available_ram_bytes": 128 * 1024**3,
+        },
     )
 
     def fake_candidate(**kwargs):
@@ -391,3 +408,153 @@ def test_candidate_failures_fall_back_to_exact_serial_profile(
         "failed",
         "failed",
     ]
+
+
+def test_available_ram_prefers_cgroup_remaining_capacity(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._host_available_ram_bytes",
+        lambda: 900 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._cgroup_memory_limit_bytes",
+        lambda: 110 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._read_cgroup_memory_value",
+        lambda *names: 50 * 1024**3 if "memory.current" in names else None,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._read_cgroup_memory_stat",
+        lambda: {
+            "file": 40 * 1024**3,
+            "shmem": 4 * 1024**3,
+            "slab_reclaimable": 2 * 1024**3,
+        },
+    )
+    from fieldscope.readout_runtime_gate import _available_ram_bytes
+
+    # File-backed reclaimable = 40 - 4 GiB shmem, plus 2 GiB slab.
+    # 110 GiB limit - (50 GiB current - 38 GiB reclaimable) = 98 GiB.
+    assert _available_ram_bytes() == 98 * 1024**3
+
+
+def test_available_ram_fails_closed_when_cgroup_usage_is_unreadable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._host_available_ram_bytes",
+        lambda: 900 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._cgroup_memory_limit_bytes",
+        lambda: 110 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._read_cgroup_memory_value",
+        lambda *_names: None,
+    )
+    from fieldscope.readout_runtime_gate import _available_ram_bytes
+
+    with pytest.raises(RuntimeError, match="memory.current is unavailable"):
+        _available_ram_bytes()
+
+
+def test_available_ram_fails_closed_when_cgroup_stat_is_unreadable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._host_available_ram_bytes",
+        lambda: 900 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._cgroup_memory_limit_bytes",
+        lambda: 110 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._read_cgroup_memory_value",
+        lambda *names: 50 * 1024**3 if "memory.current" in names else None,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._read_cgroup_memory_stat",
+        lambda: {},
+    )
+    from fieldscope.readout_runtime_gate import _available_ram_bytes
+
+    with pytest.raises(RuntimeError, match="memory.stat is unavailable"):
+        _available_ram_bytes()
+
+
+def test_memory_accounting_rejects_tampered_values() -> None:
+    from fieldscope.readout_runtime_gate import _validate_memory_accounting
+
+    with pytest.raises(ValueError, match="cgroup memory accounting mismatch"):
+        _validate_memory_accounting(
+            {
+                "source": "cgroup",
+                "host_available_ram_bytes": 900 * 1024**3,
+                "cgroup_memory_limit_bytes": 110 * 1024**3,
+                "cgroup_memory_current_bytes": 50 * 1024**3,
+                "cgroup_reclaimable_bytes": 42 * 1024**3,
+                "cgroup_nonreclaimable_bytes": 1,
+                "available_ram_bytes": 102 * 1024**3,
+            }
+        )
+
+
+def test_readout_runtime_gate_rejects_insufficient_accounted_ram(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    config = _config()
+    provenance = {
+        "code_revision": "revision",
+        "code_tree_sha256": "tree",
+        "code_dirty": False,
+    }
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate.code_provenance",
+        lambda: provenance,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate.torch.cuda.is_available",
+        lambda: True,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._memory_accounting_snapshot",
+        lambda: {
+            "source": "cgroup",
+            "host_available_ram_bytes": 900 * 1024**3,
+            "cgroup_memory_limit_bytes": 110 * 1024**3,
+            "cgroup_memory_current_bytes": 109 * 1024**3,
+            "cgroup_reclaimable_bytes": 0,
+            "cgroup_nonreclaimable_bytes": 109 * 1024**3,
+            "available_ram_bytes": 1 * 1024**3,
+        },
+    )
+    with pytest.raises(RuntimeError, match="insufficient accounted RAM"):
+        run_readout_runtime_gate(
+            config,
+            config_path=tmp_path / "config.yaml",
+            train_cache_dir=tmp_path / "train",
+            val_cache_dir=tmp_path / "val",
+            test_cache_dir=tmp_path / "test",
+            output_path=tmp_path / "readout.json",
+        )
+
+
+def test_available_ram_falls_back_to_host_without_cgroup(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._host_available_ram_bytes",
+        lambda: 900 * 1024**3,
+    )
+    monkeypatch.setattr(
+        "fieldscope.readout_runtime_gate._cgroup_memory_limit_bytes",
+        lambda: None,
+    )
+    from fieldscope.readout_runtime_gate import _available_ram_bytes
+
+    assert _available_ram_bytes() == 900 * 1024**3

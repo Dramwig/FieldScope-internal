@@ -20,7 +20,7 @@ import torch
 from fieldscope.config import RunConfig
 from fieldscope.experiments import code_provenance
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 REGISTERED_SEED_WORKERS = (1, 2, 3)
 REGISTERED_SEEDS = (4121, 7319, 104729)
 GATE_TASK = "classification"
@@ -62,6 +62,162 @@ REGISTERED_FORMAL_WORKLOADS = (
         "output_channels": 1,
     },
 )
+
+
+def _cgroup_memory_file_candidates(name: str) -> tuple[Path, ...]:
+    """Return likely cgroup v2/v1 paths for a memory controller file.
+
+    ``os.sysconf`` reports the host's memory on many container runtimes.  The
+    readout gate must also see the container limit, otherwise a cache budget
+    that is safe on the host can still exhaust the worker's cgroup.
+    """
+
+    root = Path("/sys/fs/cgroup")
+    candidates: list[Path] = []
+    try:
+        cgroup_lines = Path("/proc/self/cgroup").read_text(encoding="utf-8").splitlines()
+    except (OSError, UnicodeError):
+        cgroup_lines = []
+    for line in cgroup_lines:
+        hierarchy, separator, relative = line.partition("::")
+        if separator and relative:
+            candidates.append(root / relative.lstrip("/") / name)
+        elif hierarchy and ":memory:" in line:
+            relative_path = line.rsplit(":", 1)[-1].lstrip("/")
+            candidates.append(root / "memory" / relative_path / name)
+    candidates.extend((root / name, root / "memory" / name))
+    deduplicated: list[Path] = []
+    for candidate in candidates:
+        if candidate not in deduplicated:
+            deduplicated.append(candidate)
+    return tuple(deduplicated)
+
+
+def _read_cgroup_memory_value(*names: str) -> int | None:
+    """Read the first finite cgroup memory value, or ``None`` if unavailable."""
+
+    for name in names:
+        for path in _cgroup_memory_file_candidates(name):
+            try:
+                raw = path.read_text(encoding="utf-8").strip()
+            except (OSError, UnicodeError):
+                continue
+            if not raw or raw == "max":
+                continue
+            try:
+                value = int(raw)
+            except ValueError:
+                continue
+            # cgroup v1 uses a very large sentinel for an unlimited limit.
+            if value <= 0 or value >= 1 << 60:
+                continue
+            return value
+    return None
+
+
+def _cgroup_memory_limit_bytes() -> int | None:
+    return _read_cgroup_memory_value("memory.max", "memory.limit_in_bytes")
+
+
+def _read_cgroup_memory_stat() -> dict[str, int]:
+    for path in _cgroup_memory_file_candidates("memory.stat"):
+        try:
+            lines = path.read_text(encoding="utf-8").splitlines()
+        except (OSError, UnicodeError):
+            continue
+        values: dict[str, int] = {}
+        for line in lines:
+            key, separator, raw = line.partition(" ")
+            if not separator:
+                continue
+            try:
+                values[key] = int(raw.strip())
+            except ValueError:
+                continue
+        if values:
+            return values
+    return {}
+
+
+def _cgroup_reclaimable_bytes(stat: Mapping[str, int]) -> int:
+    """Estimate reclaimable cgroup bytes without counting shmem twice."""
+
+    file_bytes = int(stat.get("file", stat.get("cache", 0)))
+    shmem_bytes = int(stat.get("shmem", 0))
+    file_reclaimable = max(0, file_bytes - shmem_bytes)
+    slab_reclaimable = max(0, int(stat.get("slab_reclaimable", 0)))
+    return file_reclaimable + slab_reclaimable
+
+
+def _host_available_ram_bytes() -> int:
+    page_size = int(os.sysconf("SC_PAGE_SIZE"))
+    available_pages = int(os.sysconf("SC_AVPHYS_PAGES"))
+    return page_size * available_pages
+
+
+def _memory_accounting_snapshot() -> dict[str, Any]:
+    host_available = _host_available_ram_bytes()
+    limit = _cgroup_memory_limit_bytes()
+    if limit is None:
+        return {
+            "source": "host_sysconf",
+            "host_available_ram_bytes": host_available,
+            "cgroup_memory_limit_bytes": None,
+            "cgroup_memory_current_bytes": None,
+            "cgroup_reclaimable_bytes": None,
+            "cgroup_nonreclaimable_bytes": None,
+            "available_ram_bytes": host_available,
+        }
+
+    current = _read_cgroup_memory_value("memory.current", "memory.usage_in_bytes")
+    if current is None:
+        raise RuntimeError(
+            "Readout runtime gate cannot account for a finite cgroup memory limit "
+            "because memory.current is unavailable"
+        )
+    stat = _read_cgroup_memory_stat()
+    if not stat:
+        raise RuntimeError(
+            "Readout runtime gate cannot account for reclaimable cgroup memory "
+            "because memory.stat is unavailable"
+        )
+    reclaimable = min(current, _cgroup_reclaimable_bytes(stat))
+    nonreclaimable = max(0, current - reclaimable)
+    available = max(0, min(host_available, limit - nonreclaimable))
+    return {
+        "source": "cgroup",
+        "host_available_ram_bytes": host_available,
+        "cgroup_memory_limit_bytes": limit,
+        "cgroup_memory_current_bytes": current,
+        "cgroup_reclaimable_bytes": reclaimable,
+        "cgroup_nonreclaimable_bytes": nonreclaimable,
+        "available_ram_bytes": available,
+    }
+
+
+def _validate_memory_accounting(payload: Mapping[str, Any]) -> None:
+    source = payload.get("source")
+    available = int(payload.get("available_ram_bytes", -1))
+    host_available = int(payload.get("host_available_ram_bytes", -1))
+    if source not in {"cgroup", "host_sysconf"} or available < 0 or host_available < 0:
+        raise ValueError("Readout runtime memory accounting is invalid")
+    limit = payload.get("cgroup_memory_limit_bytes")
+    current = payload.get("cgroup_memory_current_bytes")
+    reclaimable = payload.get("cgroup_reclaimable_bytes")
+    nonreclaimable = payload.get("cgroup_nonreclaimable_bytes")
+    if source == "host_sysconf":
+        if any(value is not None for value in (limit, current, reclaimable, nonreclaimable)):
+            raise ValueError("Readout runtime host memory accounting is invalid")
+        if available != host_available:
+            raise ValueError("Readout runtime host memory accounting mismatch")
+        return
+    values = (limit, current, reclaimable, nonreclaimable)
+    if any(not isinstance(value, int) or value < 0 for value in values):
+        raise ValueError("Readout runtime cgroup memory accounting is invalid")
+    expected_nonreclaimable = max(0, int(current) - int(reclaimable))
+    expected_available = max(0, min(host_available, int(limit) - expected_nonreclaimable))
+    if int(nonreclaimable) != expected_nonreclaimable or available != expected_available:
+        raise ValueError("Readout runtime cgroup memory accounting mismatch")
 
 
 def _activation_proxy_units(
@@ -229,6 +385,14 @@ def readout_runtime_profile_identity(path: str | Path) -> dict[str, Any]:
         raise ValueError("Readout runtime profile CUDA threshold mismatch")
     if int(payload.get("minimum_free_ram_reserve_bytes", -1)) != (MIN_FREE_RAM_RESERVE_BYTES):
         raise ValueError("Readout runtime profile RAM threshold mismatch")
+    memory_accounting = payload.get("memory_accounting")
+    if not isinstance(memory_accounting, Mapping):
+        raise ValueError("Readout runtime memory accounting is missing")
+    _validate_memory_accounting(memory_accounting)
+    if int(memory_accounting.get("available_ram_bytes", -1)) != int(
+        payload.get("available_ram_bytes", -2)
+    ):
+        raise ValueError("Readout runtime memory accounting mismatch")
     if seed_workers not in REGISTERED_SEED_WORKERS:
         raise ValueError("Readout runtime profile selected unregistered workers")
     strict_reference = payload.get("strict_reference")
@@ -450,9 +614,7 @@ def load_readout_runtime_gate_report(
 
 
 def _available_ram_bytes() -> int:
-    page_size = int(os.sysconf("SC_PAGE_SIZE"))
-    available_pages = int(os.sysconf("SC_AVPHYS_PAGES"))
-    return page_size * available_pages
+    return int(_memory_accounting_snapshot()["available_ram_bytes"])
 
 
 def _semantic_history(history: list[Mapping[str, Any]]) -> list[dict[str, Any]]:
@@ -648,9 +810,17 @@ def run_readout_runtime_gate(
     provenance = code_provenance()
     if provenance.get("code_dirty") is not False:
         raise ValueError("Readout runtime gate requires a clean worktree")
+    memory_accounting = _memory_accounting_snapshot()
+    available_ram = int(memory_accounting["available_ram_bytes"])
+    serial_required_ram = int(config.runtime.readout_memory_cache_gib * 1024**3)
+    serial_required_ram += MIN_FREE_RAM_RESERVE_BYTES
+    if available_ram < serial_required_ram:
+        raise RuntimeError(
+            "Readout runtime gate has insufficient accounted RAM for even one worker: "
+            f"available={available_ram}, required={serial_required_ram}"
+        )
     gate_root = output_path.parent / f".{output_path.stem}.runs-{uuid4().hex}"
     gate_root.mkdir(parents=True, exist_ok=False)
-    available_ram = _available_ram_bytes()
     candidates = []
     strict_root = (gate_root / "strict-reference").resolve()
     strict_elapsed, strict_log = _run_candidate(
@@ -769,6 +939,7 @@ def run_readout_runtime_gate(
         "maximum_cuda_reserved_fraction": MAX_CUDA_RESERVED_FRACTION,
         "minimum_free_ram_reserve_bytes": MIN_FREE_RAM_RESERVE_BYTES,
         "available_ram_bytes": available_ram,
+        "memory_accounting": memory_accounting,
         "equivalence_rule": EQUIVALENCE_RULE,
         "candidates": candidates,
         "selected_profile": {

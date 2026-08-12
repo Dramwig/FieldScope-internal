@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import json
 from collections import OrderedDict
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +23,79 @@ _SHARED_PAYLOADS: OrderedDict[
 _SHARED_PAYLOAD_BYTES: dict[Path, int] = {}
 _SHARED_TOTAL_BYTES = 0
 _MAX_SHARDS_PER_RESPONSE_POOL = 32
+
+
+def _tensor_storage_bytes(
+    value: Any,
+    *,
+    _seen: set[tuple[str, int, int, int]] | None = None,
+) -> int:
+    """Return the bytes held by unique tensor storages in a nested payload.
+
+    A cache shard's serialized size is not a safe proxy for its resident size:
+    readout-sparse adjacency is expanded to dense tensors by ``load_features``.
+    Counting storages after deserialization therefore reflects the memory kept
+    alive by the in-process LRU.  Shared views/aliases are counted once.
+    """
+
+    seen = _seen if _seen is not None else set()
+    if isinstance(value, torch.Tensor):
+        storage = value.untyped_storage()
+        key = (
+            value.device.type,
+            -1 if value.device.index is None else int(value.device.index),
+            int(storage.data_ptr()),
+            int(storage.nbytes()),
+        )
+        if key in seen:
+            return 0
+        seen.add(key)
+        return int(storage.nbytes())
+    if isinstance(value, FieldFeatures):
+        return sum(
+            _tensor_storage_bytes(item, _seen=seen)
+            for item in (
+                value.state,
+                value.response,
+                value.affinity,
+                value.adjacency,
+                value.baselines,
+                value.graphs,
+            )
+        )
+    if isinstance(value, Mapping):
+        return sum(_tensor_storage_bytes(item, _seen=seen) for item in value.values())
+    if isinstance(value, (list, tuple, set, frozenset)):
+        return sum(_tensor_storage_bytes(item, _seen=seen) for item in value)
+    return 0
+
+
+def reset_shared_memory_cache() -> None:
+    """Clear process-wide cache state for isolated callers and test fixtures."""
+
+    global _SHARED_TOTAL_BYTES
+    _SHARED_PAYLOADS.clear()
+    _SHARED_PAYLOAD_BYTES.clear()
+    _SHARED_TOTAL_BYTES = 0
+
+
+def _trim_shared_memory_cache(memory_cache_bytes: int) -> None:
+    """Evict oldest shared shards until the requested budget is respected."""
+
+    global _SHARED_TOTAL_BYTES
+    while _SHARED_PAYLOADS and _SHARED_TOTAL_BYTES > memory_cache_bytes:
+        evicted_path, _ = _SHARED_PAYLOADS.popitem(last=False)
+        _SHARED_TOTAL_BYTES -= _SHARED_PAYLOAD_BYTES.pop(evicted_path, 0)
+
+
+def _clear_shared_memory_cache_entry(path: Path) -> None:
+    """Drop one shared cache entry and its accounting record, if present."""
+
+    global _SHARED_TOTAL_BYTES
+    if _SHARED_PAYLOADS.pop(path, None) is not None:
+        _SHARED_TOTAL_BYTES -= _SHARED_PAYLOAD_BYTES.pop(path, 0)
+    else:
+        _SHARED_PAYLOAD_BYTES.pop(path, None)
 
 
 def _manifest_shard_ranges(manifest: dict[str, Any]) -> list[tuple[int, int]]:
@@ -109,7 +183,7 @@ def cached_control_contract_for_cache(
 def shared_memory_cache_stats() -> dict[str, int]:
     return {
         "shards": len(_SHARED_PAYLOADS),
-        "estimated_bytes": _SHARED_TOTAL_BYTES,
+        "resident_tensor_storage_bytes": _SHARED_TOTAL_BYTES,
     }
 
 
@@ -121,6 +195,8 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
         memory_cache_bytes: int = 0,
     ):
         self.cache_dir = Path(cache_dir)
+        if memory_cache_bytes < 0:
+            raise ValueError("memory_cache_bytes must be non-negative")
         self.memory_cache_bytes = memory_cache_bytes
         manifest_path = self.cache_dir / "dataset_manifest.json"
         if not manifest_path.is_file():
@@ -144,23 +220,30 @@ class CachedFeatureDataset(Dataset[dict[str, Any]]):
 
     def _load(self, path: Path) -> tuple[FieldFeatures, dict[str, torch.Tensor], dict[str, Any]]:
         global _SHARED_TOTAL_BYTES
-        if self.memory_cache_bytes > 0 and path in _SHARED_PAYLOADS:
-            payload = _SHARED_PAYLOADS.pop(path)
-            _SHARED_PAYLOADS[path] = payload
-            return payload
-        if path in self._loaded_payloads:
+        if self.memory_cache_bytes > 0:
+            _trim_shared_memory_cache(self.memory_cache_bytes)
+            if path in _SHARED_PAYLOADS:
+                payload = _SHARED_PAYLOADS.pop(path)
+                _SHARED_PAYLOADS[path] = payload
+                return payload
+        if self.memory_cache_bytes <= 0 and path in self._loaded_payloads:
             payload = self._loaded_payloads.pop(path)
             self._loaded_payloads[path] = payload
             return payload
         payload = load_features(path)
         if self.memory_cache_bytes > 0:
-            estimated_bytes = path.stat().st_size
+            resident_bytes = _tensor_storage_bytes(payload)
+            # A single shard larger than the configured budget must not remain
+            # pinned in the process-wide cache.  It is returned for immediate
+            # use, but the next access reloads it instead of retaining it.
+            if resident_bytes > self.memory_cache_bytes:
+                _trim_shared_memory_cache(0)
+                return payload
+            _trim_shared_memory_cache(self.memory_cache_bytes - resident_bytes)
+            _clear_shared_memory_cache_entry(path)
             _SHARED_PAYLOADS[path] = payload
-            _SHARED_PAYLOAD_BYTES[path] = estimated_bytes
-            _SHARED_TOTAL_BYTES += estimated_bytes
-            while _SHARED_TOTAL_BYTES > self.memory_cache_bytes and len(_SHARED_PAYLOADS) > 1:
-                evicted_path, _ = _SHARED_PAYLOADS.popitem(last=False)
-                _SHARED_TOTAL_BYTES -= _SHARED_PAYLOAD_BYTES.pop(evicted_path)
+            _SHARED_PAYLOAD_BYTES[path] = resident_bytes
+            _SHARED_TOTAL_BYTES += resident_bytes
             return payload
         self._loaded_payloads[path] = payload
         while len(self._loaded_payloads) > self._max_loaded_shards:
