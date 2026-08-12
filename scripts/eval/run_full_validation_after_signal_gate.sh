@@ -7,6 +7,8 @@ set -euo pipefail
 : "${FIELDSCOPE_EXPECTED_REVISION:?Set FIELDSCOPE_EXPECTED_REVISION}"
 
 python_bin="${FIELDSCOPE_PYTHON:-python}"
+tracked_config="${FIELDSCOPE_EXTRACTION_CONFIG:-${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}}"
+readout_config="${FIELDSCOPE_READOUT_CONFIG:-${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}}"
 signal_root="${FIELDSCOPE_SIGNAL_ROOT:-outputs/signal_gate}"
 signal_cache_root="${FIELDSCOPE_SIGNAL_CACHE_ROOT:-$FIELDSCOPE_DATASETS_ROOT/feature_cache/signal_final512}"
 cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
@@ -46,7 +48,7 @@ verify_revision
 mkdir -p "$preflight_root" "$cache_root"
 
 "$python_bin" -m fieldscope.cli audit-backbone-assets \
-  --config configs/model/auraflow_v03.yaml \
+  --config "$tracked_config" \
   --output "$preflight_root/auraflow_backbone_asset.json"
 
 if [[ ! -f "$decision" ]]; then
@@ -212,7 +214,9 @@ while (( free_checks < 5 )); do
 done
 
 verify_revision
-export FIELDSCOPE_CONFIG="configs/model/auraflow_v03.yaml"
+export FIELDSCOPE_CONFIG="$tracked_config"
+export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"
+export FIELDSCOPE_READOUT_CONFIG="$readout_config"
 export FIELDSCOPE_CACHE_TAG="$cache_tag"
 export FIELDSCOPE_STORAGE_POLICY="readout_sparse"
 

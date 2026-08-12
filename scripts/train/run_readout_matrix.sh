@@ -9,7 +9,9 @@ if [[ $# -lt 5 || $# -gt 7 ]]; then
 fi
 
 python_bin="${FIELDSCOPE_PYTHON:-python}"
-config="${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}"
+# Keep a dedicated readout override so recovery orchestration never has to
+# mutate the config identity embedded in an already-complete feature cache.
+config="${FIELDSCOPE_READOUT_CONFIG:-${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}}"
 cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
 dataset="$1"
 task="$2"

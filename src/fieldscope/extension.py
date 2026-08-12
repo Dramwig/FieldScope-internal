@@ -530,6 +530,10 @@ def audit_extension_evidence(
         readout_budget={"epochs": 90, "batch_size": 128},
     )
     problems.extend(matrix_problems)
+    if imagenet_matrix_path.is_file():
+        matrix_payload = _read_json(imagenet_matrix_path)
+        if matrix_payload.get("readout_runtime_profile") != readout_runtime_profile:
+            problems.append("ImageNet-1k matrix readout runtime profile mismatch")
     imagenet_candidates: dict[str, Any] = {}
     if not matrix_problems:
         for candidate in ("response", "full"):

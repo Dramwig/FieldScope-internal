@@ -65,3 +65,27 @@ manifest、schema 3 runtime profile 和后续完整证据链；旧 revision 的�
 固定 revision 路径只有在 GPU 空闲、唯一 worker、全新 runtime-profile/log 标识和所有
 fail-closed 审计均满足时才能启动。本文记录的是经代码审计确认的恢复设计，不表示该路径
 已经执行或通过。
+
+## 恢复编排实现
+
+本地后续实现新增 `scripts/eval/run_fixed_revision_readout_recovery.sh`，并把通用抽取与
+readout wrapper 的配置入口拆成 `FIELDSCOPE_EXTRACTION_CONFIG` 与
+`FIELDSCOPE_READOUT_CONFIG`。该实现目前仅完成代码与测试阶段，尚未在远端启动。
+
+恢复脚本固定校验以下身份后才允许进入 GPU 等待：
+
+- clean、detached 的 `020c1de567edd88e0eda245fd085335ffe678f47`；
+- source tree SHA-256
+  `6ef1305effef91b29d432c9d2c1505b4726645531adad72f60299168d7119c4d`；
+- 内容寻址的 `0 GiB` shared-cache 配置 SHA-256
+  `0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1`；
+- 对应的 zero-shared-cache readout execution contract SHA-256
+  `4422430edf4eb8cdb20a99db8cdf7bac53c4cb934f0b09ba8dd3c21aee3facb8`；
+- 四任务正式 cache 的 revision/tree、160 GiB 原始 extraction config 身份、样本数、
+  连续 shard 区间、文件大小、逐 shard SHA-256 和临时文件为空；
+- 不存在正式 FieldScope worker，且 GPU 连续多次完全空闲。
+
+脚本不会清理或改写旧缓存、旧日志、signal-gate 负结果，也不会停止其他任务；扩展路径
+同样保持 tracked extraction config 与 external readout config 分离，并新增 ImageNet-1k
+矩阵对 readout runtime-profile identity 的 fail-closed 审计。上述两个值已由本地与远端
+旧 revision 的独立只读构造共同确认；恢复不会回退到 8 GiB。

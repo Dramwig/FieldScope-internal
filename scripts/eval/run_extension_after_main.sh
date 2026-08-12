@@ -8,6 +8,8 @@ set -euo pipefail
 
 python_bin="${FIELDSCOPE_PYTHON:-python}"
 cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
+tracked_config="${FIELDSCOPE_EXTRACTION_CONFIG:-${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}}"
+readout_config="${FIELDSCOPE_READOUT_CONFIG:-${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}}"
 cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag"
 extension_cache_root="$FIELDSCOPE_DATASETS_ROOT/feature_cache/${cache_tag}_extension"
 output_root="outputs/full_validation/$cache_tag/extension"
@@ -85,7 +87,7 @@ done
   --output "$preflight_root/imagenet1k_split_audit.json"
 
 "$python_bin" -m fieldscope.cli build-extension-ablation-configs \
-  --base-config configs/model/auraflow_v03.yaml \
+  --base-config "$tracked_config" \
   --output-dir "$preflight_root/ablation_configs" \
   --output "$preflight_root/ablation_config_registry.json"
 
@@ -156,7 +158,9 @@ PY
 done
 
 verify_revision
-export FIELDSCOPE_CONFIG="configs/model/auraflow_v03.yaml"
+export FIELDSCOPE_CONFIG="$tracked_config"
+export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"
+export FIELDSCOPE_READOUT_CONFIG="$readout_config"
 export FIELDSCOPE_RUNTIME_PROFILE="$main_runtime_profile"
 export FIELDSCOPE_READOUT_RUNTIME_PROFILE="$readout_runtime_profile"
 export FIELDSCOPE_STORAGE_POLICY="readout_sparse"
@@ -209,7 +213,7 @@ verify_revision
   --main-runtime-profile "$main_runtime_profile" \
   --readout-runtime-profile "$readout_runtime_profile" \
   --base-voc-report "outputs/full_validation/$cache_tag/voc2012_unsupervised.json" \
-  --base-config configs/model/auraflow_v03.yaml \
+  --base-config "$tracked_config" \
   --ablation-registry "$preflight_root/ablation_config_registry.json" \
   "${ablation_report_arguments[@]}" \
   "${ablation_profile_arguments[@]}" \

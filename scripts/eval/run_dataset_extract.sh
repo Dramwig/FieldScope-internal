@@ -7,7 +7,10 @@ if [[ $# -lt 2 || $# -gt 3 ]]; then
 fi
 
 python_bin="${FIELDSCOPE_PYTHON:-python}"
-config="${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}"
+# Extraction and cached-readout execution have different provenance contracts.
+# A fixed-revision recovery may therefore keep extraction on the tracked config
+# while training uses a content-addressed, lower-memory runtime-only config.
+config="${FIELDSCOPE_EXTRACTION_CONFIG:-${FIELDSCOPE_CONFIG:-configs/model/auraflow_v03.yaml}}"
 cache_tag="${FIELDSCOPE_CACHE_TAG:-auraflow_v03}"
 storage_policy="${FIELDSCOPE_STORAGE_POLICY:-readout_sparse}"
 dataset="$1"

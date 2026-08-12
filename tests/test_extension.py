@@ -274,6 +274,17 @@ def test_extension_evidence_positive_path_requires_all_registered_variants(
         },
     )
     placeholder = write_json("placeholder.json", {})
+    placeholder.write_text(
+        json.dumps(
+            {
+                "readout_runtime_profile": {
+                    **provenance,
+                    "selected_profile": {"seed_workers": 1},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
     base_report = write_json("base.json", {})
 
     from fieldscope.extension import audit_extension_evidence
@@ -295,3 +306,95 @@ def test_extension_evidence_positive_path_requires_all_registered_variants(
     assert report["status"] == "passed"
     assert report["verdict"] == "supported"
     assert len(report["high_cost_ablations"]["comparisons"]) == 15
+
+
+def test_extension_evidence_rejects_matrix_readout_profile_mismatch(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    provenance = {
+        "code_revision": "extension-revision",
+        "code_tree_sha256": "extension-tree",
+        "code_dirty": False,
+    }
+    monkeypatch.setattr("fieldscope.extension.code_provenance", lambda: provenance)
+    monkeypatch.setattr(
+        "fieldscope.extension._validate_runtime_profile",
+        lambda *_: ({"identity": {"profile": "main"}}, []),
+    )
+    monkeypatch.setattr(
+        "fieldscope.extension.readout_runtime_profile_identity",
+        lambda *_: {**provenance, "selected_profile": {"seed_workers": 1}},
+    )
+    monkeypatch.setattr(
+        "fieldscope.extension._validate_matrix",
+        lambda *_args, **_kwargs: ({}, {}, ["synthetic matrix audit failure"]),
+    )
+    monkeypatch.setattr(
+        "fieldscope.extension.file_sha256",
+        lambda path: f"sha:{Path(path).name}",
+    )
+
+    def write_json(name: str, payload: dict) -> Path:
+        path = tmp_path / name
+        path.write_text(json.dumps(payload), encoding="utf-8")
+        return path
+
+    main = write_json(
+        "main.json",
+        {**provenance, "verdict": "main_tasks_supported_pending_causal_audits"},
+    )
+    asset = write_json(
+        "asset.json",
+        {
+            **provenance,
+            "status": "passed",
+            "fieldscope_split_counts": {"train": 10, "val": 2, "test": 2},
+        },
+    )
+    split = write_json(
+        "split.json",
+        {
+            **provenance,
+            "status": "passed",
+            "dataset": "imagenet",
+            "splits": {
+                "train": {"count": 10},
+                "val": {"count": 2},
+                "test": {"count": 2},
+            },
+        },
+    )
+    matrix = write_json("matrix.json", {"readout_runtime_profile": {"sha256": "stale"}})
+    base_config = tmp_path / "base.yaml"
+    base_config.write_text("base: true\n", encoding="utf-8")
+    registry = write_json(
+        "registry.json",
+        {
+            **provenance,
+            "status": "failed",
+            "variant_count": 0,
+            "base_config_path": str(base_config.resolve()),
+            "base_config_sha256": f"sha:{base_config.name}",
+            "variants": [],
+        },
+    )
+    placeholder = write_json("placeholder.json", {})
+
+    from fieldscope.extension import audit_extension_evidence
+
+    report = audit_extension_evidence(
+        main_evidence_path=main,
+        imagenet_matrix_path=matrix,
+        imagenet_asset_audit_path=asset,
+        imagenet_split_audit_path=split,
+        main_runtime_profile_path=placeholder,
+        readout_runtime_profile_path=placeholder,
+        base_voc_report_path=placeholder,
+        base_config_path=base_config,
+        ablation_registry_path=registry,
+        ablation_report_paths={},
+        ablation_runtime_profile_paths={},
+    )
+
+    assert "ImageNet-1k matrix readout runtime profile mismatch" in report["problems"]

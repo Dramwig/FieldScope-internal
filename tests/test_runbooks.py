@@ -94,6 +94,10 @@ def test_extension_runbook_is_fail_closed_and_keeps_registered_scope() -> None:
     assert "write_combined_extension_budget" in extension
     assert 'if [[ "$fits" == "true" ]]' in extension
     assert "waiting ${resource_poll_seconds}s" in extension
+    assert 'tracked_config="${FIELDSCOPE_EXTRACTION_CONFIG:' in extension
+    assert 'readout_config="${FIELDSCOPE_READOUT_CONFIG:' in extension
+    assert 'export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"' in extension
+    assert 'export FIELDSCOPE_READOUT_CONFIG="$readout_config"' in extension
 
 
 def test_supervisor_tracks_conditional_final_stages_and_final_verdicts() -> None:
@@ -153,6 +157,59 @@ def test_readout_runtime_gate_precedes_formal_readouts_and_binds_every_matrix() 
     assert '--readout-runtime-profile "$FIELDSCOPE_READOUT_RUNTIME_PROFILE"' in matrix
     assert full.count('--readout-runtime-profile "$readout_runtime_profile"') == 1
     assert full.index("training full readout matrix") < full.index("audit-full-evidence")
+
+
+def test_extract_and_readout_runbooks_have_independent_config_overrides() -> None:
+    extraction = (REPOSITORY_ROOT / "scripts" / "eval" / "run_dataset_extract.sh").read_text(
+        encoding="utf-8"
+    )
+    matrix = (REPOSITORY_ROOT / "scripts" / "train" / "run_readout_matrix.sh").read_text(
+        encoding="utf-8"
+    )
+    full = (
+        REPOSITORY_ROOT / "scripts" / "eval" / "run_full_validation_after_signal_gate.sh"
+    ).read_text(encoding="utf-8")
+    assert "FIELDSCOPE_EXTRACTION_CONFIG" in extraction
+    assert "FIELDSCOPE_READOUT_CONFIG" in matrix
+    assert 'export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"' in full
+    assert 'export FIELDSCOPE_READOUT_CONFIG="$readout_config"' in full
+
+
+def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
+    script = (
+        REPOSITORY_ROOT
+        / "scripts"
+        / "eval"
+        / "run_fixed_revision_readout_recovery.sh"
+    ).read_text(encoding="utf-8")
+    for contract in (
+        'source_tree_sha256="6ef1305effef91b29d432c9d2c1505b4726645531adad72f60299168d7119c4d"',
+        'config_sha256="0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1"',
+        'readout_contract_sha256="4422430edf4eb8cdb20a99db8cdf7bac53c4cb934f0b09ba8dd3c21aee3facb8"',
+        "fixed-revision recovery requires exactly 0 GiB shared readout cache",
+        "symbolic-ref -q --short HEAD",
+        "fixed-revision recovery requires a clean worktree",
+        "verify_no_formal_worker",
+        "verify_required_artifacts",
+        "same-revision prerequisite provenance mismatch",
+        "flock -n 9",
+        "waiting for genuinely free GPU",
+        "readout config SHA-256 mismatch",
+        "cache shard SHA-256 mismatch",
+        "cache shard gap or overlap",
+        "temporary cache files present",
+        "verify_cache_manifests imagenet100",
+        "verify_cache_manifests all",
+        'export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config"',
+        'export FIELDSCOPE_READOUT_CONFIG="$config_path"',
+        "readout-runtime-gate",
+        "run_final_conclusion_after_main.sh",
+    ):
+        assert contract in script
+    assert "kill " not in script
+    assert "git checkout" not in script
+    assert "git switch" not in script
+    assert "rm -rf" not in script
 
 
 def test_full_runbook_reserves_conservative_checkpoint_budget() -> None:
