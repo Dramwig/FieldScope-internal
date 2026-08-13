@@ -191,6 +191,7 @@ def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
         "fixed-revision recovery requires a clean worktree",
         "verify_no_formal_worker",
         "refusing duplicate fixed-revision recovery",
+        '[[ "$parent_pid" != "$$" ]] || continue',
         "verify_required_artifacts",
         "same-revision prerequisite provenance mismatch",
         "flock -n 9",

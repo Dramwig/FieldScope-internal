@@ -121,13 +121,18 @@ PY
 }
 
 verify_no_formal_worker() {
-  local process_dir pid cwd allow_recovery_pid script_name
+  local process_dir pid parent_pid cwd allow_recovery_pid script_name
   local -a argv
   allow_recovery_pid="${1:-}"
   for process_dir in /proc/[0-9]*; do
     pid="${process_dir##*/}"
     [[ "$pid" != "$$" ]] || continue
     [[ -z "$allow_recovery_pid" || "$pid" != "$allow_recovery_pid" ]] || continue
+    parent_pid="$(awk '/^PPid:/ {print $2}' "$process_dir/status" 2>/dev/null || true)"
+    # Process substitution used by the audit log briefly inherits this
+    # wrapper's argv before execing tee. It is part of this recovery, not a
+    # competing wrapper.
+    [[ "$parent_pid" != "$$" ]] || continue
     argv=()
     mapfile -d '' -t argv <"$process_dir/cmdline" 2>/dev/null || continue
     if [[ ${#argv[@]} -ge 2 && "${argv[0]##*/}" == "bash" ]]; then

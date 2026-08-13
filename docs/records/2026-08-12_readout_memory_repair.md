@@ -111,3 +111,8 @@ profile 中 strict 与所有已完成候选的 matrix cache 路径。新 profile
 完整保留误范围运行的日志、矩阵和 traceback；`5%` fast-path 门槛、三正式 seed、20 epochs、
 full representation、zero-shared-cache execution contract 及 signal-gate
 `failed/stop_or_redesign` 均不改变。
+
+首次部署该纠正 wrapper 时，独立 wrapper 去重检查在日志 `tee` 的 process-substitution 子进程
+尚未 `exec` 的短窗口内看到了继承的 wrapper argv，因而在创建 pid/state 或进入 GPU 工作前
+fail-closed。后续检查显式忽略当前 wrapper 的直属子进程，同时仍拦截任意路径下的独立旧/新
+recovery wrapper；该编排失败同样保留在独立启动日志中，不作为运行门或科学证据。
