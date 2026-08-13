@@ -14,22 +14,24 @@ tracked_config="${FIELDSCOPE_TRACKED_CONFIG:-configs/model/auraflow_v03.yaml}"
 external_root="${FIELDSCOPE_RECOVERY_EXTERNAL_ROOT:-$FIELDSCOPE_ROOT/recovery/fixed-revision-readout}"
 output_root="${FIELDSCOPE_RECOVERY_OUTPUT_ROOT:-$repository/outputs/full_validation/$cache_tag}"
 runtime_profile="${FIELDSCOPE_RUNTIME_PROFILE:-$repository/outputs/runtime_gate/auraflow_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}.json}"
+readout_gate_cache_root="${FIELDSCOPE_READOUT_GATE_CACHE_ROOT:-$FIELDSCOPE_DATASETS_ROOT/feature_cache/signal_final512}"
 readout_cache_gib="${FIELDSCOPE_RECOVERY_READOUT_CACHE_GIB:-0}"
 gpu_free_checks_required="${FIELDSCOPE_RECOVERY_GPU_FREE_CHECKS:-5}"
 gpu_poll_seconds="${FIELDSCOPE_RECOVERY_GPU_POLL_SECONDS:-60}"
 readout_contract_sha256="4422430edf4eb8cdb20a99db8cdf7bac53c4cb934f0b09ba8dd3c21aee3facb8"
 source_tree_sha256="6ef1305effef91b29d432c9d2c1505b4726645531adad72f60299168d7119c4d"
 config_sha256="0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1"
-recovery_tag="${FIELDSCOPE_RECOVERY_TAG:-${FIELDSCOPE_EXPECTED_REVISION:0:7}-readout0g-v1}"
+readout_gate_cache_contract_sha256="30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3"
+recovery_tag="${FIELDSCOPE_RECOVERY_TAG:-${FIELDSCOPE_EXPECTED_REVISION:0:7}-readout0g-cifar-gate-v2}"
 log_root="${FIELDSCOPE_LOG_ROOT:-$FIELDSCOPE_ROOT/logs}"
 recovery_log="$log_root/full_validation_recovery_${recovery_tag}.log"
-lock_file="$log_root/full_validation_recovery_${recovery_tag}.lock"
+lock_file="$log_root/full_validation_recovery_${FIELDSCOPE_EXPECTED_REVISION}.lock"
 pid_file="$log_root/full_validation_recovery_${recovery_tag}.pid"
 state_file="$log_root/full_validation_recovery_${recovery_tag}.state.json"
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 config_path="$external_root/auraflow_v03_readout_${readout_cache_gib}g_${config_sha256}.yaml"
-readout_runtime_profile="$external_root/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
-manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
+readout_runtime_profile="$external_root/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}_${readout_gate_cache_contract_sha256}.json"
+manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}_${readout_gate_cache_contract_sha256}.json"
 
 # Normalize paths once.  The recovery script is intentionally runnable from
 # outside the checkout (for the fixed old revision), so no default output or
@@ -40,6 +42,9 @@ fi
 if [[ "$runtime_profile" != /* ]]; then
   runtime_profile="$repository/$runtime_profile"
 fi
+if [[ "$readout_gate_cache_root" != /* ]]; then
+  readout_gate_cache_root="$FIELDSCOPE_ROOT/$readout_gate_cache_root"
+fi
 if [[ "$external_root" != /* ]]; then
   external_root="$FIELDSCOPE_ROOT/$external_root"
 fi
@@ -48,10 +53,10 @@ if [[ "$log_root" != /* ]]; then
 fi
 
 config_path="$external_root/auraflow_v03_readout_${readout_cache_gib}g_${config_sha256}.yaml"
-readout_runtime_profile="$external_root/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
-manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}.json"
+readout_runtime_profile="$external_root/readout_runtime_profile_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}_${readout_gate_cache_contract_sha256}.json"
+manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}_${readout_gate_cache_contract_sha256}.json"
 recovery_log="$log_root/full_validation_recovery_${recovery_tag}.log"
-lock_file="$log_root/full_validation_recovery_${recovery_tag}.lock"
+lock_file="$log_root/full_validation_recovery_${FIELDSCOPE_EXPECTED_REVISION}.lock"
 pid_file="$log_root/full_validation_recovery_${recovery_tag}.pid"
 state_file="$log_root/full_validation_recovery_${recovery_tag}.state.json"
 
@@ -116,17 +121,28 @@ PY
 }
 
 verify_no_formal_worker() {
-  local process_dir pid cwd allow_recovery_pid
+  local process_dir pid cwd allow_recovery_pid script_name
   local -a argv
   allow_recovery_pid="${1:-}"
   for process_dir in /proc/[0-9]*; do
     pid="${process_dir##*/}"
     [[ "$pid" != "$$" ]] || continue
     [[ -z "$allow_recovery_pid" || "$pid" != "$allow_recovery_pid" ]] || continue
-    cwd="$(readlink -f "$process_dir/cwd" 2>/dev/null || true)"
-    [[ "$cwd" == "$repository" ]] || continue
     argv=()
     mapfile -d '' -t argv <"$process_dir/cmdline" 2>/dev/null || continue
+    if [[ ${#argv[@]} -ge 2 && "${argv[0]##*/}" == "bash" ]]; then
+      script_name="${argv[1]##*/}"
+      case "$script_name" in
+        run_fixed_revision_readout_recovery.sh | \
+        run_fixed_revision_final_recovery.sh | \
+        run_fixed_revision_extension_recovery.sh)
+          echo "refusing duplicate fixed-revision recovery pid=$pid argv=${argv[*]}" >&2
+          exit 7
+          ;;
+      esac
+    fi
+    cwd="$(readlink -f "$process_dir/cwd" 2>/dev/null || true)"
+    [[ "$cwd" == "$repository" ]] || continue
     # The formal error-analysis waiter is intentionally allowed. It is read-only
     # until the final decision appears and lives in the independent analyzer cwd.
     if [[ ${#argv[@]} -ge 3 && "${argv[0]}" == "$python_bin" && \
@@ -134,7 +150,7 @@ verify_no_formal_worker() {
       echo "refusing duplicate formal worker pid=$pid argv=${argv[*]}" >&2
       exit 7
     fi
-    if [[ ${#argv[@]} -ge 2 && "${argv[0]}" == "bash" ]]; then
+    if [[ ${#argv[@]} -ge 2 && "${argv[0]##*/}" == "bash" ]]; then
       case "${argv[1]}" in
         scripts/eval/run_validation_supervisor.sh | \
         scripts/eval/run_full_validation_when_ready.sh | \
@@ -142,7 +158,6 @@ verify_no_formal_worker() {
         scripts/eval/run_final_conclusion_after_main.sh | \
         scripts/eval/run_causal_validation_after_main.sh | \
         scripts/eval/run_extension_after_main.sh | \
-        scripts/eval/run_fixed_revision_readout_recovery.sh | \
         scripts/train/*.sh | scripts/data/*.sh)
           echo "refusing duplicate formal worker pid=$pid argv=${argv[*]}" >&2
           exit 7
@@ -334,6 +349,10 @@ for dataset, splits in expected.items():
                 raise SystemExit(f"cache shard gap or overlap: {manifest_path}")
         if total != count:
             raise SystemExit(f"cache shard sample total mismatch: {manifest_path}")
+        actual_files = {path.name for path in cache_dir.glob("shard-*.pt")}
+        orphaned = sorted(actual_files - names)
+        if orphaned:
+            raise SystemExit(f"orphaned cache shards present: {cache_dir}: {orphaned}")
         temporary = [
             path.name
             for path in cache_dir.iterdir()
@@ -348,27 +367,174 @@ for dataset, splits in expected.items():
             "num_samples": count,
             "shards": len(shards),
         }
-existing = {}
+registry_payload = {}
 if output.is_file():
-    existing = json.loads(output.read_text(encoding="utf-8")).get("caches", {})
+    registry_payload = json.loads(output.read_text(encoding="utf-8"))
+    if registry_payload.get("code_revision") != revision:
+        raise SystemExit(f"cache manifest registry revision mismatch: {output}")
+    if registry_payload.get("code_tree_sha256") != tree:
+        raise SystemExit(f"cache manifest registry tree mismatch: {output}")
+existing = registry_payload.get("caches", {})
 existing.update(registry)
+registry_payload.update(
+    {
+        "schema_version": 1,
+        "status": "passed",
+        "code_revision": revision,
+        "code_tree_sha256": tree,
+        "caches": existing,
+    }
+)
 output.parent.mkdir(parents=True, exist_ok=True)
 temporary = output.with_name(f".{output.name}.tmp")
 temporary.write_text(
-    json.dumps(
-        {
-            "schema_version": 1,
-            "status": "passed",
-            "code_revision": revision,
-            "code_tree_sha256": tree,
-            "caches": existing,
-        },
-        indent=2,
-        sort_keys=True,
-    ) + "\n",
+    json.dumps(registry_payload, indent=2, sort_keys=True) + "\n",
     encoding="utf-8",
 )
 temporary.replace(output)
+PY
+}
+
+verify_readout_gate_caches() {
+  "$python_bin" - \
+    "$readout_gate_cache_root" \
+    "$FIELDSCOPE_EXPECTED_REVISION" \
+    "$source_tree_sha256" \
+    "$readout_gate_cache_contract_sha256" \
+    "$manifest_registry" <<'PY'
+import hashlib
+import json
+import pathlib
+import sys
+
+cache_root = pathlib.Path(sys.argv[1]).resolve()
+revision = sys.argv[2]
+tree = sys.argv[3]
+expected_contract = sys.argv[4]
+registry_path = pathlib.Path(sys.argv[5])
+expected = {
+    "train": {
+        "num_samples": 256,
+        "manifest_sha256": "9e1af2cf00e995881fb874f155ae0c83ac17c49cd9941887ab475887965524c3",
+    },
+    "val": {
+        "num_samples": 128,
+        "manifest_sha256": "65c4e4b762c40e62ec162cd96eb7672eaa5d3af637d2c3916d7893d23794fdb1",
+    },
+    "test": {
+        "num_samples": 128,
+        "manifest_sha256": "3e16d0b73c3615fe9a68069325521019357e2b168424eeb2409e3b66052fdcc0",
+    },
+}
+contract_payload = {
+    "dataset": "cifar10",
+    "protocol": "signal_stage_cifar_cache",
+    "splits": expected,
+}
+contract = hashlib.sha256(
+    json.dumps(contract_payload, sort_keys=True, separators=(",", ":")).encode("utf-8")
+).hexdigest()
+if contract != expected_contract:
+    raise SystemExit(
+        f"readout gate cache contract mismatch: expected={expected_contract} actual={contract}"
+    )
+
+gate_registry = {}
+for split, identity in expected.items():
+    cache_dir = cache_root / f"cifar10_{split}"
+    manifest_path = cache_dir / "dataset_manifest.json"
+    raw = manifest_path.read_bytes()
+    manifest_sha256 = hashlib.sha256(raw).hexdigest()
+    if manifest_sha256 != identity["manifest_sha256"]:
+        raise SystemExit(f"readout gate manifest SHA-256 mismatch: {manifest_path}")
+    payload = json.loads(raw.decode("utf-8"))
+    if payload.get("complete") is not True or payload.get("status") != "passed":
+        raise SystemExit(f"readout gate cache is incomplete: {manifest_path}")
+    if payload.get("dataset") != "cifar10" or payload.get("split") != split:
+        raise SystemExit(f"readout gate cache identity mismatch: {manifest_path}")
+    count = int(identity["num_samples"])
+    if int(payload.get("num_samples", -1)) != count:
+        raise SystemExit(f"readout gate cache sample count mismatch: {manifest_path}")
+    if payload.get("storage_policy") != "readout_sparse":
+        raise SystemExit(f"readout gate cache storage policy mismatch: {manifest_path}")
+    if payload.get("code_revision") != revision or payload.get("code_tree_sha256") != tree:
+        raise SystemExit(f"readout gate cache provenance mismatch: {manifest_path}")
+    if payload.get("code_dirty") is not False:
+        raise SystemExit(f"readout gate cache came from a dirty worktree: {manifest_path}")
+    shards = payload.get("shards")
+    if not isinstance(shards, list) or not shards:
+        raise SystemExit(f"readout gate shard registry missing: {manifest_path}")
+    ranges = []
+    registered_names = set()
+    for item in shards:
+        name = str(item.get("path", ""))
+        if not name or name in registered_names:
+            raise SystemExit(f"duplicate readout gate shard path: {manifest_path}")
+        registered_names.add(name)
+        start = int(item.get("start", -1))
+        end = int(item.get("end", -1))
+        samples = int(item.get("num_samples", -1))
+        shard_path = cache_dir / name
+        if end - start != samples or samples < 1:
+            raise SystemExit(f"readout gate shard range mismatch: {shard_path}")
+        if not shard_path.is_file() or shard_path.stat().st_size != int(item.get("bytes", -1)):
+            raise SystemExit(f"readout gate shard missing or truncated: {shard_path}")
+        digest = hashlib.sha256()
+        with shard_path.open("rb") as handle:
+            for block in iter(lambda: handle.read(1024 * 1024), b""):
+                digest.update(block)
+        if digest.hexdigest() != item.get("sha256"):
+            raise SystemExit(f"readout gate shard SHA-256 mismatch: {shard_path}")
+        ranges.append((start, end))
+    ranges.sort()
+    if ranges[0][0] != 0 or ranges[-1][1] != count:
+        raise SystemExit(f"readout gate shard coverage mismatch: {manifest_path}")
+    for previous, current in zip(ranges, ranges[1:]):
+        if previous[1] != current[0]:
+            raise SystemExit(f"readout gate shard gap or overlap: {manifest_path}")
+    actual_files = {path.name for path in cache_dir.glob("shard-*.pt")}
+    orphaned = sorted(actual_files - registered_names)
+    if orphaned:
+        raise SystemExit(f"orphaned readout gate shards present: {cache_dir}: {orphaned}")
+    temporary = sorted(
+        path.name
+        for path in cache_dir.iterdir()
+        if path.name.startswith(".") or path.suffix in {".tmp", ".partial"}
+    )
+    if temporary:
+        raise SystemExit(f"temporary readout gate files present: {cache_dir}: {temporary}")
+    gate_registry[split] = {
+        "path": str(manifest_path),
+        "sha256": manifest_sha256,
+        "num_samples": count,
+        "shards": len(shards),
+    }
+
+registry = {}
+if registry_path.is_file():
+    registry = json.loads(registry_path.read_text(encoding="utf-8"))
+    if registry.get("code_revision") != revision:
+        raise SystemExit(f"readout gate registry revision mismatch: {registry_path}")
+    if registry.get("code_tree_sha256") != tree:
+        raise SystemExit(f"readout gate registry tree mismatch: {registry_path}")
+registry.update(
+    {
+        "schema_version": 1,
+        "status": "passed",
+        "code_revision": revision,
+        "code_tree_sha256": tree,
+        "readout_gate_cache": {
+            "protocol": "signal_stage_cifar_cache",
+            "root": str(cache_root),
+            "contract_sha256": contract,
+            "splits": gate_registry,
+        },
+    }
+)
+registry_path.parent.mkdir(parents=True, exist_ok=True)
+temporary = registry_path.with_name(f".{registry_path.name}.tmp")
+temporary.write_text(json.dumps(registry, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+temporary.replace(registry_path)
 PY
 }
 
@@ -395,12 +561,58 @@ verify_readout_profile() {
     cd "$repository"
     env -u FIELDSCOPE_RUNTIME_PROFILE "$python_bin" -m fieldscope.cli readout-runtime-gate \
       --config "$config_path" \
-      --train-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_train" \
-      --val-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_val" \
-      --test-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_test" \
+      --train-cache-dir "$readout_gate_cache_root/cifar10_train" \
+      --val-cache-dir "$readout_gate_cache_root/cifar10_val" \
+      --test-cache-dir "$readout_gate_cache_root/cifar10_test" \
       --output "$readout_runtime_profile" \
       >/dev/null
   )
+  "$python_bin" - \
+    "$readout_runtime_profile" \
+    "$readout_gate_cache_root" \
+    "$FIELDSCOPE_EXPECTED_REVISION" \
+    "$source_tree_sha256" \
+    "$readout_contract_sha256" <<'PY'
+import json
+import pathlib
+import sys
+
+profile_path = pathlib.Path(sys.argv[1]).resolve()
+cache_root = pathlib.Path(sys.argv[2]).resolve()
+revision = sys.argv[3]
+tree = sys.argv[4]
+contract = sys.argv[5]
+payload = json.loads(profile_path.read_text(encoding="utf-8"))
+if payload.get("status") != "passed":
+    raise SystemExit("readout runtime profile is not passed")
+if payload.get("code_revision") != revision or payload.get("code_tree_sha256") != tree:
+    raise SystemExit("readout runtime profile provenance mismatch")
+if payload.get("readout_execution_contract_sha256") != contract:
+    raise SystemExit("readout runtime profile execution contract mismatch")
+if float(payload.get("minimum_fast_path_speedup_fraction", -1)) != 0.05:
+    raise SystemExit("readout runtime profile changed the registered fast-path threshold")
+expected = {
+    "train_cache_dir": str((cache_root / "cifar10_train").resolve()),
+    "val_cache_dir": str((cache_root / "cifar10_val").resolve()),
+    "test_cache_dir": str((cache_root / "cifar10_test").resolve()),
+}
+reports = [payload.get("strict_reference", {}).get("matrix_report")]
+reports.extend(
+    candidate.get("matrix_report")
+    for candidate in payload.get("candidates", [])
+    if candidate.get("status") == "completed"
+)
+if not reports or any(not report for report in reports):
+    raise SystemExit("readout runtime profile is missing completed matrix reports")
+for raw_report in reports:
+    report_path = pathlib.Path(raw_report).resolve()
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    for key, value in expected.items():
+        if str(pathlib.Path(report.get(key, "")).resolve()) != value:
+            raise SystemExit(f"readout runtime profile used the wrong gate cache: {report_path}")
+    if report.get("code_tree_sha256") != tree:
+        raise SystemExit(f"readout runtime matrix provenance mismatch: {report_path}")
+PY
 }
 
 generate_readout_profile() {
@@ -410,9 +622,9 @@ generate_readout_profile() {
     cd "$repository"
     env -u FIELDSCOPE_RUNTIME_PROFILE "$python_bin" -m fieldscope.cli readout-runtime-gate \
       --config "$config_path" \
-      --train-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_train" \
-      --val-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_val" \
-      --test-cache-dir "$FIELDSCOPE_DATASETS_ROOT/feature_cache/$cache_tag/imagenet100_test" \
+      --train-cache-dir "$readout_gate_cache_root/cifar10_train" \
+      --val-cache-dir "$readout_gate_cache_root/cifar10_val" \
+      --test-cache-dir "$readout_gate_cache_root/cifar10_test" \
       --output "$temporary"
   )
   mv -f "$temporary" "$readout_runtime_profile"
@@ -441,7 +653,8 @@ write_state() {
   local stage="$1"
   "$python_bin" - \
     "$state_file" "$stage" "$FIELDSCOPE_EXPECTED_REVISION" "$source_tree_sha256" \
-    "$config_path" "$config_sha256" "$readout_runtime_profile" "$manifest_registry" <<'PY'
+    "$config_path" "$config_sha256" "$readout_runtime_profile" "$manifest_registry" \
+    "$readout_gate_cache_root" "$readout_gate_cache_contract_sha256" <<'PY'
 import json
 import pathlib
 import sys
@@ -455,6 +668,7 @@ payload = {
     "readout_config": {"path": sys.argv[5], "sha256": sys.argv[6]},
     "readout_runtime_profile": sys.argv[7],
     "cache_manifest_registry": sys.argv[8],
+    "readout_gate_cache": {"root": sys.argv[9], "contract_sha256": sys.argv[10]},
 }
 temporary = path.with_name(f".{path.name}.tmp")
 temporary.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -542,11 +756,18 @@ verify_signal_decision
 verify_required_artifacts
 materialize_readout_config
 verify_readout_contract
-# ImageNet-100 is the authoritative already-complete cache needed by the
-# readout runtime gate. Other task caches are audited immediately after their
-# tracked-config extraction/resume step instead of being required up front.
+write_state identity_preflight_passed
+wait_for_free_gpu
+verify_repository
+verify_no_formal_worker "$$"
+# The registered runtime gate uses the signal-stage CIFAR cache. ImageNet-100
+# remains the first formal cache prerequisite, and the other task caches are
+# audited immediately after their tracked-config extraction/resume step.
 verify_cache_manifests imagenet100
+verify_readout_gate_caches
 write_state preflight_passed
+# Cache SHA-256 auditing can take long enough for another workload to arrive,
+# so require a fresh sequence of idle GPU observations before CUDA work.
 wait_for_free_gpu
 verify_repository
 verify_no_formal_worker "$$"

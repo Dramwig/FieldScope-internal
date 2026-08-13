@@ -190,6 +190,7 @@ def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
         "symbolic-ref -q --short HEAD",
         "fixed-revision recovery requires a clean worktree",
         "verify_no_formal_worker",
+        "refusing duplicate fixed-revision recovery",
         "verify_required_artifacts",
         "same-revision prerequisite provenance mismatch",
         "flock -n 9",
@@ -197,7 +198,21 @@ def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
         "readout config SHA-256 mismatch",
         "cache shard SHA-256 mismatch",
         "cache shard gap or overlap",
+        "orphaned cache shards present",
         "temporary cache files present",
+        'readout_gate_cache_root="${FIELDSCOPE_READOUT_GATE_CACHE_ROOT:-$FIELDSCOPE_DATASETS_ROOT/feature_cache/signal_final512}"',
+        'readout_gate_cache_contract_sha256="30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3"',
+        "verify_readout_gate_caches",
+        "readout gate manifest SHA-256 mismatch",
+        "orphaned readout gate shards present",
+        '--train-cache-dir "$readout_gate_cache_root/cifar10_train"',
+        '--val-cache-dir "$readout_gate_cache_root/cifar10_val"',
+        '--test-cache-dir "$readout_gate_cache_root/cifar10_test"',
+        "readout runtime profile used the wrong gate cache",
+        "readout runtime profile changed the registered fast-path threshold",
+        'manifest_registry="$external_root/recovery_registry_${FIELDSCOPE_EXPECTED_REVISION}_${config_sha256}_${readout_gate_cache_contract_sha256}.json"',
+        "cache manifest registry revision mismatch",
+        'lock_file="$log_root/full_validation_recovery_${FIELDSCOPE_EXPECTED_REVISION}.lock"',
         "verify_cache_manifests imagenet100",
         "verify_cache_manifests all",
         'export FIELDSCOPE_EXTRACTION_CONFIG="$tracked_config_path"',
@@ -210,6 +225,8 @@ def test_fixed_revision_recovery_is_fail_closed_and_content_addressed() -> None:
     assert "git checkout" not in script
     assert "git switch" not in script
     assert "rm -rf" not in script
+    assert script.index("wait_for_free_gpu") < script.index("verify_cache_manifests imagenet100")
+    assert script.count("wait_for_free_gpu") >= 3
 
 
 def test_fixed_revision_recovery_uses_config_split_final_wrappers() -> None:

@@ -94,3 +94,20 @@ readout wrapper 的配置入口拆成 `FIELDSCOPE_EXTRACTION_CONFIG` 与
 同样保持 tracked extraction config 与 external readout config 分离，并新增 ImageNet-1k
 矩阵对 readout runtime-profile identity 的 fail-closed 审计。上述两个值已由本地与远端
 旧 revision 的独立只读构造共同确认；恢复不会回退到 8 GiB。
+
+## 恢复运行中的性能门范围纠正（2026-08-13）
+
+首次 `0 GiB` 恢复运行没有再出现内存、CUDA OOM、磁盘或 non-finite 故障；但外部恢复
+wrapper 错把 readout runtime gate 指向了完整 ImageNet-100 train/val/test cache。strict
+reference 与 fast serial 因而分别运行约五小时，二者保持逐 seed checkpoint 和 held-out
+metric 精确等价，但 fast serial 只快约 `1.79%`，未达到登记的 `5%` 工程门槛，运行按设计
+fail-closed。
+
+该失败不修改门槛，也不构成方法有效性结论。`2026-08-01_readout_hot_path_exactness_gate.md`
+登记的 gate 输入是 signal 阶段 CIFAR cache（train 256、val 128、test 128）；原 signal
+runbook 和同 revision 的既有候选矩阵也均使用该范围。恢复 wrapper 因此改为显式绑定三份
+manifest SHA-256，逐 shard 核验文件大小、SHA-256、连续区间、孤立/临时文件，并反查新
+profile 中 strict 与所有已完成候选的 matrix cache 路径。新 profile 使用独立内容寻址路径，
+完整保留误范围运行的日志、矩阵和 traceback；`5%` fast-path 门槛、三正式 seed、20 epochs、
+full representation、zero-shared-cache execution contract 及 signal-gate
+`failed/stop_or_redesign` 均不改变。
