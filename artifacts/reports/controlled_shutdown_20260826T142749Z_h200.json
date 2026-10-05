@@ -1,0 +1,1270 @@
+{
+  "actions": [
+    {
+      "action": "SIGSTOP_SIGTERM_group",
+      "label": "h200_cross_lane_handback_supervisor",
+      "members_after": [],
+      "members_before": [
+        {
+          "cmd": [
+            "bash",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/supervise_cross_lane_handback_gate-cd15dfcc12482f8d5e53aa80e80f7b3567e8ba9ebb41d3b2ffc346a62e9cfc47.sh",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+            "h200",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/supervise_cross_host_readout_worker-5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66.sh",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/monitor_cross_host_registered_worker-a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306.sh"
+          ],
+          "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/supervise_cross_lane_handback_gate-cd15dfcc12482f8d5e53aa80e80f7b3567e8ba9ebb41d3b2ffc346a62e9cfc47.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope h200 /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/supervise_cross_host_readout_worker-5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/monitor_cross_host_registered_worker-a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306.sh",
+          "pgid": 470616,
+          "pid": 470616,
+          "start_time_ticks": 795355433,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py",
+            "run-h200",
+            "--registration",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-registration.json",
+            "--watcher-state",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json",
+            "--responder-heartbeat",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json",
+            "--heartbeat",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json",
+            "--request",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-request.json",
+            "--a800-ack",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-ack.json",
+            "--release-complete",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-complete.json",
+            "--poll",
+            "30"
+          ],
+          "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py run-h200 --registration /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-registration.json --watcher-state /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json --responder-heartbeat /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json --heartbeat /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json --request /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-request.json --a800-ack /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-ack.json --release-complete /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-complete.json --poll 30",
+          "pgid": 470616,
+          "pid": 3931791,
+          "start_time_ticks": 800745169,
+          "state": "S"
+        }
+      ],
+      "pgid": 470616,
+      "sigcont_sent": true,
+      "sigstop_sent": true,
+      "sigterm_sent": true
+    },
+    {
+      "action": "SIGSTOP_SIGTERM_group",
+      "label": "atomic_audit_watcher",
+      "members_after": [],
+      "members_before": [
+        {
+          "cmd": [
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_atomic_audit_watcher-00a04df6d6eae0ddcd13a4a57f74f8222842d1954b4a3400a8a9819fa44253c7.py",
+            "--root",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+            "--recovery-pid",
+            "41610",
+            "--poll-seconds",
+            "600"
+          ],
+          "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_atomic_audit_watcher-00a04df6d6eae0ddcd13a4a57f74f8222842d1954b4a3400a8a9819fa44253c7.py --root /mnt/omni_ssd/user_workspace/wangzixi/FieldScope --recovery-pid 41610 --poll-seconds 600",
+          "pgid": 1542686,
+          "pid": 1542686,
+          "start_time_ticks": 786958162,
+          "state": "S"
+        }
+      ],
+      "pgid": 1542686,
+      "sigcont_sent": true,
+      "sigstop_sent": true,
+      "sigterm_sent": true
+    },
+    {
+      "action": "SIGSTOP_SIGTERM_group",
+      "label": "ade20k_parallel_monitor",
+      "members_after": [],
+      "members_before": [
+        {
+          "cmd": [
+            "bash",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960.sh",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers-486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189.json",
+            "ade20k",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog_h200.sh",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/active-fixed-e0677f25-486c2130/ade20k.monitor.exit.json"
+          ],
+          "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers-486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189.json ade20k /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog_h200.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/active-fixed-e0677f25-486c2130/ade20k.monitor.exit.json",
+          "pgid": 1615504,
+          "pid": 1615515,
+          "start_time_ticks": 778758865,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "sleep",
+            "30"
+          ],
+          "cmdline": "sleep 30",
+          "pgid": 1615504,
+          "pid": 2818741,
+          "start_time_ticks": 804402484,
+          "state": "S"
+        }
+      ],
+      "pgid": 1615504,
+      "sigcont_sent": true,
+      "sigstop_sent": true,
+      "sigterm_sent": true
+    },
+    {
+      "action": "SIGSTOP_SIGTERM_group",
+      "label": "ade20k_worker_group",
+      "members_after": [],
+      "members_before": [
+        {
+          "cmd": [
+            "bash",
+            "-c",
+            "\n   set -euo pipefail\n   ROOT=$1; REPO=$2; LOCK=$3; PIDFILE=$4; PROFILE=$5; CONFIG=$6; SHIM=$7; GPU=$8; SCRIPT_NAME=$9; EXTRA=${10}\n   exec 9>\"$LOCK\"; flock -n 9 || exit 13\n   printf \"%s\\n\" $$ >\"${PIDFILE}.tmp.$$\"; mv \"${PIDFILE}.tmp.$$\" \"$PIDFILE\"\n   trap 'rm -f \"$PIDFILE\"' EXIT\n   cd \"$REPO\"\n   env CUDA_VISIBLE_DEVICES=\"$GPU\" PYTHONPATH=\"$REPO/src:$SHIM:$REPO/src\" \\\n     FIELDSCOPE_ROOT=\"$ROOT\" FIELDSCOPE_DATASETS_ROOT=\"$ROOT/datasets\" FIELDSCOPE_CHECKPOINTS_ROOT=\"$ROOT/checkpoints\" \\\n     FIELDSCOPE_REPOSITORY=\"$REPO\" FIELDSCOPE_CONFIG=\"$CONFIG\" FIELDSCOPE_READOUT_CONFIG=\"$CONFIG\" \\\n     FIELDSCOPE_READOUT_RUNTIME_PROFILE=\"$PROFILE\" FIELDSCOPE_CACHE_TAG=auraflow_v03 \\\n     FIELDSCOPE_PYTHON=\"$ROOT/.venv/bin/python\" FIELDSCOPE_EXPECTED_REVISION=020c1de567edd88e0eda245fd085335ffe678f47 \\\n     FIELDSCOPE_GPU_INDEX=\"$GPU\" FIELDSCOPE_STORAGE_POLICY=readout_sparse $EXTRA bash \"scripts/train/$SCRIPT_NAME\"\n ",
+            "bash",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.pid",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/sitecompat-ade-all-ignore-f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+            "7",
+            "train_ade20k_readout.sh",
+            "FIELDSCOPE_ADE_ALL_IGNORE_SHIM_SHA256=f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4"
+          ],
+          "cmdline": "bash -c \n   set -euo pipefail\n   ROOT=$1; REPO=$2; LOCK=$3; PIDFILE=$4; PROFILE=$5; CONFIG=$6; SHIM=$7; GPU=$8; SCRIPT_NAME=$9; EXTRA=${10}\n   exec 9>\"$LOCK\"; flock -n 9 || exit 13\n   printf \"%s\\n\" $$ >\"${PIDFILE}.tmp.$$\"; mv \"${PIDFILE}.tmp.$$\" \"$PIDFILE\"\n   trap 'rm -f \"$PIDFILE\"' EXIT\n   cd \"$REPO\"\n   env CUDA_VISIBLE_DEVICES=\"$GPU\" PYTHONPATH=\"$REPO/src:$SHIM:$REPO/src\" \\\n     FIELDSCOPE_ROOT=\"$ROOT\" FIELDSCOPE_DATASETS_ROOT=\"$ROOT/datasets\" FIELDSCOPE_CHECKPOINTS_ROOT=\"$ROOT/checkpoints\" \\\n     FIELDSCOPE_REPOSITORY=\"$REPO\" FIELDSCOPE_CONFIG=\"$CONFIG\" FIELDSCOPE_READOUT_CONFIG=\"$CONFIG\" \\\n     FIELDSCOPE_READOUT_RUNTIME_PROFILE=\"$PROFILE\" FIELDSCOPE_CACHE_TAG=auraflow_v03 \\\n     FIELDSCOPE_PYTHON=\"$ROOT/.venv/bin/python\" FIELDSCOPE_EXPECTED_REVISION=020c1de567edd88e0eda245fd085335ffe678f47 \\\n     FIELDSCOPE_GPU_INDEX=\"$GPU\" FIELDSCOPE_STORAGE_POLICY=readout_sparse $EXTRA bash \"scripts/train/$SCRIPT_NAME\"\n  bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.pid /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/sitecompat-ade-all-ignore-f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4 7 train_ade20k_readout.sh FIELDSCOPE_ADE_ALL_IGNORE_SHIM_SHA256=f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+          "pgid": 1571745,
+          "pid": 1571745,
+          "start_time_ticks": 778733464,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "scripts/train/train_ade20k_readout.sh"
+          ],
+          "cmdline": "bash scripts/train/train_ade20k_readout.sh",
+          "pgid": 1571745,
+          "pid": 1571770,
+          "start_time_ticks": 778733473,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "scripts/train/run_readout_matrix.sh",
+            "ade20k",
+            "segmentation",
+            "80",
+            "2",
+            "dit_hidden_local",
+            "100",
+            "150"
+          ],
+          "cmdline": "bash scripts/train/run_readout_matrix.sh ade20k segmentation 80 2 dit_hidden_local 100 150",
+          "pgid": 1571745,
+          "pid": 1571771,
+          "start_time_ticks": 778733475,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+            "-m",
+            "fieldscope.cli",
+            "run-readout-matrix",
+            "--config",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml",
+            "--train-cache-dir",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_train",
+            "--val-cache-dir",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_val",
+            "--test-cache-dir",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_test",
+            "--output-dir",
+            "outputs/full_validation/auraflow_v03/ade20k",
+            "--task",
+            "segmentation",
+            "--epochs",
+            "80",
+            "--batch-size",
+            "2",
+            "--learning-rate",
+            "0.001",
+            "--weight-decay",
+            "0.0001",
+            "--reference",
+            "dit_hidden_local",
+            "--readout-runtime-profile",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+            "--num-classes",
+            "100",
+            "--segmentation-classes",
+            "150",
+            "--representation",
+            "random_feature_local",
+            "--representation",
+            "z0",
+            "--representation",
+            "zt",
+            "--representation",
+            "trajectory",
+            "--representation",
+            "velocity",
+            "--representation",
+            "mismatch",
+            "--representation",
+            "endpoint",
+            "--representation",
+            "state",
+            "--representation",
+            "state_nograph",
+            "--representation",
+            "state_graph",
+            "--representation",
+            "response_nograph",
+            "--representation",
+            "response_local",
+            "--representation",
+            "response",
+            "--representation",
+            "full_nograph",
+            "--representation",
+            "full_local",
+            "--representation",
+            "full",
+            "--representation",
+            "dit_hidden_local",
+            "--representation",
+            "dit_hidden_attention",
+            "--representation",
+            "response_shuffled",
+            "--representation",
+            "full_shuffled",
+            "--seed",
+            "4121",
+            "--seed",
+            "7319",
+            "--seed",
+            "104729"
+          ],
+          "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_test --output-dir outputs/full_validation/auraflow_v03/ade20k --task segmentation --epochs 80 --batch-size 2 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --segmentation-classes 150 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+          "pgid": 1571745,
+          "pid": 1571772,
+          "start_time_ticks": 778733476,
+          "state": "R"
+        }
+      ],
+      "pgid": 1571745,
+      "sigcont_sent": true,
+      "sigstop_sent": true,
+      "sigterm_sent": true
+    },
+    {
+      "action": "SIGSTOP_SIGTERM_group",
+      "label": "h200_recovery_imagenet_watchdog_analyzer_group",
+      "members_after": [],
+      "members_before": [
+        {
+          "cmd": [
+            "bash",
+            "-c",
+            "cd /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de && nohup env FIELDSCOPE_GPU_INDEX=6 FIELDSCOPE_GPU_MIN_FREE_MIB=110000 FIELDSCOPE_WATCHDOG_POLL_SECONDS=600 bash watchdog_h200.sh </dev/null >>/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/watchdog_h200-launch.log 2>&1 &"
+          ],
+          "cmdline": "bash -c cd /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de && nohup env FIELDSCOPE_GPU_INDEX=6 FIELDSCOPE_GPU_MIN_FREE_MIB=110000 FIELDSCOPE_WATCHDOG_POLL_SECONDS=600 bash watchdog_h200.sh </dev/null >>/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/watchdog_h200-launch.log 2>&1 &",
+          "pgid": 41094,
+          "pid": 41095,
+          "start_time_ticks": 750821911,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "watchdog_h200.sh"
+          ],
+          "cmdline": "bash watchdog_h200.sh",
+          "pgid": 41094,
+          "pid": 41096,
+          "start_time_ticks": 750821911,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "scripts/eval/run_supervised_error_analysis_after_final.sh"
+          ],
+          "cmdline": "bash scripts/eval/run_supervised_error_analysis_after_final.sh",
+          "pgid": 41094,
+          "pid": 41355,
+          "start_time_ticks": 750821943,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh"
+          ],
+          "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh",
+          "pgid": 41094,
+          "pid": 41610,
+          "start_time_ticks": 750821956,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh"
+          ],
+          "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh",
+          "pgid": 41094,
+          "pid": 41679,
+          "start_time_ticks": 750821988,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "tee",
+            "-a",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/full_validation_recovery_020c1de-readout0g-cifar-gate-v3-h200.log"
+          ],
+          "cmdline": "tee -a /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/full_validation_recovery_020c1de-readout0g-cifar-gate-v3-h200.log",
+          "pgid": 41094,
+          "pid": 41680,
+          "start_time_ticks": 750821988,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "scripts/train/train_imagenet100_readout.sh"
+          ],
+          "cmdline": "bash scripts/train/train_imagenet100_readout.sh",
+          "pgid": 41094,
+          "pid": 102908,
+          "start_time_ticks": 750900374,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "bash",
+            "scripts/train/run_readout_matrix.sh",
+            "imagenet100",
+            "classification",
+            "90",
+            "128",
+            "dit_hidden_local",
+            "100"
+          ],
+          "cmdline": "bash scripts/train/run_readout_matrix.sh imagenet100 classification 90 128 dit_hidden_local 100",
+          "pgid": 41094,
+          "pid": 102909,
+          "start_time_ticks": 750900375,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+            "-m",
+            "fieldscope.cli",
+            "run-readout-matrix",
+            "--config",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml",
+            "--train-cache-dir",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_train",
+            "--val-cache-dir",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_val",
+            "--test-cache-dir",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_test",
+            "--output-dir",
+            "outputs/full_validation/auraflow_v03/imagenet100",
+            "--task",
+            "classification",
+            "--epochs",
+            "90",
+            "--batch-size",
+            "128",
+            "--learning-rate",
+            "0.001",
+            "--weight-decay",
+            "0.0001",
+            "--reference",
+            "dit_hidden_local",
+            "--readout-runtime-profile",
+            "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+            "--num-classes",
+            "100",
+            "--representation",
+            "random_feature_local",
+            "--representation",
+            "z0",
+            "--representation",
+            "zt",
+            "--representation",
+            "trajectory",
+            "--representation",
+            "velocity",
+            "--representation",
+            "mismatch",
+            "--representation",
+            "endpoint",
+            "--representation",
+            "state",
+            "--representation",
+            "state_nograph",
+            "--representation",
+            "state_graph",
+            "--representation",
+            "response_nograph",
+            "--representation",
+            "response_local",
+            "--representation",
+            "response",
+            "--representation",
+            "full_nograph",
+            "--representation",
+            "full_local",
+            "--representation",
+            "full",
+            "--representation",
+            "dit_hidden_local",
+            "--representation",
+            "dit_hidden_attention",
+            "--representation",
+            "response_shuffled",
+            "--representation",
+            "full_shuffled",
+            "--seed",
+            "4121",
+            "--seed",
+            "7319",
+            "--seed",
+            "104729"
+          ],
+          "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_test --output-dir outputs/full_validation/auraflow_v03/imagenet100 --task classification --epochs 90 --batch-size 128 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+          "pgid": 41094,
+          "pid": 102910,
+          "start_time_ticks": 750900375,
+          "state": "R"
+        },
+        {
+          "cmd": [
+            "sleep",
+            "600"
+          ],
+          "cmdline": "sleep 600",
+          "pgid": 41094,
+          "pid": 2786387,
+          "start_time_ticks": 804356654,
+          "state": "S"
+        },
+        {
+          "cmd": [
+            "sleep",
+            "600"
+          ],
+          "cmdline": "sleep 600",
+          "pgid": 41094,
+          "pid": 2787206,
+          "start_time_ticks": 804368704,
+          "state": "S"
+        }
+      ],
+      "pgid": 41094,
+      "sigcont_sent": true,
+      "sigstop_sent": true,
+      "sigterm_sent": true
+    }
+  ],
+  "after": {
+    "disk_free_bytes": 59810187837440,
+    "gpu": [
+      "0, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "1, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "2, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "3, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "4, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "5, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "6, NVIDIA H200, 62665 MiB, 143771 MiB, 12 %",
+      "7, NVIDIA H200, 62361 MiB, 143771 MiB, 100 %"
+    ],
+    "groups_after": {
+      "1542686": {
+        "label": "atomic_audit_watcher",
+        "members": []
+      },
+      "1571745": {
+        "label": "ade20k_worker_group",
+        "members": []
+      },
+      "1615504": {
+        "label": "ade20k_parallel_monitor",
+        "members": []
+      },
+      "41094": {
+        "label": "h200_recovery_imagenet_watchdog_analyzer_group",
+        "members": []
+      },
+      "470616": {
+        "label": "h200_cross_lane_handback_supervisor",
+        "members": []
+      }
+    },
+    "host": "dsw-h200",
+    "observed_at": "2026-08-26T14:27:55.911910+00:00",
+    "reports": {
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k/random_feature_local/seed-4121/segmentation_random_feature_local_seed4121_report.json": {
+        "completed_optimizer_steps": 318325,
+        "completed_training_sample_exposures": 636615,
+        "epochs": 80,
+        "exists": true,
+        "history_len": 35,
+        "last_epoch": 35,
+        "mtime_ns": 1787751857107022392,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k/random_feature_local/seed-4121/segmentation_random_feature_local_seed4121_report.json",
+        "representation": "random_feature_local",
+        "seed": 4121,
+        "sha256": "48facab51dc3e76ad147d39ad19344f66e87aa6efa8717ccbadb764aa4284e2c",
+        "stable_double_read": true,
+        "status": "running"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/velocity/seed-7319/classification_velocity_seed7319_report.json": {
+        "completed_optimizer_steps": 74620,
+        "completed_training_sample_exposures": 9549310,
+        "epochs": 90,
+        "exists": true,
+        "history_len": 82,
+        "last_epoch": 82,
+        "mtime_ns": 1787750750171418686,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/velocity/seed-7319/classification_velocity_seed7319_report.json",
+        "representation": "velocity",
+        "seed": 7319,
+        "sha256": "0e6818f1775852ab5a16919ff2aa5a92d41987ee2a6bc15a6a53d1d593f892a3",
+        "stable_double_read": true,
+        "status": "running"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/nyuv2/response_nograph/seed-7319/depth_response_nograph_seed7319_report.json": {
+        "completed_optimizer_steps": 14320,
+        "completed_training_sample_exposures": 57200,
+        "epochs": 80,
+        "exists": true,
+        "history_len": 80,
+        "last_epoch": 80,
+        "mtime_ns": 1787737441058541816,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/nyuv2/response_nograph/seed-7319/depth_response_nograph_seed7319_report.json",
+        "representation": "response_nograph",
+        "seed": 7319,
+        "sha256": "335d51f6d571eaa8ac84c0def2f19d9992e464cb37ffcd2d5eb889bdb181c1cc",
+        "stable_double_read": true,
+        "status": "passed"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/voc2012/state_nograph/seed-7319/segmentation_state_nograph_seed7319_report.json": {
+        "completed_optimizer_steps": 26400,
+        "completed_training_sample_exposures": 105440,
+        "epochs": 80,
+        "exists": true,
+        "history_len": 80,
+        "last_epoch": 80,
+        "mtime_ns": 1787742115247360351,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/voc2012/state_nograph/seed-7319/segmentation_state_nograph_seed7319_report.json",
+        "representation": "state_nograph",
+        "seed": 7319,
+        "sha256": "defe8bc7eb16bb689aa626819504f95bca268364668088bcf6ba9ff5b34504d7",
+        "stable_double_read": true,
+        "status": "passed"
+      }
+    },
+    "state_paths": {
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": null,
+        "exists": true,
+        "failures": [],
+        "mtime_ns": 1787754410494715457,
+        "observed_at": "2026-08-26T14:26:43.026717Z",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json",
+        "sha256": "44cce2d2bfc02907fecb66b3d4a9ac1126f2accfb517b631d1274eb1796aca4c",
+        "stable_double_read": true,
+        "status": "active",
+        "terminal_counts": {
+          "imagenet100": 13,
+          "nyuv2": 34,
+          "voc2012": 27
+        }
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/registered_workers.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": false,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787568326096974006,
+        "observed_at": "2026-08-24T10:45:26.087304+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/registered_workers.json",
+        "sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978",
+        "stable_double_read": true,
+        "status": "active"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": false,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787754446092103176,
+        "observed_at": "2026-08-26T14:27:26.089174+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json",
+        "sha256": "f6723744e2ca3660344c0770ee0b7d27ecd55c98d8d528abe466682537cb731c",
+        "stable_double_read": true,
+        "status": "armed"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": false,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787754462226451918,
+        "observed_at": "2026-08-26T14:27:42.225977+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json",
+        "sha256": "1a8f632d39d8efc9b299441a4b5db50bbfc3dd6c4c71adec6a1d25e15918c6c3",
+        "stable_double_read": true,
+        "status": "passed"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog-h200/state.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": null,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787754006967160673,
+        "observed_at": "2026-08-26T14:20:06.867901+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog-h200/state.json",
+        "sha256": "24f0b8b0439708f5f611026e3124872247f46d302f8d29e8d52b70fe18827be1",
+        "stable_double_read": true,
+        "status": "active"
+      }
+    }
+  },
+  "before": {
+    "disk_free_bytes": 59810225586176,
+    "gpu": [
+      "0, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "1, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "2, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "3, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "4, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "5, NVIDIA H200, 126353 MiB, 143771 MiB, 100 %",
+      "6, NVIDIA H200, 64844 MiB, 143771 MiB, 0 %",
+      "7, NVIDIA H200, 63228 MiB, 143771 MiB, 100 %"
+    ],
+    "groups": {
+      "1542686": {
+        "label": "atomic_audit_watcher",
+        "members": [
+          {
+            "cmd": [
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_atomic_audit_watcher-00a04df6d6eae0ddcd13a4a57f74f8222842d1954b4a3400a8a9819fa44253c7.py",
+              "--root",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+              "--recovery-pid",
+              "41610",
+              "--poll-seconds",
+              "600"
+            ],
+            "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_atomic_audit_watcher-00a04df6d6eae0ddcd13a4a57f74f8222842d1954b4a3400a8a9819fa44253c7.py --root /mnt/omni_ssd/user_workspace/wangzixi/FieldScope --recovery-pid 41610 --poll-seconds 600",
+            "pgid": 1542686,
+            "pid": 1542686,
+            "start_time_ticks": 786958162,
+            "state": "S"
+          }
+        ]
+      },
+      "1571745": {
+        "label": "ade20k_worker_group",
+        "members": [
+          {
+            "cmd": [
+              "bash",
+              "-c",
+              "\n   set -euo pipefail\n   ROOT=$1; REPO=$2; LOCK=$3; PIDFILE=$4; PROFILE=$5; CONFIG=$6; SHIM=$7; GPU=$8; SCRIPT_NAME=$9; EXTRA=${10}\n   exec 9>\"$LOCK\"; flock -n 9 || exit 13\n   printf \"%s\\n\" $$ >\"${PIDFILE}.tmp.$$\"; mv \"${PIDFILE}.tmp.$$\" \"$PIDFILE\"\n   trap 'rm -f \"$PIDFILE\"' EXIT\n   cd \"$REPO\"\n   env CUDA_VISIBLE_DEVICES=\"$GPU\" PYTHONPATH=\"$REPO/src:$SHIM:$REPO/src\" \\\n     FIELDSCOPE_ROOT=\"$ROOT\" FIELDSCOPE_DATASETS_ROOT=\"$ROOT/datasets\" FIELDSCOPE_CHECKPOINTS_ROOT=\"$ROOT/checkpoints\" \\\n     FIELDSCOPE_REPOSITORY=\"$REPO\" FIELDSCOPE_CONFIG=\"$CONFIG\" FIELDSCOPE_READOUT_CONFIG=\"$CONFIG\" \\\n     FIELDSCOPE_READOUT_RUNTIME_PROFILE=\"$PROFILE\" FIELDSCOPE_CACHE_TAG=auraflow_v03 \\\n     FIELDSCOPE_PYTHON=\"$ROOT/.venv/bin/python\" FIELDSCOPE_EXPECTED_REVISION=020c1de567edd88e0eda245fd085335ffe678f47 \\\n     FIELDSCOPE_GPU_INDEX=\"$GPU\" FIELDSCOPE_STORAGE_POLICY=readout_sparse $EXTRA bash \"scripts/train/$SCRIPT_NAME\"\n ",
+              "bash",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.pid",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/sitecompat-ade-all-ignore-f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+              "7",
+              "train_ade20k_readout.sh",
+              "FIELDSCOPE_ADE_ALL_IGNORE_SHIM_SHA256=f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4"
+            ],
+            "cmdline": "bash -c \n   set -euo pipefail\n   ROOT=$1; REPO=$2; LOCK=$3; PIDFILE=$4; PROFILE=$5; CONFIG=$6; SHIM=$7; GPU=$8; SCRIPT_NAME=$9; EXTRA=${10}\n   exec 9>\"$LOCK\"; flock -n 9 || exit 13\n   printf \"%s\\n\" $$ >\"${PIDFILE}.tmp.$$\"; mv \"${PIDFILE}.tmp.$$\" \"$PIDFILE\"\n   trap 'rm -f \"$PIDFILE\"' EXIT\n   cd \"$REPO\"\n   env CUDA_VISIBLE_DEVICES=\"$GPU\" PYTHONPATH=\"$REPO/src:$SHIM:$REPO/src\" \\\n     FIELDSCOPE_ROOT=\"$ROOT\" FIELDSCOPE_DATASETS_ROOT=\"$ROOT/datasets\" FIELDSCOPE_CHECKPOINTS_ROOT=\"$ROOT/checkpoints\" \\\n     FIELDSCOPE_REPOSITORY=\"$REPO\" FIELDSCOPE_CONFIG=\"$CONFIG\" FIELDSCOPE_READOUT_CONFIG=\"$CONFIG\" \\\n     FIELDSCOPE_READOUT_RUNTIME_PROFILE=\"$PROFILE\" FIELDSCOPE_CACHE_TAG=auraflow_v03 \\\n     FIELDSCOPE_PYTHON=\"$ROOT/.venv/bin/python\" FIELDSCOPE_EXPECTED_REVISION=020c1de567edd88e0eda245fd085335ffe678f47 \\\n     FIELDSCOPE_GPU_INDEX=\"$GPU\" FIELDSCOPE_STORAGE_POLICY=readout_sparse $EXTRA bash \"scripts/train/$SCRIPT_NAME\"\n  bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.pid /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/sitecompat-ade-all-ignore-f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4 7 train_ade20k_readout.sh FIELDSCOPE_ADE_ALL_IGNORE_SHIM_SHA256=f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+            "pgid": 1571745,
+            "pid": 1571745,
+            "start_time_ticks": 778733464,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "scripts/train/train_ade20k_readout.sh"
+            ],
+            "cmdline": "bash scripts/train/train_ade20k_readout.sh",
+            "pgid": 1571745,
+            "pid": 1571770,
+            "start_time_ticks": 778733473,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "scripts/train/run_readout_matrix.sh",
+              "ade20k",
+              "segmentation",
+              "80",
+              "2",
+              "dit_hidden_local",
+              "100",
+              "150"
+            ],
+            "cmdline": "bash scripts/train/run_readout_matrix.sh ade20k segmentation 80 2 dit_hidden_local 100 150",
+            "pgid": 1571745,
+            "pid": 1571771,
+            "start_time_ticks": 778733475,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+              "-m",
+              "fieldscope.cli",
+              "run-readout-matrix",
+              "--config",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml",
+              "--train-cache-dir",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_train",
+              "--val-cache-dir",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_val",
+              "--test-cache-dir",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_test",
+              "--output-dir",
+              "outputs/full_validation/auraflow_v03/ade20k",
+              "--task",
+              "segmentation",
+              "--epochs",
+              "80",
+              "--batch-size",
+              "2",
+              "--learning-rate",
+              "0.001",
+              "--weight-decay",
+              "0.0001",
+              "--reference",
+              "dit_hidden_local",
+              "--readout-runtime-profile",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+              "--num-classes",
+              "100",
+              "--segmentation-classes",
+              "150",
+              "--representation",
+              "random_feature_local",
+              "--representation",
+              "z0",
+              "--representation",
+              "zt",
+              "--representation",
+              "trajectory",
+              "--representation",
+              "velocity",
+              "--representation",
+              "mismatch",
+              "--representation",
+              "endpoint",
+              "--representation",
+              "state",
+              "--representation",
+              "state_nograph",
+              "--representation",
+              "state_graph",
+              "--representation",
+              "response_nograph",
+              "--representation",
+              "response_local",
+              "--representation",
+              "response",
+              "--representation",
+              "full_nograph",
+              "--representation",
+              "full_local",
+              "--representation",
+              "full",
+              "--representation",
+              "dit_hidden_local",
+              "--representation",
+              "dit_hidden_attention",
+              "--representation",
+              "response_shuffled",
+              "--representation",
+              "full_shuffled",
+              "--seed",
+              "4121",
+              "--seed",
+              "7319",
+              "--seed",
+              "104729"
+            ],
+            "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_test --output-dir outputs/full_validation/auraflow_v03/ade20k --task segmentation --epochs 80 --batch-size 2 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --segmentation-classes 150 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+            "pgid": 1571745,
+            "pid": 1571772,
+            "start_time_ticks": 778733476,
+            "state": "S"
+          }
+        ]
+      },
+      "1615504": {
+        "label": "ade20k_parallel_monitor",
+        "members": [
+          {
+            "cmd": [
+              "bash",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960.sh",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers-486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189.json",
+              "ade20k",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog_h200.sh",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/active-fixed-e0677f25-486c2130/ade20k.monitor.exit.json"
+            ],
+            "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers-486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189.json ade20k /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog_h200.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/active-fixed-e0677f25-486c2130/ade20k.monitor.exit.json",
+            "pgid": 1615504,
+            "pid": 1615515,
+            "start_time_ticks": 778758865,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "sleep",
+              "30"
+            ],
+            "cmdline": "sleep 30",
+            "pgid": 1615504,
+            "pid": 2818741,
+            "start_time_ticks": 804402484,
+            "state": "S"
+          }
+        ]
+      },
+      "41094": {
+        "label": "h200_recovery_imagenet_watchdog_analyzer_group",
+        "members": [
+          {
+            "cmd": [
+              "bash",
+              "-c",
+              "cd /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de && nohup env FIELDSCOPE_GPU_INDEX=6 FIELDSCOPE_GPU_MIN_FREE_MIB=110000 FIELDSCOPE_WATCHDOG_POLL_SECONDS=600 bash watchdog_h200.sh </dev/null >>/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/watchdog_h200-launch.log 2>&1 &"
+            ],
+            "cmdline": "bash -c cd /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de && nohup env FIELDSCOPE_GPU_INDEX=6 FIELDSCOPE_GPU_MIN_FREE_MIB=110000 FIELDSCOPE_WATCHDOG_POLL_SECONDS=600 bash watchdog_h200.sh </dev/null >>/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/watchdog_h200-launch.log 2>&1 &",
+            "pgid": 41094,
+            "pid": 41095,
+            "start_time_ticks": 750821911,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "watchdog_h200.sh"
+            ],
+            "cmdline": "bash watchdog_h200.sh",
+            "pgid": 41094,
+            "pid": 41096,
+            "start_time_ticks": 750821911,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "scripts/eval/run_supervised_error_analysis_after_final.sh"
+            ],
+            "cmdline": "bash scripts/eval/run_supervised_error_analysis_after_final.sh",
+            "pgid": 41094,
+            "pid": 41355,
+            "start_time_ticks": 750821943,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh"
+            ],
+            "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh",
+            "pgid": 41094,
+            "pid": 41610,
+            "start_time_ticks": 750821956,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh"
+            ],
+            "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh",
+            "pgid": 41094,
+            "pid": 41679,
+            "start_time_ticks": 750821988,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "tee",
+              "-a",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/full_validation_recovery_020c1de-readout0g-cifar-gate-v3-h200.log"
+            ],
+            "cmdline": "tee -a /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/full_validation_recovery_020c1de-readout0g-cifar-gate-v3-h200.log",
+            "pgid": 41094,
+            "pid": 41680,
+            "start_time_ticks": 750821988,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "scripts/train/train_imagenet100_readout.sh"
+            ],
+            "cmdline": "bash scripts/train/train_imagenet100_readout.sh",
+            "pgid": 41094,
+            "pid": 102908,
+            "start_time_ticks": 750900374,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "bash",
+              "scripts/train/run_readout_matrix.sh",
+              "imagenet100",
+              "classification",
+              "90",
+              "128",
+              "dit_hidden_local",
+              "100"
+            ],
+            "cmdline": "bash scripts/train/run_readout_matrix.sh imagenet100 classification 90 128 dit_hidden_local 100",
+            "pgid": 41094,
+            "pid": 102909,
+            "start_time_ticks": 750900375,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+              "-m",
+              "fieldscope.cli",
+              "run-readout-matrix",
+              "--config",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml",
+              "--train-cache-dir",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_train",
+              "--val-cache-dir",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_val",
+              "--test-cache-dir",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_test",
+              "--output-dir",
+              "outputs/full_validation/auraflow_v03/imagenet100",
+              "--task",
+              "classification",
+              "--epochs",
+              "90",
+              "--batch-size",
+              "128",
+              "--learning-rate",
+              "0.001",
+              "--weight-decay",
+              "0.0001",
+              "--reference",
+              "dit_hidden_local",
+              "--readout-runtime-profile",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+              "--num-classes",
+              "100",
+              "--representation",
+              "random_feature_local",
+              "--representation",
+              "z0",
+              "--representation",
+              "zt",
+              "--representation",
+              "trajectory",
+              "--representation",
+              "velocity",
+              "--representation",
+              "mismatch",
+              "--representation",
+              "endpoint",
+              "--representation",
+              "state",
+              "--representation",
+              "state_nograph",
+              "--representation",
+              "state_graph",
+              "--representation",
+              "response_nograph",
+              "--representation",
+              "response_local",
+              "--representation",
+              "response",
+              "--representation",
+              "full_nograph",
+              "--representation",
+              "full_local",
+              "--representation",
+              "full",
+              "--representation",
+              "dit_hidden_local",
+              "--representation",
+              "dit_hidden_attention",
+              "--representation",
+              "response_shuffled",
+              "--representation",
+              "full_shuffled",
+              "--seed",
+              "4121",
+              "--seed",
+              "7319",
+              "--seed",
+              "104729"
+            ],
+            "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_test --output-dir outputs/full_validation/auraflow_v03/imagenet100 --task classification --epochs 90 --batch-size 128 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+            "pgid": 41094,
+            "pid": 102910,
+            "start_time_ticks": 750900375,
+            "state": "R"
+          },
+          {
+            "cmd": [
+              "sleep",
+              "600"
+            ],
+            "cmdline": "sleep 600",
+            "pgid": 41094,
+            "pid": 2786387,
+            "start_time_ticks": 804356654,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "sleep",
+              "600"
+            ],
+            "cmdline": "sleep 600",
+            "pgid": 41094,
+            "pid": 2787206,
+            "start_time_ticks": 804368704,
+            "state": "S"
+          }
+        ]
+      },
+      "470616": {
+        "label": "h200_cross_lane_handback_supervisor",
+        "members": [
+          {
+            "cmd": [
+              "bash",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/supervise_cross_lane_handback_gate-cd15dfcc12482f8d5e53aa80e80f7b3567e8ba9ebb41d3b2ffc346a62e9cfc47.sh",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope",
+              "h200",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/supervise_cross_host_readout_worker-5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66.sh",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/monitor_cross_host_registered_worker-a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306.sh"
+            ],
+            "cmdline": "bash /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/supervise_cross_lane_handback_gate-cd15dfcc12482f8d5e53aa80e80f7b3567e8ba9ebb41d3b2ffc346a62e9cfc47.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope h200 /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/supervise_cross_host_readout_worker-5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66.sh /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/monitor_cross_host_registered_worker-a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306.sh",
+            "pgid": 470616,
+            "pid": 470616,
+            "start_time_ticks": 795355433,
+            "state": "S"
+          },
+          {
+            "cmd": [
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py",
+              "run-h200",
+              "--registration",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-registration.json",
+              "--watcher-state",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json",
+              "--responder-heartbeat",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json",
+              "--heartbeat",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json",
+              "--request",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-request.json",
+              "--a800-ack",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-ack.json",
+              "--release-complete",
+              "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-complete.json",
+              "--poll",
+              "30"
+            ],
+            "cmdline": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py run-h200 --registration /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-registration.json --watcher-state /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json --responder-heartbeat /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json --heartbeat /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json --request /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-request.json --a800-ack /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-ack.json --release-complete /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/release-complete.json --poll 30",
+            "pgid": 470616,
+            "pid": 3931791,
+            "start_time_ticks": 800745169,
+            "state": "S"
+          }
+        ]
+      }
+    },
+    "host": "dsw-h200",
+    "observed_at": "2026-08-26T14:27:49.986402+00:00",
+    "pgid": 2818972,
+    "reports": {
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k/random_feature_local/seed-4121/segmentation_random_feature_local_seed4121_report.json": {
+        "completed_optimizer_steps": 318325,
+        "completed_training_sample_exposures": 636615,
+        "epochs": 80,
+        "exists": true,
+        "history_len": 35,
+        "last_epoch": 35,
+        "mtime_ns": 1787751857107022392,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k/random_feature_local/seed-4121/segmentation_random_feature_local_seed4121_report.json",
+        "representation": "random_feature_local",
+        "seed": 4121,
+        "sha256": "48facab51dc3e76ad147d39ad19344f66e87aa6efa8717ccbadb764aa4284e2c",
+        "stable_double_read": true,
+        "status": "running"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/velocity/seed-7319/classification_velocity_seed7319_report.json": {
+        "completed_optimizer_steps": 74620,
+        "completed_training_sample_exposures": 9549310,
+        "epochs": 90,
+        "exists": true,
+        "history_len": 82,
+        "last_epoch": 82,
+        "mtime_ns": 1787750750171418686,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/velocity/seed-7319/classification_velocity_seed7319_report.json",
+        "representation": "velocity",
+        "seed": 7319,
+        "sha256": "0e6818f1775852ab5a16919ff2aa5a92d41987ee2a6bc15a6a53d1d593f892a3",
+        "stable_double_read": true,
+        "status": "running"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/nyuv2/response_nograph/seed-7319/depth_response_nograph_seed7319_report.json": {
+        "completed_optimizer_steps": 14320,
+        "completed_training_sample_exposures": 57200,
+        "epochs": 80,
+        "exists": true,
+        "history_len": 80,
+        "last_epoch": 80,
+        "mtime_ns": 1787737441058541816,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/nyuv2/response_nograph/seed-7319/depth_response_nograph_seed7319_report.json",
+        "representation": "response_nograph",
+        "seed": 7319,
+        "sha256": "335d51f6d571eaa8ac84c0def2f19d9992e464cb37ffcd2d5eb889bdb181c1cc",
+        "stable_double_read": true,
+        "status": "passed"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/voc2012/state_nograph/seed-7319/segmentation_state_nograph_seed7319_report.json": {
+        "completed_optimizer_steps": 26400,
+        "completed_training_sample_exposures": 105440,
+        "epochs": 80,
+        "exists": true,
+        "history_len": 80,
+        "last_epoch": 80,
+        "mtime_ns": 1787742115247360351,
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/voc2012/state_nograph/seed-7319/segmentation_state_nograph_seed7319_report.json",
+        "representation": "state_nograph",
+        "seed": 7319,
+        "sha256": "defe8bc7eb16bb689aa626819504f95bca268364668088bcf6ba9ff5b34504d7",
+        "stable_double_read": true,
+        "status": "passed"
+      }
+    },
+    "state_paths": {
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": null,
+        "exists": true,
+        "failures": [],
+        "mtime_ns": 1787754410494715457,
+        "observed_at": "2026-08-26T14:26:43.026717Z",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json",
+        "sha256": "44cce2d2bfc02907fecb66b3d4a9ac1126f2accfb517b631d1274eb1796aca4c",
+        "stable_double_read": true,
+        "status": "active",
+        "terminal_counts": {
+          "imagenet100": 13,
+          "nyuv2": 34,
+          "voc2012": 27
+        }
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/registered_workers.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": false,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787568326096974006,
+        "observed_at": "2026-08-24T10:45:26.087304+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/registered_workers.json",
+        "sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978",
+        "stable_double_read": true,
+        "status": "active"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": false,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787754446092103176,
+        "observed_at": "2026-08-26T14:27:26.089174+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/a800-heartbeat.json",
+        "sha256": "f6723744e2ca3660344c0770ee0b7d27ecd55c98d8d528abe466682537cb731c",
+        "stable_double_read": true,
+        "status": "armed"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": false,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787754462226451918,
+        "observed_at": "2026-08-26T14:27:42.225977+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/h200-heartbeat.json",
+        "sha256": "1a8f632d39d8efc9b299441a4b5db50bbfc3dd6c4c71adec6a1d25e15918c6c3",
+        "stable_double_read": true,
+        "status": "passed"
+      },
+      "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog-h200/state.json": {
+        "changes_scientific_verdict": false,
+        "execution_complete": null,
+        "exists": true,
+        "failures": null,
+        "mtime_ns": 1787754006967160673,
+        "observed_at": "2026-08-26T14:20:06.867901+00:00",
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/watchdog-h200/state.json",
+        "sha256": "24f0b8b0439708f5f611026e3124872247f46d302f8d29e8d52b70fe18827be1",
+        "stable_double_read": true,
+        "status": "active"
+      }
+    }
+  },
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "experiment_status": "paused_by_user",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "host": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-26T14:27:55.911910+00:00",
+  "problems": [],
+  "schema_version": 1,
+  "scope": "fieldscope_controlled_shutdown",
+  "status": "passed"
+}

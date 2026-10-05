@@ -1,0 +1,66 @@
+{
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gate_script_sha256": "901ad669add8a52cc900868582383b6adc045949a35d9d377a37d8d4547a6ce5",
+  "locks": {
+    "nyuv2": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/nyuv2-gpu6.lock",
+    "voc2012": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260822/voc2012-gpu7.lock"
+  },
+  "matrix_complete": {
+    "nyuv2": false,
+    "voc2012": false
+  },
+  "method_effectiveness_conclusion": null,
+  "monitor_script_sha256": "a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306",
+  "monitors": {
+    "nyuv2": {
+      "argv_sha256": "e3f6848cf86a5f0d6dbee76cff7ff09f3f97cf65390299a7a4318e7ce0198cd0",
+      "pgid": 55616,
+      "pid": 55616,
+      "start_time_ticks": 163630533
+    },
+    "voc2012": {
+      "argv_sha256": "d5280123b467bc810a47e37a66e8033d58d27e83edb5d77445f4fc5ee84fdaf0",
+      "pgid": 55621,
+      "pid": 55621,
+      "start_time_ticks": 163630550
+    }
+  },
+  "observed_at": "2026-08-25T07:50:23.087803+00:00",
+  "registry": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/cross-host-a800/registered_workers.json",
+  "registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978",
+  "repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+  "role": "a800",
+  "schema_version": 1,
+  "status": "armed",
+  "supervisor_script_sha256": "5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66",
+  "supervisors": {
+    "nyuv2": {
+      "argv_sha256": "841bfecf3dfced7391f8452ea206e6a0521656f5941ba3aeeb5c02b26d75fc2c",
+      "pgid": 61255,
+      "pid": 61255,
+      "start_time_ticks": 163897482
+    },
+    "voc2012": {
+      "argv_sha256": "5d87e49334fb61f0e7a4778715687b105bc400bff001d8d1b5d84862f1f636e6",
+      "pgid": 61253,
+      "pid": 61253,
+      "start_time_ticks": 163897480
+    }
+  },
+  "workers": {
+    "nyuv2": {
+      "argv_sha256": "2ea0152506acd3d5d75a034ea779639153d69bceb34548ee0bf62f547d413ab2",
+      "pgid": 53467,
+      "pid": 53492,
+      "start_time_ticks": 163542700
+    },
+    "voc2012": {
+      "argv_sha256": "b831ef768740d1d97c54bbb6272909fd8e98c84ca2410eaebb2b340c65c1776c",
+      "pgid": 53466,
+      "pid": 53491,
+      "start_time_ticks": 163542700
+    }
+  }
+}

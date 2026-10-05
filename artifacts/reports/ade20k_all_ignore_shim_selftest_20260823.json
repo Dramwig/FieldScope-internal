@@ -1,0 +1,36 @@
+{
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "formal_outputs_modified": false,
+  "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+  "method_effectiveness_conclusion": null,
+  "results": {
+    "all_ignore_gpu": {
+      "finite": true,
+      "gradient_finite": true,
+      "gradient_nonzero": 0,
+      "loss": 0.0,
+      "original_is_nan": true
+    },
+    "mixed_gpu": {
+      "gradient_equal": true,
+      "loss": 5.019447326660156,
+      "loss_equal": true
+    },
+    "non_mean_unchanged": {
+      "equal": true,
+      "value": 0.0
+    },
+    "nonfinite_logits_preserved": {
+      "loss_is_nan": true
+    },
+    "valid_gpu": {
+      "gradient_equal": true,
+      "loss": 5.479127883911133,
+      "loss_equal": true
+    }
+  },
+  "schema_version": 1,
+  "shim_sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+  "status": "passed"
+}

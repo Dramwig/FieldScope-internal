@@ -1,0 +1,183 @@
+{
+  "accepted_intermediate_audits": 286,
+  "active_cells": {
+    "ade20k/random_feature_local/seed-4121/epoch-8": {
+      "optimizer_steps": 72760,
+      "strong_audit_sha256": "59ac743a05e04f199e1f9e072b67364568e0821502c842b230ba57e1ccf88a9b",
+      "training_sample_exposures": 145512
+    },
+    "imagenet100/velocity/seed-7319/epoch-44": {
+      "optimizer_steps": 40040,
+      "strong_audit_sha256": "8fed045e815b25e9a719308be6ff39c75f69a33d4d8b3a49352248fb54a4a107",
+      "training_sample_exposures": 5124020
+    },
+    "nyuv2/random_feature_local/seed-104729/epoch-35": {
+      "optimizer_steps": 6265,
+      "strong_audit_sha256": "d41ccfa77f592db7f723c45d442ca1c62f92401fc8714254a490d05fafd5b71d",
+      "training_sample_exposures": 25025
+    },
+    "voc2012/z0/seed-104729/epoch-52": {
+      "optimizer_steps": 17160,
+      "strong_audit_sha256": "326a2487cc0e9308125c140f4c0ed7b74b935756727698467e567ef5eec87a24",
+      "training_sample_exposures": 68536
+    }
+  },
+  "active_subtotal": {
+    "cells": 4,
+    "optimizer_steps": 136225,
+    "training_sample_exposures": 5363093
+  },
+  "analysis_worktree_clean": true,
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-24T12:49:37.348711Z",
+  "problems": [],
+  "reconstructed_global": {
+    "optimizer_steps": 1361565,
+    "training_sample_exposures": 142257043
+  },
+  "registered_global": {
+    "optimizer_steps": 51013200,
+    "terminal_cells": 240,
+    "training_sample_exposures": 725922600
+  },
+  "schema_version": 2,
+  "scope": "independent_reconstruction_of_current_formal_main_matrix_atomic_ledger",
+  "status": "passed",
+  "terminal_cells": {
+    "ade20k": {
+      "count": 0,
+      "optimizer_steps": 0,
+      "training_sample_exposures": 0
+    },
+    "imagenet100": {
+      "count": 13,
+      "optimizer_steps": 1064700,
+      "training_sample_exposures": 136252350
+    },
+    "nyuv2": {
+      "count": 2,
+      "optimizer_steps": 28640,
+      "training_sample_exposures": 114400
+    },
+    "voc2012": {
+      "count": 5,
+      "optimizer_steps": 132000,
+      "training_sample_exposures": 527200
+    }
+  },
+  "terminal_entries": {
+    "imagenet100/random_feature_local/seed-104729/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "8a0cf49a4e57c88fab03e0994a28ce650ba39a9cb3e2c855be5193e677bf8ef5",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/random_feature_local/seed-4121/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "257a28c80d285d78add3d7d39f15e5039abc4a549f340768974c8b3e205a736f",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/random_feature_local/seed-7319/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "329230cf01641d0392a2a4943409cfc1f950c4920da714c3368d0fd6eb29e26a",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/trajectory/seed-104729/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "194a22009839323da378fe7130df706ca5dcb4e429eb793c561ae98985a185fb",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/trajectory/seed-4121/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "05e88870b4e6bde6372513749a679db0e623d9ab0d7b98ef9d4710b234cbe84d",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/trajectory/seed-7319/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "55181e4ebaed0edd69317036bce2712aa0fc3efbd5aa6658783f3623fac5b12f",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/velocity/seed-4121/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "9f1c4409935ec29ee03238f59b8c96a76563cbfe9da3aa0a5a5b52031dc4beda",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/z0/seed-104729/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "54a2100786abbe43fbaf1d06d238a7ebdb9f672acce86805a4a9592b73298288",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/z0/seed-4121/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "dfd902793e051f9ed8f95555f58adb10760ffe1cfe3093d6037301ce800cbf62",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/z0/seed-7319/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "b22bc188d9ce7cb01d8d062a8c2717b174af0d4bceb5c6eb6ca1e1894bba0fbd",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/zt/seed-104729/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "41d15c4d84a345055c013c25a74f86d18f4aa38fa9e354fd0772ffa18ba6b90f",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/zt/seed-4121/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "73be8f8708fc21845afbdeddeb3b2ef4f44b0b8788f099ac9034ac0e99f63272",
+      "training_sample_exposures": 10480950
+    },
+    "imagenet100/zt/seed-7319/terminal": {
+      "optimizer_steps": 81900,
+      "strong_audit_sha256": "4c2ceb2f84016fe0c9e58cdf44ccf2c5a114590caac2f7fdfb181ef356a44642",
+      "training_sample_exposures": 10480950
+    },
+    "nyuv2/random_feature_local/seed-4121/terminal": {
+      "optimizer_steps": 14320,
+      "strong_audit_sha256": "7f24a86bb2c0b3622964d1f24f436cc8fe0e502c961555534aaaf4ea69c75152",
+      "training_sample_exposures": 57200
+    },
+    "nyuv2/random_feature_local/seed-7319/terminal": {
+      "optimizer_steps": 14320,
+      "strong_audit_sha256": "a6d32db3aaa89ca0192eb0be7460513ea4b650bf755510ebb8af2549a44239da",
+      "training_sample_exposures": 57200
+    },
+    "voc2012/random_feature_local/seed-104729/terminal": {
+      "optimizer_steps": 26400,
+      "strong_audit_sha256": "fa5ac86afc7282bdc4e76dc67ff0afab035762ce8271a0b5e1394561ef6b8eae",
+      "training_sample_exposures": 105440
+    },
+    "voc2012/random_feature_local/seed-4121/terminal": {
+      "optimizer_steps": 26400,
+      "strong_audit_sha256": "78232209cca89d586c1a797a8ce3f4d5047d4a50d9e65190b1ea32ca074e6630",
+      "training_sample_exposures": 105440
+    },
+    "voc2012/random_feature_local/seed-7319/terminal": {
+      "optimizer_steps": 26400,
+      "strong_audit_sha256": "9bef036648ea842c3ac9483ecba650d895eccf0821bdfa3de69c4a50e3613633",
+      "training_sample_exposures": 105440
+    },
+    "voc2012/z0/seed-4121/terminal": {
+      "optimizer_steps": 26400,
+      "strong_audit_sha256": "d8f203be551dccb2a56203b6e96072ecf3fd4187171f48b1fa5136e361f742bd",
+      "training_sample_exposures": 105440
+    },
+    "voc2012/z0/seed-7319/terminal": {
+      "optimizer_steps": 26400,
+      "strong_audit_sha256": "fc6b8754274586ac131b9f357ffc49182b3c0651da3201cf446cc067a4c074d9",
+      "training_sample_exposures": 105440
+    }
+  },
+  "terminal_subtotal": {
+    "cells": 20,
+    "optimizer_steps": 1225340,
+    "training_sample_exposures": 136893950
+  },
+  "transient_audit_races": 4,
+  "unresolved_failures": 0,
+  "watcher_state_sha256": "4fbc60138ab52c32293818f36608238bf6777bcb2bf03dfdbbfa91754581de7d"
+}

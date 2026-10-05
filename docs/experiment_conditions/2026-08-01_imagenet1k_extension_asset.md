@@ -3,6 +3,13 @@
 Date: 2026-08-01
 Scope: asset provenance and readiness only; this is not method-effect evidence.
 
+> Migration status (2026-08-18): the registered asset was transferred to
+> `dsw-h200`, audited on fixed revision `020c1de`, and installed at
+> `/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/prepared/imagenet1k`.
+> Current paths and target-side evidence are recorded in
+> `2026-08-18_dsw_h200_imagenet1k.md`. The `pro6000` paths below remain historical
+> provenance and must not be used as current run paths.
+
 ## Fixed server asset
 
 The extension source is read-only external data already present on `pro6000`:

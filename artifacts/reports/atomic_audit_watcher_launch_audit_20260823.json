@@ -1,0 +1,33 @@
+{
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "first_sweep": {
+    "audited_cells": [
+      "imagenet100/velocity/seed-7319/epoch-32",
+      "voc2012/random_feature_local/seed-104729/epoch-34",
+      "nyuv2/random_feature_local/seed-4121/epoch-2"
+    ],
+    "failures": [],
+    "state_artifact": "artifacts/reports/atomic_audit_watcher_state_20260823.json",
+    "state_artifact_sha256": "bb239d506dd6205441b0dbe5d8a023a8127171e83249e558d52a15cafa2d2133",
+    "status": "active"
+  },
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "helper_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_audit_cell.py",
+  "helper_sha256": "fa668e47ce879d903cd17036961fbdbca901c8fc96d4eda7975a574e50318ae5",
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "nice": 19,
+  "observed_at": "2026-08-23T10:59:47.058670Z",
+  "poll_seconds": 600,
+  "primary_recovery_pid": 41610,
+  "problems": [],
+  "read_only_training_outputs": true,
+  "schema_version": 1,
+  "status": "passed",
+  "stop_contract": "stop automatically when primary recovery PID exits",
+  "training_outputs_modified": false,
+  "watcher_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_atomic_audit_watcher.py",
+  "watcher_pid": 3047103,
+  "watcher_sha256": "da1d2149038e41c9eb87380600f40f58b2be35c50f92ecc0566fc2b12b1f5604"
+}

@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_at": "2026-08-21T08:34:34Z",
+  "evidence_scope": "fixed_revision_orchestration_and_downstream_contract_preflight_only",
+  "machine": "dsw-h200",
+  "source_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "source_worktree": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+  "source_worktree_clean": true,
+  "analyzer_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "analyzer_worktree": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/analysis-020c1de",
+  "analyzer_worktree_clean": true,
+  "gpu_contract": {
+    "physical_gpu": 6,
+    "formal_cuda_visible_devices": "6",
+    "readout_batch_size": 128,
+    "cache_batch_size": 2,
+    "readout_memory_cache_gib": 0,
+    "seed_workers": 1
+  },
+  "main_matrix_contract": {
+    "tasks": ["imagenet100", "voc2012", "ade20k", "nyuv2"],
+    "representations": [
+      "random_feature_local",
+      "z0",
+      "zt",
+      "trajectory",
+      "velocity",
+      "mismatch",
+      "endpoint",
+      "state",
+      "state_nograph",
+      "state_graph",
+      "response_nograph",
+      "response_local",
+      "response",
+      "full_nograph",
+      "full_local",
+      "full",
+      "dit_hidden_local",
+      "dit_hidden_attention",
+      "response_shuffled",
+      "full_shuffled"
+    ],
+    "representation_count_per_task": 20,
+    "seeds": [4121, 7319, 104729],
+    "seed_count_per_representation": 3,
+    "required_cells": 240,
+    "task_specs": {
+      "imagenet100": {"task": "classification", "epochs": 90, "batch_size": 128, "num_classes": 100},
+      "voc2012": {"task": "segmentation", "epochs": 80, "batch_size": 4, "segmentation_classes": 21},
+      "ade20k": {"task": "segmentation", "epochs": 80, "batch_size": 2, "segmentation_classes": 150},
+      "nyuv2": {"task": "depth", "epochs": 80, "batch_size": 4}
+    },
+    "main_evidence_command": "fieldscope.cli audit-full-evidence",
+    "runbook_sha256": "d0bd133e455e6e3318612ee76bf8cad5d31e72690802999bdf8b247fa99f9ae9"
+  },
+  "causal_contract": {
+    "runs_after_complete_main_positive_or_negative": true,
+    "accepted_main_verdicts": ["main_tasks_supported_pending_causal_audits", "limited_or_negative"],
+    "registered_controls": ["random_flow", "spatially_shuffled_probe", "neutral_prompt", "unrelated_prompt"],
+    "dataset": "voc2012",
+    "split": "test",
+    "num_samples_per_control": 1449,
+    "decision_command": "fieldscope.cli audit-causal-evidence"
+  },
+  "extension_contract": {
+    "positive_main_only": true,
+    "required_main_verdict": "main_tasks_supported_pending_causal_audits",
+    "negative_main_skips_extension": true,
+    "imagenet1k_asset_audit_required": true,
+    "registered_voc_one_factor_variant_count": 15,
+    "resource_blocking_behavior": "wait_without_shrinking_registered_scope",
+    "decision_command": "fieldscope.cli audit-extension-evidence"
+  },
+  "final_decision_contract": {
+    "causal_evidence_always_required": true,
+    "extension_evidence_required_only_after_positive_main": true,
+    "decision_command": "fieldscope.cli audit-final-evidence",
+    "allowed_terminal_verdicts": [
+      "supports_core_hypothesis_with_scaling_extension",
+      "supports_core_hypothesis_limited_scaling",
+      "main_task_gain_not_causally_attributed",
+      "limited_or_negative"
+    ]
+  },
+  "supervised_replay_contract": {
+    "starts_only_after_complete_formal_final_decision": true,
+    "tasks": ["imagenet100", "voc2012", "ade20k", "nyuv2"],
+    "input_reports_per_task": 33,
+    "required_replays": 132,
+    "comparisons_per_task": 12,
+    "per_sample_records_required": true,
+    "sample_id_alignment_and_sha256_required": true,
+    "changes_main_verdict_required": false,
+    "registry_status_required": "passed",
+    "completion_audit_required": {
+      "status": "passed",
+      "execution_complete": true,
+      "changes_scientific_verdict": false
+    },
+    "waiter_alive": true,
+    "waiter_pid": 41355,
+    "waiter_cuda_visible_devices": "6",
+    "source_repository_binding": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+    "analyzer_repository_binding": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/analysis-020c1de",
+    "output_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/analysis-output/formal-supervised-errors-020c1de"
+  },
+  "orchestration_identities": {
+    "readout_recovery_wrapper_sha256": "fef17407a2b261335183ae17f9dd23dedf4446aa36eb41f32f3776a22d21c251",
+    "readout_recovery_wrapper_matches_readiness_record": true,
+    "final_recovery_wrapper_sha256": "8e918f0053768e50025ddb7d281b329c1de2e71288547bbc574a6af1db95e9b1",
+    "extension_recovery_wrapper_sha256": "ebd52059cc65de0562b2446847c0e4bce82212251102730695f281a105280233",
+    "watchdog_sha256": "23a2a22c6fa6a28c368094a9536989c38ad574178a4736e11f66660aea691963",
+    "watchdog_matches_readiness_record": true,
+    "supervised_replay_runbook_sha256": "920184d3083389fd138ed464a007dd0df111714dc2f0b84e48acf96074a606cb",
+    "error_analysis_module_sha256": "646131f0e1b3802276aff7203a2039cc48f52cce8fe17d609c264994884c5e2c",
+    "error_summary_module_sha256": "eb8419cbfde4b0637e7fd1afb8bf664480092094fd4c3f581c42000cbb62072e",
+    "completion_module_sha256": "b12b1187195f38ac8dd7337a0b30722b306def5f7ba00f098120a5fa304da021"
+  },
+  "current_execution": {
+    "status": "active",
+    "imagenet100_completed_cells": 12,
+    "active_representation": "velocity",
+    "active_seed": 4121,
+    "latest_committed_epoch": 79,
+    "target_epochs": 90,
+    "fieldscope_worker_pid": 102910,
+    "watchdog_pid": 41096,
+    "recovery_pid": 41610,
+    "execution_complete": false
+  },
+  "decision_artifacts_currently_absent": [
+    "evidence_decision.json",
+    "causal/final_evidence_decision.json",
+    "extension/extension_evidence_decision.json",
+    "final_evidence_decision.json",
+    "registry.json",
+    "completion_audit.json"
+  ],
+  "negative_evidence_preservation_required": true,
+  "method_effectiveness_conclusion": null,
+  "problems": [],
+  "changes_scientific_verdict": false
+}

@@ -1,0 +1,40 @@
+{
+  "changes_scientific_verdict": false,
+  "dataset": "ade20k",
+  "elapsed_seconds": 149.4127540588379,
+  "execution_complete": false,
+  "formal_outputs_modified": false,
+  "ignore_index": 255,
+  "method_effectiveness_conclusion": null,
+  "schema_version": 1,
+  "segmentation_classes": 150,
+  "splits": {
+    "test": {
+      "all_ignore_sample_count": 0,
+      "all_ignore_sample_indices": [],
+      "expected_num_samples": 2000,
+      "invalid_non_ignore_sample_count": 0,
+      "invalid_non_ignore_sample_indices": [],
+      "maximum_valid_pixels": 262096,
+      "minimum_valid_pixels": 17430,
+      "num_samples": 2000,
+      "sequential_batch_size2_all_ignore_batch_count": 0,
+      "sequential_batch_size2_all_ignore_batches": []
+    },
+    "val": {
+      "all_ignore_sample_count": 1,
+      "all_ignore_sample_indices": [
+        1453
+      ],
+      "expected_num_samples": 2021,
+      "invalid_non_ignore_sample_count": 0,
+      "invalid_non_ignore_sample_indices": [],
+      "maximum_valid_pixels": 262144,
+      "minimum_valid_pixels": 0,
+      "num_samples": 2021,
+      "sequential_batch_size2_all_ignore_batch_count": 0,
+      "sequential_batch_size2_all_ignore_batches": []
+    }
+  },
+  "status": "passed"
+}

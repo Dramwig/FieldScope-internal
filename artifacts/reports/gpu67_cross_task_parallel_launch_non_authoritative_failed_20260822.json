@@ -1,0 +1,13 @@
+{
+  "authoritative": false,
+  "changes_scientific_verdict": false,
+  "observed_at": "2026-08-22T06:13:04Z",
+  "preserved": true,
+  "reason": "launcher PID file contained literal 3925620n because of shell printf escaping; the VOC worker itself had already launched successfully, but the first sidecar setup failed closed",
+  "schema_version": 1,
+  "stage": "post_launch_safety_monitor_setup",
+  "status": "failed",
+  "training_content_failure": false,
+  "voc_parent_pid_observed": 3925620,
+  "voc_worker_pid_observed": 3925626
+}

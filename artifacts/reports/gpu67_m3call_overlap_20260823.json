@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "scope": "gpu67_external_resource_overlap_provenance",
+  "status": "passed",
+  "observed_at": "2026-08-23T12:11:17Z",
+  "server": "dsw-h200",
+  "authorized_physical_gpus": [
+    6,
+    7
+  ],
+  "fieldscope_parallel_scope": "cross_task_only",
+  "fieldscope_per_task_seed_workers": 1,
+  "fieldscope_workers": [
+    {
+      "task": "imagenet100",
+      "pid": 102910,
+      "physical_gpu": 6,
+      "used_memory_mib": 2174
+    },
+    {
+      "task": "nyuv2",
+      "pid": 2992183,
+      "physical_gpu": 6,
+      "used_memory_mib": 928
+    },
+    {
+      "task": "voc2012",
+      "pid": 3925626,
+      "physical_gpu": 7,
+      "used_memory_mib": 920
+    },
+    {
+      "task": "ade20k",
+      "pid": 3634699,
+      "physical_gpu": 7,
+      "used_memory_mib": 850
+    }
+  ],
+  "external_processes": [
+    {
+      "project": "M3Call",
+      "pid": 3660411,
+      "physical_gpu": 6,
+      "used_memory_mib": 61808,
+      "started_at": "2026-08-23T11:53:15Z",
+      "command_role": "stage1_trainer_stop_after_step_256"
+    },
+    {
+      "project": "M3Call",
+      "pid": 3660412,
+      "physical_gpu": 7,
+      "used_memory_mib": 61522,
+      "started_at": "2026-08-23T11:53:15Z",
+      "command_role": "stage1_trainer_stop_after_step_256"
+    }
+  ],
+  "gpu_snapshots": [
+    {
+      "physical_gpu": 6,
+      "uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "memory_total_mib": 143771,
+      "memory_used_mib": 65750,
+      "memory_free_mib": 77407,
+      "utilization_gpu_percent": 3,
+      "power_draw_w": 114.71
+    },
+    {
+      "physical_gpu": 7,
+      "uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+      "memory_total_mib": 143771,
+      "memory_used_mib": 64132,
+      "memory_free_mib": 79025,
+      "utilization_gpu_percent": 100,
+      "power_draw_w": 112.85
+    }
+  ],
+  "actions": {
+    "external_processes_terminated": false,
+    "fieldscope_workers_restarted": false,
+    "fieldscope_batch_or_runtime_contract_changed": false,
+    "duplicate_dataset_or_cell_writer_started": false,
+    "four_fieldscope_tasks_kept_running": true
+  },
+  "resource_overlap_scientific_effect": "not_inferred",
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

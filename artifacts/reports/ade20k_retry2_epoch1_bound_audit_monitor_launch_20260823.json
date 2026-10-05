@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_at": "2026-08-23T11:58:13Z",
+  "machine": "dsw-h200",
+  "scope": "read_only_one_shot_audit_monitor",
+  "script": {
+    "path": "scripts/ops/monitor_ade20k_retry2_epoch1.py",
+    "sha256": "d56bd39ac8bb06d701da731c8d547418e247df506d31f20697ea50b0032b1c6a",
+    "ruff_status": "passed",
+    "py_compile_status": "passed"
+  },
+  "monitor_pid": 3678237,
+  "nice": 19,
+  "retry_parent_pid": 3634680,
+  "retry_cli_pid": 3634699,
+  "primary_recovery_pid": 41610,
+  "poll_seconds": 60,
+  "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k_random_feature_local_seed4121_epoch1_shim_bound_audit_retry2.json",
+  "standard_audit_output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k_random_feature_local_seed4121_epoch1_standard_strong_audit_retry2.json",
+  "binds": [
+    "atomic report and checkpoint ledger",
+    "fixed formal and analysis worktree identities",
+    "ADE-only shim SHA and live CLI environment",
+    "recovery gate SHA",
+    "complete label scan SHA",
+    "registered all-ignore batch identity"
+  ],
+  "formal_outputs_modified": false,
+  "training_restarted": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

@@ -1,0 +1,366 @@
+{
+  "cells": [
+    {
+      "best_checkpoint_sha256": "8fc2430c7a30815e2305b5124617ba66156b15a2ef4bafcab453920a199ba1ab",
+      "best_epoch": 1,
+      "best_primary_metric": 0.010046367851622875,
+      "last_checkpoint_sha256": "f3df3e92c0e090a5a1378ce2c567f27c351b1c0a03c761ed6ceb7d889697b2db",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "random_feature_local",
+      "seed": 4121,
+      "test_metric_top1": 0.01,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/random_feature_local/seed-4121/classification_random_feature_local_seed4121_test.json",
+      "test_report_sha256": "715b20a553ce490673f003ba55a24e8ca0b33aba4d4d5f26097420afeeb50c3e",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/random_feature_local/seed-4121/classification_random_feature_local_seed4121_report.json",
+      "training_report_sha256": "580e7647fd4d3c69a3f6a577d841e1ca8026449afcfbfb0663abf076e28e60bc",
+      "training_seconds_sum": 117551.7698830869,
+      "validation_seconds_sum": 13550.732425035909
+    },
+    {
+      "best_checkpoint_sha256": "f02ccf556b7cf34d54775c09a4703e93ffd727855ab3a6fc9ee9af062fcbbf1b",
+      "best_epoch": 1,
+      "best_primary_metric": 0.010046367851622875,
+      "last_checkpoint_sha256": "4f290c6a1d2c3845905b7dc7a22f86fd91836134beeb1212e2111d1d0150fca3",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "random_feature_local",
+      "seed": 7319,
+      "test_metric_top1": 0.01,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/random_feature_local/seed-7319/classification_random_feature_local_seed7319_test.json",
+      "test_report_sha256": "6dfc91a36627cab26bf3a47b8b6a10fbff8dc80789e3b24f96ee137c67e52d1d",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/random_feature_local/seed-7319/classification_random_feature_local_seed7319_report.json",
+      "training_report_sha256": "e27aa7a59b74e95d70e6c843016238502549e43af3871298f28d5e2eeb7248da",
+      "training_seconds_sum": 48655.322037991136,
+      "validation_seconds_sum": 5547.513094333932
+    },
+    {
+      "best_checkpoint_sha256": "d03cecc05c1a18d70c7e3de9671f60807b8031b04f2895a05744005ca0a44400",
+      "best_epoch": 1,
+      "best_primary_metric": 0.010046367851622875,
+      "last_checkpoint_sha256": "8edf179181689619ffaf332da04a40ada0fb18d1a139658b1d0416b79dde0406",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "random_feature_local",
+      "seed": 104729,
+      "test_metric_top1": 0.01,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/random_feature_local/seed-104729/classification_random_feature_local_seed104729_test.json",
+      "test_report_sha256": "710f199dacde9c9fc63eff7b8a2b2dfaa2cc87d251e24a647b0d22135262ccb6",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/random_feature_local/seed-104729/classification_random_feature_local_seed104729_report.json",
+      "training_report_sha256": "2e8d68dc61655b1407bf4d6bc75a7f516a8967b3f69e7d90ec9a4d870357e05f",
+      "training_seconds_sum": 28947.11432637833,
+      "validation_seconds_sum": 3416.8969041462988
+    },
+    {
+      "best_checkpoint_sha256": "95c7f318a759664c3e8050e12d23df9098172fe0145d23bf12a19f582d3fcefd",
+      "best_epoch": 83,
+      "best_primary_metric": 0.12326120556414219,
+      "last_checkpoint_sha256": "c517af1c8134b6fc6767504ec5efd7a315d9e0c7b03736a8f29afd4de140d530",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "z0",
+      "seed": 4121,
+      "test_metric_top1": 0.1162,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/z0/seed-4121/classification_z0_seed4121_test.json",
+      "test_report_sha256": "06ae415abaf2e07015c3986756dde40e9520ab77f3a67dff043c06d354598fd8",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/z0/seed-4121/classification_z0_seed4121_report.json",
+      "training_report_sha256": "bc0401dd1e6f95130575bc431cbd3650b511411adb48ba94c4e2fa63453bed87",
+      "training_seconds_sum": 11849.68478615582,
+      "validation_seconds_sum": 1952.290422860533
+    },
+    {
+      "best_checkpoint_sha256": "c67d94ab4d0a89a05d1cf53b9272f757087a33a96fd95d66201092b3a1150fef",
+      "best_epoch": 78,
+      "best_primary_metric": 0.05811437403400309,
+      "last_checkpoint_sha256": "3c3da3611688ab70267e29df30adaee13e462ec4272aa19a53facd2e1abd5ee7",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "z0",
+      "seed": 7319,
+      "test_metric_top1": 0.0522,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/z0/seed-7319/classification_z0_seed7319_test.json",
+      "test_report_sha256": "b7cc76b89af0793a87c7e27fac29e94a7889064f48d4db905ef38df34c6ed1c9",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/z0/seed-7319/classification_z0_seed7319_report.json",
+      "training_report_sha256": "5c301449df12aca1e0ae7ba8f8305d339b00d31972aae2e5cd20fa9f62c6b84f",
+      "training_seconds_sum": 7986.203647930175,
+      "validation_seconds_sum": 951.8333739619702
+    },
+    {
+      "best_checkpoint_sha256": "dbdb57dd60b01b58e952fb615497a258b0c87bd0d08916e5336f8af9cd13b715",
+      "best_epoch": 83,
+      "best_primary_metric": 0.08191653786707882,
+      "last_checkpoint_sha256": "31f1a8f9e257084dd97ff2015765405f3a484ed22bca05b8dc75c1ff3421c85c",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "z0",
+      "seed": 104729,
+      "test_metric_top1": 0.075,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/z0/seed-104729/classification_z0_seed104729_test.json",
+      "test_report_sha256": "03d201c549290b64f09b054cb5c47543dc7b7cf99e9193cd6a2b811831c161ee",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/z0/seed-104729/classification_z0_seed104729_report.json",
+      "training_report_sha256": "38fb08763a7679c3909a0d347520617c3f8d7451d9998852c71534bd41127655",
+      "training_seconds_sum": 9915.575096933171,
+      "validation_seconds_sum": 1385.605292391032
+    },
+    {
+      "best_checkpoint_sha256": "c1e734e7ac64d9b38ac351ae92b0cb892830c6bed1cad7c86e322c065a89a7eb",
+      "best_epoch": 1,
+      "best_primary_metric": 0.010046367851622875,
+      "last_checkpoint_sha256": "9f8454fad0f60d5819517df37c5a7dfa3c8eee1b90905ee042febf4bda796dd7",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "zt",
+      "seed": 4121,
+      "test_metric_top1": 0.01,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/zt/seed-4121/classification_zt_seed4121_test.json",
+      "test_report_sha256": "005720cff5e8448187ab27cd92c4630208e8f31fcddf6081c90d2afaa1d9fad2",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/zt/seed-4121/classification_zt_seed4121_report.json",
+      "training_report_sha256": "4ae54f03149863643bb3ef3698471d650d55c9687ee21f0141ad2a54c69f89eb",
+      "training_seconds_sum": 9051.348339254037,
+      "validation_seconds_sum": 1220.3111193943769
+    },
+    {
+      "best_checkpoint_sha256": "9339f11d195410cb1547f8d7c9b3368b04fd02f2436e902cedc3346a7ffa732e",
+      "best_epoch": 78,
+      "best_primary_metric": 0.08918083462132921,
+      "last_checkpoint_sha256": "93e44432ff39c52a1fac3dd36ba6dfdb8ec18ed611109d6f307f6bbdbec9c0a5",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "zt",
+      "seed": 7319,
+      "test_metric_top1": 0.0872,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/zt/seed-7319/classification_zt_seed7319_test.json",
+      "test_report_sha256": "e2514f34e39d044e716a8cca5f941f760fd63882724c64c0124e685493a51c4a",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/zt/seed-7319/classification_zt_seed7319_report.json",
+      "training_report_sha256": "3de7259a4b34ffddda78ff5f4f3855316a607605f9082e536ff3f2b15943606f",
+      "training_seconds_sum": 10254.606823792681,
+      "validation_seconds_sum": 1341.306759096682
+    },
+    {
+      "best_checkpoint_sha256": "a85b6981be58fabb9727c8309d83b9714a2c39e2fc98e103b2fe9a9df51bfba7",
+      "best_epoch": 1,
+      "best_primary_metric": 0.010046367851622875,
+      "last_checkpoint_sha256": "b50f1c77792dd9feeaf9cc7127ca6cb2bfa937d0b2c7f2c6618567477c138517",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "zt",
+      "seed": 104729,
+      "test_metric_top1": 0.01,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/zt/seed-104729/classification_zt_seed104729_test.json",
+      "test_report_sha256": "a035f8fea58aff2f7fa0f5f34999f4b638855d7810ce1c0bee74a73a15f27449",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/zt/seed-104729/classification_zt_seed104729_report.json",
+      "training_report_sha256": "eb761d99c2b8903dc5e075a8667ae09bec8cce255350b0aecee30902aad513fd",
+      "training_seconds_sum": 9407.48262363486,
+      "validation_seconds_sum": 1349.6528728492558
+    },
+    {
+      "best_checkpoint_sha256": "1226b2cf7a78ed76fa8cfc75f27b1dd6512123b89c6a30169d3e3db0d8de8496",
+      "best_epoch": 83,
+      "best_primary_metric": 0.05811437403400309,
+      "last_checkpoint_sha256": "578922187d4de72b23152dcbac07ae2bc4c5ae29af16eb753a138b70edcf4034",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "trajectory",
+      "seed": 4121,
+      "test_metric_top1": 0.0558,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/trajectory/seed-4121/classification_trajectory_seed4121_test.json",
+      "test_report_sha256": "3b159eeae0eb1b2bf68c32321e154bcc9b28abdc3f491b260bd93bd45509b0e8",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/trajectory/seed-4121/classification_trajectory_seed4121_report.json",
+      "training_report_sha256": "6cddacfd5aec0291375e1519e0235a2ce68632bdf4647b1935369dfe334286f0",
+      "training_seconds_sum": 15537.0423264727,
+      "validation_seconds_sum": 2750.4739492628723
+    },
+    {
+      "best_checkpoint_sha256": "5f03d6e4279b4783bc716398a184af66ccef97ce268c0b466909248286ed00a7",
+      "best_epoch": 78,
+      "best_primary_metric": 0.09667697063369397,
+      "last_checkpoint_sha256": "5fed27ea84270e29992c4b614a7752059e07f035bd39878d1995fd140fca4b27",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "trajectory",
+      "seed": 7319,
+      "test_metric_top1": 0.0904,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/trajectory/seed-7319/classification_trajectory_seed7319_test.json",
+      "test_report_sha256": "1ed53aef6573c30e08e3ba25402741a6f7ce6731f27e665f73b7c0ecdfdf6ad9",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/trajectory/seed-7319/classification_trajectory_seed7319_report.json",
+      "training_report_sha256": "ace2fd3cd5c496e361c7a69b865172332400e63809a7cc5fe4f996b5c4c96a11",
+      "training_seconds_sum": 10560.99384727329,
+      "validation_seconds_sum": 1609.7807707823813
+    },
+    {
+      "best_checkpoint_sha256": "46989025fa5c212f6a8605429a2dacea89ac71f5c9ce2f649e6197dc7c768491",
+      "best_epoch": 84,
+      "best_primary_metric": 0.05795981452859351,
+      "last_checkpoint_sha256": "7fe2b621cfc65dcfbccf5dc3978705c0dd8e70df24ade68184d525f008c53712",
+      "problems": [
+        "test_checkpoint_path_mismatch"
+      ],
+      "representation": "trajectory",
+      "seed": 104729,
+      "test_metric_top1": 0.0502,
+      "test_num_samples": 5000,
+      "test_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/trajectory/seed-104729/classification_trajectory_seed104729_test.json",
+      "test_report_sha256": "95aae9acb670ed70af1c8a9563ac0d772d23f02fa81c73e768ad3e010d9776b7",
+      "training_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/trajectory/seed-104729/classification_trajectory_seed104729_report.json",
+      "training_report_sha256": "55b487463ede28792c6967714432c658c1e648675f39a2690bb3460160356a66",
+      "training_seconds_sum": 9276.92012534663,
+      "validation_seconds_sum": 1247.3329837806523
+    }
+  ],
+  "changes_scientific_verdict": false,
+  "completed_cells": 12,
+  "completed_optimizer_steps": 982800,
+  "completed_training_sample_exposures": 125771400,
+  "execution_complete": false,
+  "expected_cells": 12,
+  "expected_order": [
+    {
+      "representation": "random_feature_local",
+      "seed": 4121
+    },
+    {
+      "representation": "random_feature_local",
+      "seed": 7319
+    },
+    {
+      "representation": "random_feature_local",
+      "seed": 104729
+    },
+    {
+      "representation": "z0",
+      "seed": 4121
+    },
+    {
+      "representation": "z0",
+      "seed": 7319
+    },
+    {
+      "representation": "z0",
+      "seed": 104729
+    },
+    {
+      "representation": "zt",
+      "seed": 4121
+    },
+    {
+      "representation": "zt",
+      "seed": 7319
+    },
+    {
+      "representation": "zt",
+      "seed": 104729
+    },
+    {
+      "representation": "trajectory",
+      "seed": 4121
+    },
+    {
+      "representation": "trajectory",
+      "seed": 7319
+    },
+    {
+      "representation": "trajectory",
+      "seed": 104729
+    }
+  ],
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "fixed_revision_clean_tree_verified": true,
+  "intermediate_matrix_evidence_only": true,
+  "machine": "dsw-h200",
+  "matrix_report": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/imagenet100/matrix_report.json",
+  "matrix_report_sha256": "d6dfa5f2e50b8e96f8205c4a01162078113e2562afec41fb9fa312e243a350aa",
+  "matrix_status": "running",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-21T16:15:33.087628Z",
+  "physical_gpu": 6,
+  "problems": [
+    "random_feature_local/seed-4121:test_checkpoint_path_mismatch",
+    "random_feature_local/seed-7319:test_checkpoint_path_mismatch",
+    "random_feature_local/seed-104729:test_checkpoint_path_mismatch",
+    "z0/seed-4121:test_checkpoint_path_mismatch",
+    "z0/seed-7319:test_checkpoint_path_mismatch",
+    "z0/seed-104729:test_checkpoint_path_mismatch",
+    "zt/seed-4121:test_checkpoint_path_mismatch",
+    "zt/seed-7319:test_checkpoint_path_mismatch",
+    "zt/seed-104729:test_checkpoint_path_mismatch",
+    "trajectory/seed-4121:test_checkpoint_path_mismatch",
+    "trajectory/seed-7319:test_checkpoint_path_mismatch",
+    "trajectory/seed-104729:test_checkpoint_path_mismatch"
+  ],
+  "reported_order": [
+    {
+      "representation": "random_feature_local",
+      "seed": 4121
+    },
+    {
+      "representation": "random_feature_local",
+      "seed": 7319
+    },
+    {
+      "representation": "random_feature_local",
+      "seed": 104729
+    },
+    {
+      "representation": "z0",
+      "seed": 4121
+    },
+    {
+      "representation": "z0",
+      "seed": 7319
+    },
+    {
+      "representation": "z0",
+      "seed": 104729
+    },
+    {
+      "representation": "zt",
+      "seed": 4121
+    },
+    {
+      "representation": "zt",
+      "seed": 7319
+    },
+    {
+      "representation": "zt",
+      "seed": 104729
+    },
+    {
+      "representation": "trajectory",
+      "seed": 4121
+    },
+    {
+      "representation": "trajectory",
+      "seed": 7319
+    },
+    {
+      "representation": "trajectory",
+      "seed": 104729
+    }
+  ],
+  "schema_version": 1,
+  "scope": "imagenet100_first_12_completed_main_matrix_cells",
+  "stable_matrix_double_read": true,
+  "status": "failed"
+}

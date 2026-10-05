@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_at": "2026-08-23T11:50:31Z",
+  "machine": "dsw-h200",
+  "task": "ade20k",
+  "task_type": "segmentation",
+  "formal_retry_index": 2,
+  "assigned_physical_gpu": 7,
+  "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+  "fixed_base_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "analysis_worktree_clean": true,
+  "recovery_gate": {
+    "path": "artifacts/reports/ade20k_all_ignore_recovery_gate_20260823.json",
+    "sha256": "fe59df4ce274fb809dd12acb3f143872cdade242b102a7ce7ee2c0b8d703625d",
+    "status": "passed"
+  },
+  "protocol": {
+    "path": "docs/experiment_plans/2026-08-23_ade20k_all_ignore_recovery_protocol.md",
+    "sha256": "287081577fa60b5779c9b46e597655bf6e01da86349e48163d1f09f38ab34aa9"
+  },
+  "runtime_shim": {
+    "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/sitecompat-ade-all-ignore-f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4/sitecustomize.py",
+    "sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+    "sha256_verified_before_launch": true,
+    "loaded_in_cli_pythonpath": true,
+    "environment_identity": "FIELDSCOPE_ADE_ALL_IGNORE_SHIM_SHA256=f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+    "loaded_only_for_ade20k": true
+  },
+  "formal_contract": {
+    "epochs": 80,
+    "batch_size": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "segmentation_classes": 150,
+    "representations": 20,
+    "seeds": [
+      4121,
+      7319,
+      104729
+    ],
+    "seed_workers": 1,
+    "readout_memory_cache_gib": 0,
+    "dataset_samples_changed": false,
+    "sampler_changed": false,
+    "optimizer_step_budget_changed": false,
+    "sample_exposure_budget_changed": false
+  },
+  "processes": {
+    "parent": {
+      "pid": 3634680,
+      "pgid": 3634680,
+      "alive": true
+    },
+    "task_script": {
+      "pid": 3634697,
+      "ppid": 3634680,
+      "pgid": 3634680,
+      "alive": true
+    },
+    "matrix_script": {
+      "pid": 3634698,
+      "ppid": 3634697,
+      "pgid": 3634680,
+      "alive": true
+    },
+    "cli": {
+      "pid": 3634699,
+      "ppid": 3634698,
+      "pgid": 3634680,
+      "alive": true
+    },
+    "safety_monitor": {
+      "pid": 3635008,
+      "alive": true
+    },
+    "exit_evidence_monitor": {
+      "pid": 3639896,
+      "alive": true
+    },
+    "verified_process_group_exclusive_to_ade20k": true
+  },
+  "isolation": {
+    "parallel_scope": "cross_task_only",
+    "independent_lock": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock",
+    "independent_lock_held": true,
+    "pid_file_value": 3634680,
+    "duplicate_ade_writer_present": false,
+    "output_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k",
+    "output_files_at_audit": 0,
+    "guard_pause_present": true
+  },
+  "preserved_negative_evidence": {
+    "original_failure_log_overwritten": false,
+    "original_failure_audit_sha256": "f99e09df5876c2f703892a56322947538c4eac0b87cb7344f543c928859a95db",
+    "retry1_log_overwritten": false,
+    "retry1_exit_evidence_sha256": "aad83fc4aae8b5c5d67c5e0fffe9576ee07d04f28955a2712953ea417a779703",
+    "all_ignore_samples_retained": 16
+  },
+  "concurrent_formal_workers": {
+    "imagenet100": {
+      "physical_gpu": 6,
+      "cli_pid": 102910,
+      "terminal_cells": 13,
+      "active_representation": "velocity",
+      "active_seed": 7319,
+      "committed_epoch": 32
+    },
+    "voc2012": {
+      "physical_gpu": 7,
+      "cli_pid": 3925626,
+      "terminal_cells": 2,
+      "active_representation": "random_feature_local",
+      "active_seed": 104729,
+      "committed_epoch": 37
+    },
+    "nyuv2": {
+      "physical_gpu": 6,
+      "cli_pid": 2992183,
+      "terminal_cells": 0,
+      "active_representation": "random_feature_local",
+      "active_seed": 4121,
+      "committed_epoch": 8
+    }
+  },
+  "primary_recovery": {
+    "pid": 41610,
+    "alive": true,
+    "termination_contract": "If primary recovery exits while retry2 is alive, TERM the verified ADE20K process group, wait 15 seconds, then KILL the group if the CLI remains."
+  },
+  "atomic_epoch_committed_at_launch_audit": false,
+  "formal_progress_credited_at_launch_audit": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

@@ -1,0 +1,45 @@
+{
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "main_matrix_terminal_cells": {
+    "ade20k": 0,
+    "imagenet100": 13,
+    "nyuv2": 13,
+    "total": 38,
+    "voc2012": 12
+  },
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-25T06:56:00Z",
+  "problems": [
+    "primary_recovery_sequentially_enters_side_owned_datasets_after_imagenet100",
+    "primary_recovery_does_not_acquire_registered_per_task_side_worker_locks",
+    "side_worker_monitors_do_not_observe_primary_recovery_dataset_stage",
+    "cross_host_supervisors_can_restart_incomplete_side_workers_while_watchdog_is_active"
+  ],
+  "required_action": {
+    "deadline": "before_imagenet100_terminal_cells_reach_59_of_60",
+    "decision": "deploy_and_self_test_fail_closed_cross_lane_ownership_handback_gate",
+    "invariants": [
+      "do_not_modify_fixed_revision_worktrees",
+      "do_not_restart_current_formal_workers_during_gate_deployment",
+      "freeze_primary_recovery_parent_before_imagenet100_worker_exit",
+      "stop_side_worker_supervisors_before_releasing_side_worker_ownership",
+      "preserve_last_atomic_checkpoint_and_all_negative_evidence",
+      "resume_primary_recovery_only_after_cross_host_and_local_side_lane_acknowledgements"
+    ]
+  },
+  "runtime": {
+    "a800_cross_host_monitor_sha256": "a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306",
+    "a800_registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978",
+    "a800_supervisor_sha256": "5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66",
+    "h200_parallel_monitor_registry_sha256": "486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189",
+    "h200_parallel_monitor_sha256": "e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960",
+    "h200_primary_recovery_pid": 41610,
+    "h200_readout_recovery_wrapper_sha256": "98fc2baea7203d3c225a890deb6eb26307f4164deb8d94f1b73997b7b662f3e9"
+  },
+  "schema_version": 1,
+  "scope": "read_only_cross_lane_ownership_handback_preflight",
+  "status": "action_required",
+  "writes_to_formal_outputs": false
+}

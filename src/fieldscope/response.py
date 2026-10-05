@@ -189,13 +189,20 @@ class FieldResponseExtractor:
                 time_responses.append(pooled_response)
                 time_affinities.append(cosine_affinity(pooled_response))
                 if "dit_hidden" in auxiliary:
+                    pooled_hidden = patch_pool(
+                        auxiliary["dit_hidden"],
+                        self.config.graph_grid,
+                    )
                     time_baselines.setdefault("dit_hidden", []).append(
-                        fixed_gaussian_sketch(
-                            patch_pool(
-                                auxiliary["dit_hidden"],
-                                self.config.graph_grid,
-                            ),
-                            self.config.hidden_baseline_dim,
+                        torch.stack(
+                            [
+                                fixed_gaussian_sketch(
+                                    sample,
+                                    self.config.hidden_baseline_dim,
+                                )
+                                for sample in pooled_hidden
+                            ],
+                            dim=0,
                         )
                     )
                 if {

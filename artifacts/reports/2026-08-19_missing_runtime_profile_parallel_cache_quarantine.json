@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "evidence_scope": "quarantine_integrity_and_formal_ineligibility_only",
+  "observed_at": "2026-08-19T15:59:52Z",
+  "machine": "dsw-h200",
+  "physical_gpu": 6,
+  "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "failure_class": "missing_runtime_profile_environment",
+  "failure_reason": "The initial manual parallel launch omitted FIELDSCOPE_RUNTIME_PROFILE, so every produced manifest recorded runtime_profile=null.",
+  "formal_cache_eligibility": false,
+  "may_enter_formal_registry": false,
+  "quarantine_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/quarantine/2026-08-19_missing_runtime_profile_parallel_cache",
+  "total_files": 11,
+  "total_bytes": 447852409,
+  "all_files_present": true,
+  "all_file_sizes_recorded": true,
+  "all_sha256_recorded": true,
+  "manifests": [
+    {
+      "dataset": "ade20k",
+      "split": "test",
+      "original_pid": 72701,
+      "replacement_pid": 83444,
+      "status": "running",
+      "complete": false,
+      "num_samples": 64,
+      "shards": 1,
+      "runtime_profile": null
+    },
+    {
+      "dataset": "ade20k",
+      "split": "val",
+      "original_pid": 72691,
+      "replacement_pid": 83442,
+      "status": "running",
+      "complete": false,
+      "num_samples": 64,
+      "shards": 1,
+      "runtime_profile": null
+    },
+    {
+      "dataset": "nyuv2",
+      "split": "test",
+      "original_pid": 72699,
+      "replacement_pid": 83450,
+      "status": "running",
+      "complete": false,
+      "num_samples": 64,
+      "shards": 1,
+      "runtime_profile": null
+    },
+    {
+      "dataset": "nyuv2",
+      "split": "train",
+      "original_pid": 72695,
+      "replacement_pid": 83446,
+      "status": "running",
+      "complete": false,
+      "num_samples": 64,
+      "shards": 1,
+      "runtime_profile": null
+    },
+    {
+      "dataset": "nyuv2",
+      "split": "val",
+      "original_pid": 72696,
+      "replacement_pid": 83448,
+      "status": "passed",
+      "complete": true,
+      "num_samples": 80,
+      "shards": 2,
+      "runtime_profile": null
+    }
+  ],
+  "files": [
+    {
+      "path": "ade20k_test/dataset_manifest.json",
+      "bytes": 3612,
+      "sha256": "cc1f2781704bcb4e280181d9cc384d27b1e46a821e92dea6647f0ef908acb310"
+    },
+    {
+      "path": "ade20k_test/shard-00000000-00000064.pt",
+      "bytes": 54149961,
+      "sha256": "285463d53e60f2a62d87c65604e3bb9904f7d4ff5ef7c07be209d4583f54f242"
+    },
+    {
+      "path": "ade20k_val/dataset_manifest.json",
+      "bytes": 3609,
+      "sha256": "6bae39ef94754c3ac24a93fa0afd5822487aec077581a8c5d099ea97ab4125fe"
+    },
+    {
+      "path": "ade20k_val/shard-00000000-00000064.pt",
+      "bytes": 54157001,
+      "sha256": "9785cf5c5faf6b6617fd7b3b1c5d7d8e2884d99968e882709cd46742d7d7241a"
+    },
+    {
+      "path": "nyuv2_test/dataset_manifest.json",
+      "bytes": 3613,
+      "sha256": "f160635c6245d448b0826ae60445f132bb11c089a015b5d2b7e71af1d0853b89"
+    },
+    {
+      "path": "nyuv2_test/shard-00000000-00000064.pt",
+      "bytes": 104463241,
+      "sha256": "0a6b47ac7e10911fd4bb836203e16d0de8ee5c43e8a93c3cc3f8ab645d2887c3"
+    },
+    {
+      "path": "nyuv2_train/dataset_manifest.json",
+      "bytes": 3614,
+      "sha256": "4ad70dc314a5bb1d345b1c8c0ca854f20dbac21f24b5fcf02b3e8a70136fcd95"
+    },
+    {
+      "path": "nyuv2_train/shard-00000000-00000064.pt",
+      "bytes": 104474889,
+      "sha256": "fdf25a32d26f25b2728db0c926d5819157df1e709d26507af381d4174fddb780"
+    },
+    {
+      "path": "nyuv2_val/dataset_manifest.json",
+      "bytes": 3987,
+      "sha256": "9754fd587ae094fbcbd9bb0b8524e2232a91ca029df2e1b97a77771779a6e9e3"
+    },
+    {
+      "path": "nyuv2_val/shard-00000000-00000064.pt",
+      "bytes": 104470217,
+      "sha256": "f3d6c106f73f65c8508769816a0c864a395e05b06e9def2b8d08785fad73f347"
+    },
+    {
+      "path": "nyuv2_val/shard-00000064-00000080.pt",
+      "bytes": 26118665,
+      "sha256": "ab32555c7790f0aeef25a335758c8c8a7d44d677d7f75d9f77872f84bad89867"
+    }
+  ],
+  "corrected_runtime_profile_sha256": "8e36dc71a2110b48ee05e05b12e8fe38bd88105a992d923ead053c37e4d5e37f",
+  "corrected_outputs_recomputed_from_empty": true,
+  "quarantined_outputs_reused": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

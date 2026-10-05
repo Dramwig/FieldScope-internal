@@ -1,0 +1,139 @@
+{
+  "active_reports_at_stop": {
+    "ade20k": "random_feature_local/seed-4121 epoch 35/80 report stable, status running",
+    "imagenet100": "velocity/seed-7319 epoch 82/90 report stable, status running",
+    "nyuv2": "response_nograph/seed-7319 report stable, status passed 80/80 (terminal audit pending reconciliation)",
+    "voc2012": "state_nograph/seed-7319 report stable, status passed 80/80 (terminal audit pending reconciliation)"
+  },
+  "all_formal_locks_free": true,
+  "all_target_process_groups_empty": true,
+  "audit_files": [
+    {
+      "actions": [
+        {
+          "label": "h200_cross_lane_handback_supervisor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "atomic_audit_watcher",
+          "members_after": 0,
+          "members_before": 1,
+          "sigkill_sent": false
+        },
+        {
+          "label": "ade20k_parallel_monitor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "ade20k_worker_group",
+          "members_after": 0,
+          "members_before": 4,
+          "sigkill_sent": false
+        },
+        {
+          "label": "h200_recovery_imagenet_watchdog_analyzer_group",
+          "members_after": 0,
+          "members_before": 11,
+          "sigkill_sent": false
+        }
+      ],
+      "host": "dsw-h200",
+      "observed_at": "2026-08-26T14:27:55.911910+00:00",
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/FieldScope-internal/artifacts/reports/controlled_shutdown_20260826T142749Z_h200.json",
+      "problems": [],
+      "sha256": "6861ce3d31639990e642a583af553e4ffe66ea6e7db038acb3b8a38e4f32dddc",
+      "status": "passed"
+    },
+    {
+      "actions": [
+        {
+          "label": "a800_cross_lane_handback_supervisor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "voc2012_cross_host_supervisor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "nyuv2_cross_host_supervisor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "voc2012_cross_host_monitor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "nyuv2_cross_host_monitor",
+          "members_after": 0,
+          "members_before": 2,
+          "sigkill_sent": false
+        },
+        {
+          "label": "voc2012_worker_group",
+          "members_after": 0,
+          "members_before": 3,
+          "sigkill_sent": false
+        },
+        {
+          "label": "nyuv2_worker_group",
+          "members_after": 0,
+          "members_before": 3,
+          "sigkill_sent": false
+        }
+      ],
+      "host": "dsw-M3Call",
+      "observed_at": "2026-08-26T14:28:00.059471+00:00",
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/FieldScope-internal/artifacts/reports/controlled_shutdown_20260826T142751Z_a800.json",
+      "problems": [],
+      "sha256": "2e7fc0bee37dc434c9610d3012fc68f9517a5f5fb5ab47c6f832793a1aae4ece",
+      "status": "passed"
+    }
+  ],
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "experiment_status": "paused_by_user",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "hosts": [
+    "dsw-h200",
+    "dsw-M3Call"
+  ],
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-26T14:29:55.738556+00:00",
+  "operational_files": {
+    "a800_heartbeat_sha256": "f6723744e2ca3660344c0770ee0b7d27ecd55c98d8d528abe466682537cb731c",
+    "h200_heartbeat_sha256": "1a8f632d39d8efc9b299441a4b5db50bbfc3dd6c4c71adec6a1d25e15918c6c3",
+    "watchdog_state_sha256": "24f0b8b0439708f5f611026e3124872247f46d302f8d29e8d52b70fe18827be1"
+  },
+  "problems": [],
+  "schema_version": 1,
+  "scope": "fieldscope_controlled_shutdown_cross_host",
+  "sigkill_used": false,
+  "state": {
+    "audited_count": 897,
+    "failures": [],
+    "observed_at": "2026-08-26T14:26:43.026717Z",
+    "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/state.json",
+    "sha256": "44cce2d2bfc02907fecb66b3d4a9ac1126f2accfb517b631d1274eb1796aca4c",
+    "status": "active",
+    "terminal_counts": {
+      "imagenet100": 13,
+      "nyuv2": 34,
+      "voc2012": 27
+    },
+    "terminal_total": 74,
+    "transient_audit_races": 25
+  },
+  "status": "passed"
+}

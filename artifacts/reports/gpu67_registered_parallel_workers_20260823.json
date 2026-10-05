@@ -1,0 +1,40 @@
+{
+  "schema_version": 1,
+  "status": "active",
+  "scope": "registered_cross_task_parallel_workers_for_fixed_revision_recovery_handoff",
+  "observed_at": "2026-08-23T15:10:00Z",
+  "supersedes_registry_sha256": "50bc7d697ae4fc152431d6f9eecd1c634d271285e64a9f9b7c6be49936d2e02d",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+  "per_task_seed_workers": 1,
+  "workers": {
+    "voc2012": {
+      "worker_pid": 1571769,
+      "worker_start_time_ticks": 778733472,
+      "pgid": 1571730,
+      "physical_gpu": 7,
+      "expected_output_dir": "outputs/full_validation/auraflow_v03/voc2012",
+      "expected_train_cache_suffix": "/feature_cache/auraflow_v03/voc2012_train"
+    },
+    "nyuv2": {
+      "worker_pid": 1571768,
+      "worker_start_time_ticks": 778733472,
+      "pgid": 1571732,
+      "physical_gpu": 6,
+      "expected_output_dir": "outputs/full_validation/auraflow_v03/nyuv2",
+      "expected_train_cache_suffix": "/feature_cache/auraflow_v03/nyuv2_train"
+    },
+    "ade20k": {
+      "worker_pid": 1571772,
+      "worker_start_time_ticks": 778733476,
+      "pgid": 1571745,
+      "physical_gpu": 7,
+      "expected_output_dir": "outputs/full_validation/auraflow_v03/ade20k",
+      "expected_train_cache_suffix": "/feature_cache/auraflow_v03/ade20k_train",
+      "ade_all_ignore_shim_sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4"
+    }
+  },
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

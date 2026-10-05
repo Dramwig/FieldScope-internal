@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "live_cross_lane_ownership_handback_gate_deployment",
+  "observed_at": "2026-08-25T07:57:41Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gate_script_sha256": "901ad669add8a52cc900868582383b6adc045949a35d9d377a37d8d4547a6ce5",
+  "supervisor_script_sha256": "cd15dfcc12482f8d5e53aa80e80f7b3567e8ba9ebb41d3b2ffc346a62e9cfc47",
+  "h200": {
+    "registration_sha256": "05a7a31c78f74857ffded941af177a435c2d65a24b0a1afa42ce86b03f12a07c",
+    "heartbeat_sha256": "806bab52f18768dde1eb6645a4278483e63854aa5d515e55f1746f6e3739eb75",
+    "supervisor_pid": 1243084,
+    "gate_child_pid": 1243387,
+    "decision": "monitor",
+    "image_terminal_cells": 13,
+    "formal_recovery_pid": 41610,
+    "ade_worker_pid": 1571772
+  },
+  "a800": {
+    "registration_sha256": "f9698abc16a892355244238e135987c6470c299d045af1033c21106223716761",
+    "heartbeat_sha256": "02bdcd80a661ebf2d532c27f33344305c64767a5cd44babe6cd37f65e32a0c5d",
+    "supervisor_pid": 226373,
+    "gate_child_pid": 226399,
+    "worker_pids": {"nyuv2": 53492, "voc2012": 53491}
+  },
+  "preconditions": {
+    "formal_worktree_fixed_revision_and_clean": true,
+    "analysis_worktree_fixed_revision_and_clean": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1,
+    "current_formal_workers_restarted": false,
+    "release_request_exists": false,
+    "release_ack_exists": false,
+    "release_complete_exists": false
+  },
+  "verification": {
+    "gate_unit_tests": "14 passed",
+    "ruff": "passed",
+    "bash_syntax": "passed",
+    "full_pytest": "208 passed in 271.87s",
+    "toy_smoke": "passed; cache_reload_equal=true"
+  },
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

@@ -1,0 +1,76 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "incremental_cross_host_pretrigger_absence_recheck",
+  "observed_at": "2026-08-26T07:22:42.879075+00:00",
+  "machine": "dsw-h200",
+  "side_worker_machine": "dsw-M3Call",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260826T072200Z.json",
+    "sha256": "068078b0d06c6e3d2e62337fe8ee0c498f74737cb099a5def8cf6aa5eb435d48",
+    "observed_at": "2026-08-26T07:20:30.977716Z",
+    "status": "passed",
+    "accepted_intermediate_audits": 804,
+    "transient_audit_races": 25,
+    "unresolved_failures": 0,
+    "terminal_cells": 67,
+    "required_terminal_cells": 240,
+    "active_boundaries": {
+      "ade20k": "30",
+      "imagenet100": "75",
+      "nyuv2": "37",
+      "voc2012": "32"
+    },
+    "execution_complete": false,
+    "changes_scientific_verdict": false
+  },
+  "live_identity_recheck": {
+    "h200_pids_checked": [
+      41610,
+      41096,
+      41355,
+      1542686,
+      102910,
+      1571772,
+      470616,
+      3931791
+    ],
+    "h200_processes_alive": true,
+    "a800_heartbeat_identity_valid": true,
+    "all_required_processes_alive": true,
+    "formal_revision_matches": true,
+    "formal_worktree_clean": true,
+    "analysis_revision_matches": true,
+    "analysis_worktree_clean": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1
+  },
+  "cross_lane_handback": {
+    "h200_status": "passed",
+    "h200_decision": "monitor",
+    "h200_heartbeat_sha256": "39914d122226c4589839b549ff1226e4c6a4778c2ec1e737e9e564fa3b7872c4",
+    "a800_status": "armed",
+    "a800_heartbeat_sha256": "858df5de0bdb58ca96cf767c7b70273d0004e3854a84bb69e2e2a01caa335738",
+    "a800_registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978"
+  },
+  "premature_artifacts_absent": {
+    "main_evidence": true,
+    "causal_evidence": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "error_registry": true,
+    "completion_audit": true
+  },
+  "preserved_evidence": {
+    "operational_failures_preserved": true,
+    "transient_audit_races": 25,
+    "unresolved_failures": 0
+  },
+  "gate_decision": "wait_for_all_240_main_matrix_cells",
+  "downstream_triggered": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

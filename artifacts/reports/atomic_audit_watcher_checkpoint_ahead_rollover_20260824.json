@@ -1,0 +1,97 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "atomic_watcher_checkpoint_ahead_race_classification_and_live_rollover",
+  "observed_at": "2026-08-24T14:04:28Z",
+  "machine": "dsw-h200",
+  "side_worker_machine": "dsw-M3Call",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "verification": {
+    "ruff_full": "passed",
+    "targeted_pytest": "4 passed in 3.81s",
+    "full_pytest": "182 passed in 2854.28s",
+    "toy_smoke_status": "passed",
+    "toy_smoke_steps": 2,
+    "toy_smoke_backend": "fieldscope/toy-coupled-field-v1",
+    "toy_smoke_device": "cpu",
+    "toy_smoke_cache_fingerprint": "f7881f40692de360319050166ea24c31bcbf5567caccf5e7e8648919f40dbf61",
+    "toy_smoke_cache_reload_equal": true
+  },
+  "classified_race": {
+    "key": "voc2012/z0/seed-104729/epoch-55",
+    "expected_epoch": 55,
+    "checkpoint_epoch": 56,
+    "confirmed_epoch": 58,
+    "classification": "checkpoint_ahead_of_stable_report_confirmed_by_later_strong_audit",
+    "failed_audit_sha256": "09bce9d05511805f18ae959db99014795cb31984553bef9709c035edc0f37d76",
+    "confirmation_audit_sha256": "7d7f2a06dde816ea438b92e8ea15411335b5f49c005e3d60ce788feca316c210",
+    "failed_artifact_preserved": true,
+    "unresolved_scientific_failure": false
+  },
+  "rollover": {
+    "old_watcher_pid": 2393317,
+    "old_watcher_sha256": "aa95c36ac9edbae4ac38656c2c67c77fd3b016a95da0e4e6e7ce256e8e2e2c27",
+    "new_watcher_pid": 1542686,
+    "new_watcher_sha256": "00a04df6d6eae0ddcd13a4a57f74f8222842d1954b4a3400a8a9819fa44253c7",
+    "only_atomic_watcher_restarted": true,
+    "formal_workers_restarted": false,
+    "h200_recovery_pid_unchanged": 41610,
+    "h200_imagenet100_pid_unchanged": 102910,
+    "h200_ade20k_pid_unchanged": 1571772,
+    "a800_nyuv2_pid_unchanged": 53492,
+    "a800_voc2012_pid_unchanged": 53491,
+    "a800_nyuv2_supervisor_pid_unchanged": 61255,
+    "a800_voc2012_supervisor_pid_unchanged": 61253
+  },
+  "watcher_state": {
+    "pre_rollover_path": "artifacts/reports/atomic_audit_watcher_state_pre_rollover_20260824T135843Z.json",
+    "pre_rollover_sha256": "4c68074e02f58420d251384fb0ed0cb2965f956ab56b6036a9a72a51cb55d001",
+    "pre_rollover_observed_at": "2026-08-24T13:50:34.006262Z",
+    "pre_rollover_accepted_intermediate_audits": 297,
+    "pre_rollover_terminal_audits": 20,
+    "pre_rollover_unresolved_failures": 1,
+    "pre_rollover_transient_audit_races": 4,
+    "post_rollover_path": "artifacts/reports/atomic_audit_watcher_state_post_rollover_20260824T140028Z.json",
+    "post_rollover_sha256": "44b6d6336f78f9624e2bf215da0a5d3446a68997516cc21e3fe8b916354a35bc",
+    "post_rollover_observed_at": "2026-08-24T14:00:22.190036Z",
+    "post_rollover_accepted_intermediate_audits": 299,
+    "post_rollover_terminal_audits": 20,
+    "post_rollover_unresolved_failures": 0,
+    "post_rollover_transient_audit_races": 5
+  },
+  "atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260824T140028Z.json",
+    "sha256": "abc1d3e53e4fc354850c810a773d9948707780667c2244570a616f5b17827484",
+    "status": "passed",
+    "accepted_intermediate_audits": 299,
+    "terminal_cells": 20,
+    "required_terminal_cells": 240,
+    "unresolved_failures": 0,
+    "transient_audit_races": 5,
+    "active_boundaries": {
+      "imagenet100": 45,
+      "ade20k": 8,
+      "nyuv2": 45,
+      "voc2012": 63
+    },
+    "execution_complete": false,
+    "changes_scientific_verdict": false
+  },
+  "guards": {
+    "formal_worktree_clean": true,
+    "analysis_worktree_clean": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1,
+    "premature_downstream_artifacts_absent": true,
+    "downstream_triggered": false
+  },
+  "operational_throughput": {
+    "nyuv2_a800_vs_h200_speedup": 2.76,
+    "voc2012_a800_vs_h200_speedup": 1.07,
+    "decision": "retain_four_independent_task_lanes_across_h200_and_a800"
+  },
+  "method_effectiveness_conclusion": null,
+  "execution_complete": false,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

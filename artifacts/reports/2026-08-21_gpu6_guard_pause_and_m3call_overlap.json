@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-08-21T13:54:42Z",
+  "status": "active",
+  "machine": "dsw-h200",
+  "physical_gpu": 6,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "fieldscope_worker_pid": 102910,
+  "fieldscope_active_cell": {
+    "task": "imagenet100",
+    "representation": "velocity",
+    "seed": 4121,
+    "committed_epoch": 85,
+    "target_epochs": 90
+  },
+  "resource_guard": {
+    "pid": 1813,
+    "monitor_alive": true,
+    "gpu6_pause_file": "/mnt/omni_ssd/user_workspace/wangzixi/tools/dsw_resource_guard/run/interactive-eouhw7dc45t3-9576ccc4b-stg7v/gpu.6.pause",
+    "gpu6_state": "paused",
+    "pause_scope": "device",
+    "other_gpus_unchanged": true,
+    "reason": "Automatic 25-percent yielding repeatedly measured the cached readout below threshold and restarted the large-matmul occupier, so the documented per-device pause interface was used without stopping the guard monitor."
+  },
+  "external_overlap": {
+    "project": "M3Call",
+    "launcher_pid": 1841281,
+    "gpu6_pid": 1841812,
+    "gpu7_pid": 1841813,
+    "gpu6_memory_mib": 61064,
+    "gpu6_observed_sm_percent_range": [8, 16],
+    "command_scope": "omnicall AVA natural-512 regression audit",
+    "ended_observed_at": "2026-08-21T13:58:19Z",
+    "ended_naturally": true,
+    "terminated_by_fieldscope": false,
+    "scientific_effect": "not_inferred"
+  },
+  "fieldscope_continuity": {
+    "worker_alive": true,
+    "watchdog_alive": true,
+    "report_still_running": true,
+    "report_committed_epoch": 85,
+    "rchar_growth_observed": true
+  },
+  "scientific_verdict": null,
+  "changes_scientific_verdict": false
+}

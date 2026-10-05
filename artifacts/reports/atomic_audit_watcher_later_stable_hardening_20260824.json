@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "external_atomic_audit_watcher_later_stable_confirmation_hardening",
+  "observed_at": "2026-08-24T08:50:58.418160Z",
+  "machine": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "training_workers_restarted": false,
+  "training_outputs_modified": false,
+  "old_watcher_pid": 1870499,
+  "new_watcher_pid": 2197616,
+  "old_watcher_sha256": "e02012a02729ebbba6f0a3c2b85f81bb0770a68df251219e8aa1c442a0057c55",
+  "new_watcher_sha256": "840c8128924693f894c7f3deafddf52b376bb5b89ac61a4f61b3a060e92c2376",
+  "old_state_sha256": "6d8394b20c5becbe28e2001374022f1d6b15670389ad1eaa8b7e89df082c0842",
+  "new_state_sha256": "b69c2894fac644a2d6f220544468b2e6201d66ad707cdbfce6f1a0e45585acc9",
+  "accepted_intermediate_audits": 236,
+  "terminal_cells": 18,
+  "failures_before": 2,
+  "failures_after": 0,
+  "transient_audit_races_before": 2,
+  "transient_audit_races_after": 4,
+  "classification_requirements": {
+    "failed_problems_limited_to_unstable_observation_or_epoch_advance": true,
+    "failed_report_checkpoint_history_equal": true,
+    "later_same_cell_audit_status_passed": true,
+    "later_same_cell_all_checks_true": true,
+    "identity_fields_equal": true,
+    "optimizer_steps_monotonic": true,
+    "training_sample_exposures_monotonic": true,
+    "failed_artifact_preserved": true
+  },
+  "classified_failures": [
+    {
+      "key": "nyuv2/random_feature_local/seed-7319/epoch-68",
+      "failed_audit_sha256": "93914d8138ba7072b9e8ecaa90648160176b6ea339da3997440b40effe280c64",
+      "confirmation_epoch": 70,
+      "confirmation_audit_sha256": "da39afb710fd554a868d43e5f71a3bd381eaaa2257fdd02be4fcd5efa318bd44",
+      "unresolved_scientific_failure": false
+    },
+    {
+      "key": "voc2012/z0/seed-7319/epoch-66",
+      "failed_audit_sha256": "abb4bfe5b1612c7ef971b20c3ab81203e4210309ebab945c52a3a0a61b1d04eb",
+      "confirmation_epoch": 69,
+      "confirmation_audit_sha256": "40117fa6e2f8842898e3e8ba383390cf0654c10e61d1ba1e726f0343dcea1f0e",
+      "unresolved_scientific_failure": false
+    }
+  ],
+  "verification": {
+    "targeted_pytest": "2 passed",
+    "ruff": "passed",
+    "real_artifact_read_only_replay": "passed"
+  },
+  "problems": [],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

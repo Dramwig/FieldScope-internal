@@ -1,0 +1,31 @@
+{
+  "audited": {
+    "imagenet100/velocity/seed-7319/epoch-32": {
+      "observed_at": "2026-08-23T10:59:47.058670Z",
+      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/imagenet100_velocity_seed7319_epoch32_strong_audit.json",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/imagenet100_velocity_seed7319_epoch32_strong_audit.json\",\n  \"sha256\": \"11b25450bf680bee13e7fbdc4afb4b279f1425bab82fa53f01f349ab0eddc07b\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
+    },
+    "nyuv2/random_feature_local/seed-4121/epoch-2": {
+      "observed_at": "2026-08-23T10:59:47.058670Z",
+      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed4121_epoch2_strong_audit.json",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed4121_epoch2_strong_audit.json\",\n  \"sha256\": \"7fefd030ed9903639ff908ee32a243b3d7167a7bedc90746bac18edeb0b04545\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
+    },
+    "voc2012/random_feature_local/seed-104729/epoch-34": {
+      "observed_at": "2026-08-23T10:59:47.058670Z",
+      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_random_feature_local_seed104729_epoch34_strong_audit.json",
+      "returncode": 0,
+      "stderr": "",
+      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_random_feature_local_seed104729_epoch34_strong_audit.json\",\n  \"sha256\": \"95a0dcd36eab6f87e444063d33099be3cb7e6e51813fb7ea9f460039d570861f\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
+    }
+  },
+  "changes_scientific_verdict": false,
+  "failures": [],
+  "observed_at": "2026-08-23T10:59:47.058670Z",
+  "recovery_pid": 41610,
+  "schema_version": 1,
+  "status": "active"
+}

@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "formal_readout_cross_host_worker_ownership_handoff",
+  "observed_at": "2026-08-24T10:48:46Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "source_host": "dsw-h200",
+  "destination_ssh_alias": "dsw-M3Call",
+  "destination_runtime_hostname": "interactive-upozjqcdg5ie-57fcf4446c-tvk2d",
+  "partition": {
+    "dsw-h200/physical_gpu_6": "imagenet100",
+    "dsw-h200/physical_gpu_7": "ade20k",
+    "dsw-M3Call/physical_gpu_0": "nyuv2",
+    "dsw-M3Call/physical_gpu_1": "voc2012"
+  },
+  "destination_gpus": {
+    "nyuv2": {
+      "physical_gpu": 0,
+      "uuid": "GPU-be5276b3-290c-8ed6-3776-fee7c4fc506b",
+      "name": "NVIDIA A800-SXM4-80GB"
+    },
+    "voc2012": {
+      "physical_gpu": 1,
+      "uuid": "GPU-cef35e91-7538-4d6b-20e0-486a39e282ee",
+      "name": "NVIDIA A800-SXM4-80GB"
+    }
+  },
+  "source_workers": {
+    "nyuv2": {
+      "worker_pid": 1571768,
+      "pgid": 1571732,
+      "worker_start_time_ticks": 778733472,
+      "last_accepted_epoch": 5,
+      "last_strong_audit_sha256": "01fde511d5af232be3455fea9505eb80f34cf00040f136377257a7c562c7b245",
+      "exit_audit_sha256": "f251c6e3f427829c88cfa069ffe518ff81f4a0346daa5ba9b179fdc109860edc"
+    },
+    "voc2012": {
+      "worker_pid": 1571769,
+      "pgid": 1571730,
+      "worker_start_time_ticks": 778733472,
+      "last_accepted_epoch": 24,
+      "last_strong_audit_sha256": "61771ea4b46f402f2af1601fc656a1583be716c9b087d7038f7681bef6f23415",
+      "exit_audit_sha256": "ab438fa7cc045ad1b57ad646a1571c257a42dea5dff3d40480b8176920f72a13"
+    }
+  },
+  "destination_workers": {
+    "nyuv2": {
+      "worker_pid": 53492,
+      "pgid": 53467,
+      "worker_start_time_ticks": 163542700,
+      "first_accepted_epoch": 7,
+      "first_strong_audit_sha256": "c4995863ba906a1a3104f40f41da268875fa1c8fe5b13f58c3fdf8cd2fbbe694",
+      "monitor_pid": 55616
+    },
+    "voc2012": {
+      "worker_pid": 53491,
+      "pgid": 53466,
+      "worker_start_time_ticks": 163542700,
+      "first_accepted_epoch": 26,
+      "first_strong_audit_sha256": "13c709df32585b720918705cc0b9fdde4ebb1c5d51d5a3a7d481cc6c53d61f5e",
+      "monitor_pid": 55621
+    }
+  },
+  "ownership": {
+    "cross_host_flock_passed": true,
+    "old_workers_absent_before_destination_launch": true,
+    "destination_locks_held": true,
+    "duplicate_dataset_writer_observed": false,
+    "per_task_seed_workers": 1,
+    "uncommitted_source_epoch_work_may_have_been_discarded": true,
+    "accepted_checkpoint_or_report_rewritten_or_deleted_by_handoff": false
+  },
+  "continuity": {
+    "nyuv2_history_contiguous_through_epoch": 7,
+    "voc2012_history_contiguous_through_epoch": 26,
+    "post_handoff_strong_audits_passed": true,
+    "unresolved_failures": 0,
+    "changes_scientific_verdict": false
+  },
+  "checks": {
+    "formal_worktree_clean": true,
+    "analysis_worktree_clean": true,
+    "fixed_revision_matches": true,
+    "shared_watchdog_heartbeat_passed": true,
+    "registered_worker_identity_selftests_passed": true,
+    "cache_manifests_preflight_passed": true,
+    "atomic_ledger_reconstruction_passed": true
+  },
+  "artifacts": {
+    "readiness_report": "artifacts/reports/dsw_m3call_a800_cross_host_readiness_20260824.json",
+    "registration_failure": "artifacts/reports/dsw_m3call_a800_registration_attempt1_non_authoritative_failed_20260824.json",
+    "worker_registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978",
+    "launcher_sha256": "0b4efd4dc22941cba02fc6f44d41cfe443864c3e1e4bfc2f4273fa10aa368abf",
+    "monitor_sha256": "a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306",
+    "heartbeat_helper_sha256": "7d25c2e51f1d9cc880c0ad486f30abbfd20689f29d6ffad33918a172ab0e728b",
+    "worker_registrar_sha256": "38db57548bc51725ef97039cafb312635ba5b673d560bd3d1a2862f85ce4f84b"
+  },
+  "monitor_rollover": {
+    "observed_at": "2026-08-24T10:57:53Z",
+    "reason": "distinguish a live worker with invalid identity from a normally exited worker",
+    "superseded_monitor_sha256": "b108f81d57f6ac2245ee9b26f8000df8801a6f8d1870e7717a8f74bfef433093",
+    "superseded_monitor_pids": [54412, 54419],
+    "replacement_monitor_pids": [55616, 55621],
+    "replacement_completed_full_poll": true,
+    "formal_workers_restarted": false
+  },
+  "verification": {
+    "observed_at": "2026-08-24T11:18:26Z",
+    "ruff": {
+      "status": "passed",
+      "scope": "src tests scripts"
+    },
+    "pytest": {
+      "status": "passed",
+      "tests": 180,
+      "seconds": 957.5
+    },
+    "toy_smoke": {
+      "status": "passed",
+      "steps": 2,
+      "cache_reload_equal": true,
+      "cache_fingerprint": "f7881f40692de360319050166ea24c31bcbf5567caccf5e7e8648919f40dbf61"
+    }
+  },
+  "post_verification_atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260824T111758Z.json",
+    "sha256": "2f5e5a16d64a41c2216f6e75a3462bab5fadac7b7f1dadec984abbb8f7401dd2",
+    "observed_at": "2026-08-24T11:17:58.888727Z",
+    "accepted_intermediate_audits": 267,
+    "terminal_cells": 20,
+    "active_epochs": {
+      "imagenet100": 43,
+      "ade20k": 7,
+      "nyuv2": 17,
+      "voc2012": 35
+    },
+    "unresolved_failures": 0,
+    "status": "passed",
+    "execution_complete": false
+  },
+  "atomic_ledger": {
+    "observed_at": "2026-08-24T10:47:30.723705Z",
+    "accepted_intermediate_audits": 261,
+    "terminal_cells": 20,
+    "unresolved_failures": 0,
+    "status": "passed",
+    "execution_complete": false
+  },
+  "problems": [],
+  "migration_executed": true,
+  "formal_workers_started_on_a800": true,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

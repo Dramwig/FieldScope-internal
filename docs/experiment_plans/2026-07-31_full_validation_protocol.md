@@ -43,8 +43,10 @@
   768→hidden 投影；`full` 在该投影前无参数融合，DiT hidden cache 也固定为
   768 维；
 - 特征按样本 ID 分片缓存；模型抽取 batch 由上述 gate 固定，cache shard 固定为 64，训练按 shard
-  分组洗牌并使用固定容量 LRU；pro6000 的同一 readout matrix 进程允许最多 160 GiB
-  只读内存 cache，任务头训练不重复调用生成主干；
+  分组洗牌并使用固定容量 LRU；原 `pro6000` 执行时同一 readout matrix 进程允许最多
+  160 GiB 只读内存 cache，该数字只属于旧机器资源门。迁移到 `dsw-h200` 后必须在
+  看到任何新任务指标前重新执行 readout runtime gate，记录当前可见 GPU、主机内存、
+  worker 数与新 profile，不能直接沿用 160 GiB；任务头训练不重复调用生成主干；
 - 非方形图像及密集标签保持纵横比，将短边缩放到目标分辨率后做配对中心方形裁剪；
 - 无监督图诊断使用 `dense` cache；监督 readout 使用 `readout_sparse`，后者仅无损
   打包实际使用的加权 adjacency，不保留未被监督 tokenizer 读取的 dense affinity。

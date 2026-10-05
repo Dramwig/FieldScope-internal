@@ -1,0 +1,109 @@
+{
+  "schema_version": 1,
+  "status": "running",
+  "scope": "non_authoritative_a800_imagenet100_ade20k_one_epoch_throughput_benchmark",
+  "observed_at": "2026-08-25T08:17:30Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "scientific_authority": false,
+  "host": {
+    "ssh_alias": "dsw-M3Call",
+    "runtime_hostname": "interactive-upozjqcdg5ie-57fcf4446c-tvk2d",
+    "pytorch": "2.7.1+cu126",
+    "cuda": "12.6",
+    "logical_cpus": 128,
+    "memory_tib": 2.0,
+    "gpus": [
+      {"physical_index": 0, "name": "NVIDIA A800-SXM4-80GB", "uuid": "GPU-be5276b3-290c-8ed6-3776-fee7c4fc506b"},
+      {"physical_index": 1, "name": "NVIDIA A800-SXM4-80GB", "uuid": "GPU-cef35e91-7538-4d6b-20e0-486a39e282ee"}
+    ]
+  },
+  "preconditions": {
+    "formal_worktree_clean": true,
+    "analysis_worktree_clean": true,
+    "fixed_revision_matches": true,
+    "formal_worker_pids_unchanged": {
+      "h200_imagenet100": 102910,
+      "h200_ade20k": 1571772,
+      "a800_nyuv2": 53492,
+      "a800_voc2012": 53491
+    },
+    "handback_gate": {
+      "h200_status": "passed",
+      "h200_decision": "monitor",
+      "a800_status": "armed",
+      "release_request_exists": false
+    },
+    "formal_output_directories_used_by_benchmark": false,
+    "formal_caches_read_only_by_benchmark_contract": true,
+    "independent_output_roots": true,
+    "independent_locks": true,
+    "independent_process_groups": true
+  },
+  "cache_manifest_sha256": {
+    "imagenet100_train": "dbbbae5d442acc6c52068ba01f4bf25f1aeb22f8a4b1deebdd20a3b240fb67d2",
+    "imagenet100_val": "2dc104e78ab8c9e18e4bb3acc24b16522db97a944824c7cdc40ebf841e6036fb",
+    "imagenet100_test": "e92f56bbdaa4941e3693f185a8548351824dfffae622de9835c0e7088a9791e7",
+    "ade20k_train": "e83276167077f8e1fe7e1703ea0e472ecaee77ccd8517b1317f645a41edb1f81",
+    "ade20k_val": "592af67413a3f4d85bb176c59f3eccccc8ebfda4a371479c07ef6ceea1369bfe",
+    "ade20k_test": "a4695f688dd38178839b390bfbf22fb144bea1a521ef85562e69b45d251da37c"
+  },
+  "benchmarks": {
+    "imagenet100": {
+      "physical_gpu": 0,
+      "launcher_pid": 230148,
+      "worker_pid": 230151,
+      "pgid": 230148,
+      "task": "classification",
+      "representation": "velocity",
+      "seed": 7319,
+      "epochs": 1,
+      "batch_size": 128,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "output_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/benchmarks/a800-throughput-20260825T0815Z/imagenet100",
+      "lock": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/benchmarks/a800-throughput-20260825T0815Z/imagenet100.lock",
+      "h200_same_cell_epoch1_reference_seconds": 3538.2573828836903
+    },
+    "ade20k": {
+      "physical_gpu": 1,
+      "launcher_pid": 230149,
+      "worker_pid": 230150,
+      "pgid": 230149,
+      "task": "segmentation",
+      "representation": "random_feature_local",
+      "seed": 4121,
+      "epochs": 1,
+      "batch_size": 2,
+      "learning_rate": 0.001,
+      "weight_decay": 0.0001,
+      "segmentation_classes": 150,
+      "output_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/benchmarks/a800-throughput-20260825T0815Z/ade20k",
+      "lock": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/benchmarks/a800-throughput-20260825T0815Z/ade20k.lock",
+      "all_ignore_shim_sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+      "h200_same_cell_epoch1_reference_seconds": 8845.354368342087
+    }
+  },
+  "existing_cross_host_throughput_evidence": {
+    "nyuv2_a800_vs_h200_speedup": 2.764577133965591,
+    "voc2012_a800_vs_h200_speedup": 1.071104729989486,
+    "scientific_effect_inferred": false
+  },
+  "launch_observation": {
+    "benchmark_workers_alive": true,
+    "formal_workers_alive": true,
+    "a800_memory_used_mib": {"gpu0": 2367, "gpu1": 2307},
+    "a800_memory_total_mib_per_gpu": 81920,
+    "a800_sm_utilization_sample_range_percent": [0, 66],
+    "h200_gpu67_sm_utilization_sample_range_percent": [0, 100],
+    "h200_gpu67_most_samples_below_percent": 20,
+    "migration_decision": "defer_until_benchmark_completes",
+    "parallel_benchmark_retained": true
+  },
+  "benchmark_execution_complete": false,
+  "migration_executed": false,
+  "formal_outputs_changed_by_benchmark": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

@@ -1,0 +1,128 @@
+{
+  "audit_correction": {
+    "non_authoritative_failed_artifact": "imagenet100_velocity_seed7319_epoch10_strong_audit_non_authoritative_failed_20260822.json",
+    "non_authoritative_failed_artifact_sha256": "c35e374c6da05a5173f4c7ad0c4682f4ae57c96b607b19bff9338a92309115c1",
+    "reason": "initial audit read the registered seed_workers from an incorrect JSON path; the authoritative runtime profile stores it at selected_profile.seed_workers",
+    "runtime_profile_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json",
+    "runtime_profile_selected_profile_seed_workers": 1
+  },
+  "best_checkpoint_sha256": "ee2c47e02764fa58d2c63493584b2780056d456b96583f6a7e0f03adfa404a98",
+  "best_epoch": 1,
+  "best_primary_metric": 0.010046367851622875,
+  "changes_scientific_verdict": false,
+  "checks": {
+    "both_worktrees_clean": true,
+    "committed_epoch_is_10": true,
+    "completed_optimizer_steps_exact": true,
+    "completed_training_sample_exposures_exact": true,
+    "config_cache_control_coverage_verified": true,
+    "fixed_revision_exact": true,
+    "formal_cache_batch_2": true,
+    "guard_pause_present": true,
+    "guard_process_observed": true,
+    "history_contiguous": true,
+    "memory_cache_0": true,
+    "optimizer_state_step_exact": true,
+    "readout_batch_128": true,
+    "report_checkpoint_history_equal_under_json_tuple_normalization": true,
+    "rng_keys_exact": true,
+    "running_report_last_checkpoint_sha256_null": true,
+    "scheduler_exact": true,
+    "seed_workers_1": true,
+    "stable_double_read": true,
+    "worker_alive": true,
+    "worker_cuda_visible_devices_6": true
+  },
+  "committed_epoch": 10,
+  "completed_optimizer_steps": 9100,
+  "completed_training_sample_exposures": 1164550,
+  "config_cache_control_coverage_verified": true,
+  "contract_equal_details": {
+    "config": true,
+    "train_cache": true,
+    "train_control_contract": true,
+    "training_coverage_contract": true,
+    "validation_cache": true,
+    "validation_control_contract": true
+  },
+  "execution_complete": false,
+  "external_gpu_processes_observed_at_audit": [
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 1368198,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/venvs/m3call_baselines/bin/python",
+      "used_memory_mib": 61806
+    }
+  ],
+  "external_m3call_overlap_observed_at_audit": true,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "fixed_revision_clean_tree_verified": true,
+  "formal_cache_batch_size": 2,
+  "gpu6_compute_processes": [
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 814
+    },
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 102910,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+      "used_memory_mib": 2174
+    },
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 1368198,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/venvs/m3call_baselines/bin/python",
+      "used_memory_mib": 61806
+    }
+  ],
+  "gpu6_guard_pause_present": true,
+  "history_contiguous": true,
+  "intermediate_cell_result_only": true,
+  "last_checkpoint_sha256": "15101ebeae8c8a8c2fac667432d5aa28472f5a75eb4ee78e7bf6c1cdfbbc7aed",
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-22T05:28:48.993843Z",
+  "optimizer_state_steps": [
+    9100
+  ],
+  "optimizer_steps_delta": 2730,
+  "physical_gpu": 6,
+  "previous_committed_epoch": 7,
+  "problems": [],
+  "readout_batch_size": 128,
+  "readout_memory_cache_gib": 0,
+  "report_atomic_commit_at": "2026-08-22T05:01:34.887283Z",
+  "report_checkpoint_history_equal_under_json_tuple_normalization": true,
+  "report_embedded_last_checkpoint_sha256": null,
+  "report_sha256": "6bbc3d2092a943d59d244dcc4e532a9bb84d74ddc86063262b939f169be462e3",
+  "representation": "velocity",
+  "resource_guard_process_observed_at_audit": true,
+  "resource_overlap_scientific_effect": "not_inferred",
+  "rng_keys": [
+    "numpy",
+    "python",
+    "torch_cpu",
+    "torch_cuda"
+  ],
+  "runtime_profile_seed_workers": 1,
+  "scheduler_last_epoch": 10,
+  "scheduler_t_max": 90,
+  "schema_version": 1,
+  "seed": 7319,
+  "stable_double_read": true,
+  "status": "passed",
+  "target_epochs": 90,
+  "task": "imagenet100",
+  "train_seconds": 2916.47917692177,
+  "training_sample_exposures_delta": 349365,
+  "validation_seconds": 315.47849005740136,
+  "validation_top1": 0.010046367851622875,
+  "validation_top5": 0.05023183925811438,
+  "worker_alive": true,
+  "worker_command": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_test --output-dir outputs/full_validation/auraflow_v03/imagenet100 --task classification --epochs 90 --batch-size 128 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+  "worker_cuda_visible_devices": "6",
+  "worker_pid": 102910
+}

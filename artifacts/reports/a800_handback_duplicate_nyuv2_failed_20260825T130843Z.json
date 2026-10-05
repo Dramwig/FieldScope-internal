@@ -1,0 +1,15 @@
+{
+  "changes_scientific_verdict": false,
+  "details": {},
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-25T13:09:16.003038+00:00",
+  "problems": [
+    "duplicate_a800_control_process:nyuv2"
+  ],
+  "role": "a800",
+  "schema_version": 1,
+  "scope": "cross_lane_ownership_handback_gate",
+  "status": "failed"
+}

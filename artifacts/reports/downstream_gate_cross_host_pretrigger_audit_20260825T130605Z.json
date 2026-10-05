@@ -1,0 +1,79 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "incremental_cross_host_pretrigger_absence_recheck",
+  "observed_at": "2026-08-25T13:06:05Z",
+  "machine": "dsw-h200",
+  "side_worker_machine": "dsw-M3Call",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260825T130406Z.json",
+    "sha256": "e2669b8059077397a54de85795ac9dd2a8b0ae0e6bd3b30380e4a0dbe5e6af04",
+    "observed_at": "2026-08-25T13:03:22.143708Z",
+    "status": "passed",
+    "accepted_intermediate_audits": 574,
+    "transient_audit_races": 16,
+    "unresolved_failures": 0,
+    "terminal_cells": 45,
+    "required_terminal_cells": 240,
+    "active_boundaries": {
+      "imagenet100": 59,
+      "ade20k": 18,
+      "nyuv2": 62,
+      "voc2012": 75
+    },
+    "execution_complete": false,
+    "changes_scientific_verdict": false
+  },
+  "live_identity_recheck": {
+    "recovery_pid": 41610,
+    "watchdog_pid": 41096,
+    "supervised_error_waiter_pid": 41355,
+    "atomic_watcher_pid": 1542686,
+    "imagenet100_pid": 102910,
+    "ade20k_pid": 1571772,
+    "h200_handback_supervisor_pid": 1243084,
+    "nyuv2_pid": 53492,
+    "voc2012_pid": 53491,
+    "nyuv2_monitor_pid": 55616,
+    "voc2012_monitor_pid": 55621,
+    "nyuv2_supervisor_pid": 61255,
+    "voc2012_supervisor_pid": 61253,
+    "a800_handback_supervisor_pid": 226373,
+    "a800_handback_gate_pid": 226399,
+    "all_required_processes_alive": true,
+    "formal_revision_matches": true,
+    "formal_worktree_clean": true,
+    "analysis_revision_matches": true,
+    "analysis_worktree_clean": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1
+  },
+  "cross_lane_handback": {
+    "h200_status": "passed",
+    "h200_decision": "monitor",
+    "h200_heartbeat_sha256": "6e8b21a58d9b6ed04126c72e83bc59711225ac16373c3a2252d6818c7cd765ad",
+    "a800_status": "armed",
+    "a800_heartbeat_sha256": "d9ccd7ee043b002f37a3ef8a141fcb2a80d2d2ddee4fe712624c8ef5142cb79a",
+    "a800_registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978"
+  },
+  "premature_artifacts_absent": {
+    "main_evidence": true,
+    "causal_evidence": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "error_registry": true,
+    "completion_audit": true
+  },
+  "preserved_evidence": {
+    "operational_failures_preserved": true,
+    "transient_audit_races": 16,
+    "unresolved_failures": 0
+  },
+  "gate_decision": "wait_for_all_240_main_matrix_cells",
+  "downstream_triggered": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

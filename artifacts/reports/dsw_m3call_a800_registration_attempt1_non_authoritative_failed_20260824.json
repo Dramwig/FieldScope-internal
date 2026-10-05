@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "scope": "non_authoritative_cross_host_worker_registration_attempt",
+  "recorded_at": "2026-08-24T10:48:46Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "runtime_hostname": "interactive-upozjqcdg5ie-57fcf4446c-tvk2d",
+  "registration_script_sha256": "46402bcd37731844e350d0a4b453a07b4cf0fdcfcd4c70075f665edc13ed267f",
+  "failure": {
+    "exception": "RuntimeError",
+    "message": "expected one nyuv2 worker, found 0",
+    "classification": "python_symlink_path_identity_mismatch",
+    "registry_written": false,
+    "formal_worker_terminated": false,
+    "formal_output_modified_by_registration_attempt": false
+  },
+  "correction": {
+    "description": "Resolve both argv[0] and the configured Python path before comparing process identity.",
+    "corrected_script_sha256": "38db57548bc51725ef97039cafb312635ba5b673d560bd3d1a2862f85ce4f84b",
+    "corrected_registration_status": "passed"
+  },
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}
