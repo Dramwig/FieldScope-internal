@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "scope": "incremental_cross_host_pretrigger_absence_recheck",
+  "observed_at": "2026-08-26T09:05:10Z",
+  "machine": "dsw-h200",
+  "side_worker_machine": "dsw-M3Call",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "status": "passed",
+  "atomic_ledger": {
+    "path": "FieldScope-internal/artifacts/reports/four_task_atomic_ledger_reconstruction_20260826T090400Z.json",
+    "sha256": "981c4d847573689bc747c752617e42c68f83b1f4bf60d132c536eb89e12e013e",
+    "observed_at": "2026-08-26T09:02:00.034701Z",
+    "accepted_intermediate_audits": 826,
+    "terminal_cells": 69,
+    "required_terminal_cells": 240,
+    "active_boundaries": {
+      "ade20k": "31",
+      "imagenet100": "77",
+      "nyuv2": "43",
+      "voc2012": "8"
+    },
+    "transient_audit_races": 25,
+    "unresolved_failures": 0,
+    "status": "passed",
+    "execution_complete": false,
+    "changes_scientific_verdict": false
+  },
+  "cross_lane_handback": {
+    "h200_status": "passed",
+    "h200_decision": "monitor",
+    "h200_heartbeat_sha256": "bab169ed00ee1c5014d34eb5f8a1929bd051c9a7ec12c1856e01092c150dc196",
+    "a800_status": "armed",
+    "a800_heartbeat_sha256": "8b8e5e00afb373592254b22baa9b0f63bd76b011075c358e9e0d35bbd7456c4c",
+    "a800_registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978"
+  },
+  "live_identity_recheck": {
+    "formal_revision_matches": true,
+    "analysis_revision_matches": true,
+    "formal_worktree_clean": true,
+    "analysis_worktree_clean": true,
+    "h200_processes_alive": true,
+    "a800_processes_alive": true,
+    "all_required_processes_alive": true,
+    "h200_pids_checked": [
+      41610,
+      102910,
+      1571772,
+      41355
+    ],
+    "a800_identity_source": "a800-heartbeat.json + registered_workers.json (checked on dsw-M3Call)",
+    "a800_workers_identity_valid": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1,
+    "a800_heartbeat_identity_valid": true
+  },
+  "premature_artifacts_absent": {
+    "main_evidence": true,
+    "causal_evidence": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "error_registry": true,
+    "completion_audit": true
+  },
+  "preserved_evidence": {
+    "operational_failures_preserved": true,
+    "transient_audit_races": 25,
+    "unresolved_failures": 0
+  },
+  "downstream_triggered": false,
+  "gate_decision": "wait_for_all_240_main_matrix_cells",
+  "method_effectiveness_conclusion": null,
+  "execution_complete": false,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

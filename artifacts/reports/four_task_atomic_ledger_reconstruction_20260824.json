@@ -1,5 +1,5 @@
 {
-  "accepted_intermediate_audits": 286,
+  "accepted_intermediate_audits": 287,
   "active_cells": {
     "ade20k/random_feature_local/seed-4121/epoch-8": {
       "optimizer_steps": 72760,
@@ -11,10 +11,10 @@
       "strong_audit_sha256": "8fed045e815b25e9a719308be6ff39c75f69a33d4d8b3a49352248fb54a4a107",
       "training_sample_exposures": 5124020
     },
-    "nyuv2/random_feature_local/seed-104729/epoch-35": {
-      "optimizer_steps": 6265,
-      "strong_audit_sha256": "d41ccfa77f592db7f723c45d442ca1c62f92401fc8714254a490d05fafd5b71d",
-      "training_sample_exposures": 25025
+    "nyuv2/random_feature_local/seed-104729/epoch-38": {
+      "optimizer_steps": 6802,
+      "strong_audit_sha256": "f3bad74cd53f3c8a513ab57b9dee6e745a9b7e704b8350db02d8cec3b7bbea36",
+      "training_sample_exposures": 27170
     },
     "voc2012/z0/seed-104729/epoch-52": {
       "optimizer_steps": 17160,
@@ -24,8 +24,8 @@
   },
   "active_subtotal": {
     "cells": 4,
-    "optimizer_steps": 136225,
-    "training_sample_exposures": 5363093
+    "optimizer_steps": 136762,
+    "training_sample_exposures": 5365238
   },
   "analysis_worktree_clean": true,
   "changes_scientific_verdict": false,
@@ -34,11 +34,13 @@
   "formal_worktree_clean": true,
   "machine": "dsw-h200",
   "method_effectiveness_conclusion": null,
-  "observed_at": "2026-08-24T12:49:37.348711Z",
-  "problems": [],
+  "observed_at": "2026-08-24T12:59:47.696888Z",
+  "problems": [
+    "unresolved_watcher_failures"
+  ],
   "reconstructed_global": {
-    "optimizer_steps": 1361565,
-    "training_sample_exposures": 142257043
+    "optimizer_steps": 1362102,
+    "training_sample_exposures": 142259188
   },
   "registered_global": {
     "optimizer_steps": 51013200,
@@ -47,7 +49,7 @@
   },
   "schema_version": 2,
   "scope": "independent_reconstruction_of_current_formal_main_matrix_atomic_ledger",
-  "status": "passed",
+  "status": "failed",
   "terminal_cells": {
     "ade20k": {
       "count": 0,
@@ -178,6 +180,6 @@
     "training_sample_exposures": 136893950
   },
   "transient_audit_races": 4,
-  "unresolved_failures": 0,
-  "watcher_state_sha256": "4fbc60138ab52c32293818f36608238bf6777bcb2bf03dfdbbfa91754581de7d"
+  "unresolved_failures": 1,
+  "watcher_state_sha256": "1b4c891a6453588ecb6beb847c294f0ee3ad95dd97767274467562d85cd52bc1"
 }

@@ -40,12 +40,12 @@
   "one_writer_per_task": true,
   "per_task_seed_workers": 1,
   "atomic_watcher": {
-      "pid": 1870499,
+    "pid": 1870499,
     "alive": true,
-      "observed_at": "2026-08-24T08:07:03.432349Z",
-      "state_sha256": "083515ea87366303d5132ebba2908e5ebb41bf2ae222d6f84aefe508cbd448d3",
-      "failures": [],
-      "transient_audit_races": 2
+    "observed_at": "2026-08-24T08:07:03.432349Z",
+    "state_sha256": "083515ea87366303d5132ebba2908e5ebb41bf2ae222d6f84aefe508cbd448d3",
+    "failures": [],
+    "transient_audit_races": 2
   },
   "premature_artifacts_absent": {
     "main_evidence": true,

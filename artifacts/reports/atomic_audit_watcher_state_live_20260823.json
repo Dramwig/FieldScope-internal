@@ -42,13 +42,6 @@
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/ade20k_random_feature_local_seed4121_epoch6_strong_audit.json\",\n  \"sha256\": \"91aae3325cefade072cad7c40041240cb9187eb80b9d75a261a089cc8afb10f9\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     },
-    "ade20k/random_feature_local/seed-4121/epoch-7": {
-      "observed_at": "2026-08-24T09:53:41.331269Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/ade20k_random_feature_local_seed4121_epoch7_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/ade20k_random_feature_local_seed4121_epoch7_strong_audit.json\",\n  \"sha256\": \"e5dbc189de1266e5dd6290050f687235767b4b6b71bb8d20bfbc1d23500ca911\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
     "imagenet100/velocity/seed-7319/epoch-32": {
       "observed_at": "2026-08-23T10:59:47.058670Z",
       "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/imagenet100_velocity_seed7319_epoch32_strong_audit.json",
@@ -125,69 +118,6 @@
       "returncode": 0,
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/imagenet100_velocity_seed7319_epoch42_strong_audit.json\",\n  \"sha256\": \"3a76bba9f6c47a9c2881ae8815ac0ab7be0d658dcea81b5cf0ddcfbd74a90244\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "imagenet100/velocity/seed-7319/epoch-43": {
-      "observed_at": "2026-08-24T10:16:45.484702Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/imagenet100_velocity_seed7319_epoch43_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/imagenet100_velocity_seed7319_epoch43_strong_audit.json\",\n  \"sha256\": \"0fdd099612593eec8caf510fc4fd709f89a4775e750f74a4e17d8f8c5bfe1c49\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-1": {
-      "observed_at": "2026-08-24T10:06:35.984704Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch1_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch1_strong_audit.json\",\n  \"sha256\": \"6d311f7552ed7808e35959377a2dcefa0dd56d15ba385d662f451477b62304bd\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-10": {
-      "observed_at": "2026-08-24T10:57:39.153700Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch10_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch10_strong_audit.json\",\n  \"sha256\": \"08b6e2a311fd88ee9a6b3134220946fcfa6a685d7ee31ac39f335ade9c72dab1\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-13": {
-      "observed_at": "2026-08-24T11:07:48.646708Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch13_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch13_strong_audit.json\",\n  \"sha256\": \"d3924c94c46afb6c6835781ffdaeb4f7329fa027b407e91f0f724b3b191ca2a9\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-17": {
-      "observed_at": "2026-08-24T11:17:58.888727Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch17_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch17_strong_audit.json\",\n  \"sha256\": \"30f907816f957c46bda8fe36b3f2f4c1c5aee0d63a790fd316f2a7d95f7ff74f\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-2": {
-      "observed_at": "2026-08-24T10:16:45.484702Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch2_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch2_strong_audit.json\",\n  \"sha256\": \"f7ce18c5b3de9a127517b136d1db46a79c3efb3d74378ec57998be3788d7f161\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-3": {
-      "observed_at": "2026-08-24T10:27:05.813719Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch3_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch3_strong_audit.json\",\n  \"sha256\": \"1bab31b3e3fb0718b141c2bdb07ea1cbea36e7c0d4e04cc4f3f4b3bf897ab034\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-5": {
-      "observed_at": "2026-08-24T10:37:18.462711Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch5_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch5_strong_audit.json\",\n  \"sha256\": \"01fde511d5af232be3455fea9505eb80f34cf00040f136377257a7c562c7b245\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-104729/epoch-7": {
-      "observed_at": "2026-08-24T10:47:30.723705Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch7_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed104729_epoch7_strong_audit.json\",\n  \"sha256\": \"c4995863ba906a1a3104f40f41da268875fa1c8fe5b13f58c3fdf8cd2fbbe694\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     },
     "nyuv2/random_feature_local/seed-4121/epoch-10": {
       "observed_at": "2026-08-23T12:08:41.779691Z",
@@ -1015,62 +945,6 @@
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch7_strong_audit.json\",\n  \"sha256\": \"66a407995e415d3428e75ca4742e2f7f490cb1c51d6b6251e861a09f20cde643\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     },
-    "nyuv2/random_feature_local/seed-7319/epoch-70": {
-      "observed_at": "2026-08-24T08:27:50.602324Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch70_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch70_strong_audit.json\",\n  \"sha256\": \"da39afb710fd554a868d43e5f71a3bd381eaaa2257fdd02be4fcd5efa318bd44\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-71": {
-      "observed_at": "2026-08-24T08:38:13.120712Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch71_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch71_strong_audit.json\",\n  \"sha256\": \"606c7be5711d18c3f07c323b9385c0dfc06be6931caf391694c03de0f7f66556\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-72": {
-      "observed_at": "2026-08-24T08:48:36.633699Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch72_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch72_strong_audit.json\",\n  \"sha256\": \"729f39fbcf8e6e9bb92d7c61245b2fca93572b4a103b2f561a47432e9a8dfc58\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-74": {
-      "observed_at": "2026-08-24T09:01:04.504723Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch74_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch74_strong_audit.json\",\n  \"sha256\": \"1b57eef5ba3e72789c5d4a7569c404a7b608017146535ce9bce46e2e4522e9b6\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-75": {
-      "observed_at": "2026-08-24T09:11:08.619704Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch75_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch75_strong_audit.json\",\n  \"sha256\": \"83fd50fa912d8a996340f6788ceca1a5b3563822d3ebbacc7e519aa2412addea\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-77": {
-      "observed_at": "2026-08-24T09:25:38.609716Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch77_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch77_strong_audit.json\",\n  \"sha256\": \"ed92780ca7e9c1bbfcd170a98065058ec5e8eb9bc93f7aa40f4bbe7ca0a42e80\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-78": {
-      "observed_at": "2026-08-24T09:36:28.423523Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch78_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch78_strong_audit.json\",\n  \"sha256\": \"d8d7e1a73f5437bcfd1261b8b61babd31995cbf552c3f5a3a38ddb6443072855\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "nyuv2/random_feature_local/seed-7319/epoch-79": {
-      "observed_at": "2026-08-24T09:41:16.265213Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch79_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch79_strong_audit.json\",\n  \"sha256\": \"e0a5a576769c924f5b9a9d7901bd36009b2e3efc20f2879a422bc62393d8bdec\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
     "nyuv2/random_feature_local/seed-7319/epoch-8": {
       "observed_at": "2026-08-24T00:02:40.865696Z",
       "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch8_strong_audit.json",
@@ -1400,118 +1274,6 @@
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_random_feature_local_seed104729_epoch79_strong_audit.json\",\n  \"sha256\": \"74a00571a300aebc0f5a3c2b43014ff05ac4288cfe6a002f1a99bf9f50ffae1b\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     },
-    "voc2012/z0/seed-104729/epoch-1": {
-      "observed_at": "2026-08-24T09:15:34.155942Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch1_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch1_strong_audit.json\",\n  \"sha256\": \"95eebc5d7a8e8fb9ce9b85758ededc02ce6f1de7299d3e9f13e3a8403ccf2896\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-10": {
-      "observed_at": "2026-08-24T09:46:19.125545Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch10_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch10_strong_audit.json\",\n  \"sha256\": \"58d46f746613899460c09762f3fb386896ffd30083baea682f66650225d7fe95\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-12": {
-      "observed_at": "2026-08-24T09:53:41.331269Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch12_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch12_strong_audit.json\",\n  \"sha256\": \"4a203fa63f9db28d54d0c398c4b672a9f85b47a831bcc3c29be98fa11b7ef506\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-13": {
-      "observed_at": "2026-08-24T09:56:26.293810Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch13_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch13_strong_audit.json\",\n  \"sha256\": \"51a14ba5356a7b56de12db653af6a99070e200b0a4ca30aa3a56fd482b33f431\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-15": {
-      "observed_at": "2026-08-24T10:06:35.984704Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch15_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch15_strong_audit.json\",\n  \"sha256\": \"21a45a0638c580d9ce7ab1e03275e392d55752e1a526193db9b66324c4e099d9\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-18": {
-      "observed_at": "2026-08-24T10:16:45.484702Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch18_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch18_strong_audit.json\",\n  \"sha256\": \"d4f0a8527bd41b8f2df7987f8d00e45c46ec3ede7873d14aff6866c11a1c7ed3\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-21": {
-      "observed_at": "2026-08-24T10:27:05.813719Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch21_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch21_strong_audit.json\",\n  \"sha256\": \"4460cfc78581e4095c49e17bf5a5f72668fdaffdb6a4554c26ea678f176333b9\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-24": {
-      "observed_at": "2026-08-24T10:37:18.462711Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch24_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch24_strong_audit.json\",\n  \"sha256\": \"61771ea4b46f402f2af1601fc656a1583be716c9b087d7038f7681bef6f23415\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-26": {
-      "observed_at": "2026-08-24T10:47:30.723705Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch26_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch26_strong_audit.json\",\n  \"sha256\": \"13c709df32585b720918705cc0b9fdde4ebb1c5d51d5a3a7d481cc6c53d61f5e\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-29": {
-      "observed_at": "2026-08-24T10:57:39.153700Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch29_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch29_strong_audit.json\",\n  \"sha256\": \"4dfb96b1538571bbb9823cbb212926d2a48f81286db4fe9837d0bba0172b5888\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-32": {
-      "observed_at": "2026-08-24T11:07:48.646708Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch32_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch32_strong_audit.json\",\n  \"sha256\": \"25b294263079eb1478aebac98b236387967dc4171126288a45d08fe6529f78d9\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-35": {
-      "observed_at": "2026-08-24T11:17:58.888727Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch35_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch35_strong_audit.json\",\n  \"sha256\": \"de34b56eb089befaed3b6d43a9a005ee38a62e20c8e7c88e67c23d7ebe138862\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-4": {
-      "observed_at": "2026-08-24T09:25:38.609716Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch4_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch4_strong_audit.json\",\n  \"sha256\": \"88bdc069c9a617450b2f4cd8879bd215db9fc6b6b8ed1c8b793d3dcdee149fe1\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-6": {
-      "observed_at": "2026-08-24T09:31:35.685388Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch6_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch6_strong_audit.json\",\n  \"sha256\": \"2b1fdba3773bbab9b74337980a9edfd33be592083f0f0ed72c66da132be3f993\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-7": {
-      "observed_at": "2026-08-24T09:36:28.423523Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch7_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch7_strong_audit.json\",\n  \"sha256\": \"88f80fde4ca13c98ed097d417e5b443f5b560781519f194410b526347705f592\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-104729/epoch-9": {
-      "observed_at": "2026-08-24T09:41:16.265213Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch9_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed104729_epoch9_strong_audit.json\",\n  \"sha256\": \"49ed28911501c708f36154a6300a795263e4d62e49c29c29709e05bd035c29a6\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
     "voc2012/z0/seed-4121/epoch-11": {
       "observed_at": "2026-08-24T00:02:40.865696Z",
       "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed4121_epoch11_strong_audit.json",
@@ -1834,45 +1596,34 @@
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch64_strong_audit.json\",\n  \"sha256\": \"3a7aab2100775c3fe1250819528cb80bec3d7d6f19a95024e7075ee17b3053a3\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     },
-    "voc2012/z0/seed-7319/epoch-69": {
-      "observed_at": "2026-08-24T08:27:50.602324Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch69_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch69_strong_audit.json\",\n  \"sha256\": \"40117fa6e2f8842898e3e8ba383390cf0654c10e61d1ba1e726f0343dcea1f0e\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
     "voc2012/z0/seed-7319/epoch-7": {
       "observed_at": "2026-08-24T04:41:02.587644Z",
       "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch7_strong_audit.json",
       "returncode": 0,
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch7_strong_audit.json\",\n  \"sha256\": \"360f0453bb38dd58291b0b540ca86973403f0719c598635b750ce35889d772d1\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-7319/epoch-73": {
-      "observed_at": "2026-08-24T08:38:13.120712Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch73_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch73_strong_audit.json\",\n  \"sha256\": \"a144f27dd695d0d2e30ab934d56aefb8f1979e6abc392f0732709ad56e573e87\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-7319/epoch-76": {
-      "observed_at": "2026-08-24T08:48:36.633699Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch76_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch76_strong_audit.json\",\n  \"sha256\": \"48d7b55e7b9ce3cd3e68fe9d7f1a79d840c352b00c347d515445e16adc9fca18\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-7319/epoch-77": {
-      "observed_at": "2026-08-24T08:50:58.418160Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch77_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch77_strong_audit.json\",\n  \"sha256\": \"3d9389df51d6b5ed4c6fd29736af5fa3b14b82fa611850c5081447c1c5288f84\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     }
   },
   "changes_scientific_verdict": false,
-  "failures": [],
-  "observed_at": "2026-08-24T11:17:58.888727Z",
+  "failures": [
+    {
+      "key": "nyuv2/random_feature_local/seed-7319/epoch-68",
+      "observed_at": "2026-08-24T08:17:27.011695Z",
+      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch68_strong_audit.json",
+      "returncode": 1,
+      "stderr": "",
+      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch68_strong_audit.json\",\n  \"sha256\": \"93914d8138ba7072b9e8ecaa90648160176b6ea339da3997440b40effe280c64\",\n  \"status\": \"failed\",\n  \"problems\": [\n    \"stable_report_double_read\",\n    \"history_contiguous\",\n    \"report_epoch_matches\",\n    \"checkpoint_epoch_matches\",\n    \"report_steps_match\",\n    \"checkpoint_steps_match\",\n    \"report_exposures_match\",\n    \"checkpoint_exposures_match\",\n    \"optimizer_state_steps_match\",\n    \"scheduler_last_epoch_matches\"\n  ]\n}\n"
+    },
+    {
+      "key": "voc2012/z0/seed-7319/epoch-66",
+      "observed_at": "2026-08-24T08:17:27.011695Z",
+      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch66_strong_audit.json",
+      "returncode": 1,
+      "stderr": "",
+      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch66_strong_audit.json\",\n  \"sha256\": \"abb4bfe5b1612c7ef971b20c3ab81203e4210309ebab945c52a3a0a61b1d04eb\",\n  \"status\": \"failed\",\n  \"problems\": [\n    \"stable_checkpoint_during_hash_and_load\"\n  ]\n}\n"
+    }
+  ],
+  "observed_at": "2026-08-24T08:17:27.011695Z",
   "recovery_pid": 41610,
   "schema_version": 1,
   "status": "active",
@@ -1975,13 +1726,6 @@
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed4121_terminal_cell_strong_audit.json\",\n  \"sha256\": \"7f24a86bb2c0b3622964d1f24f436cc8fe0e502c961555534aaaf4ea69c75152\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     },
-    "nyuv2/random_feature_local/seed-7319/terminal": {
-      "observed_at": "2026-08-24T09:56:26.293810Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_terminal_cell_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_terminal_cell_strong_audit.json\",\n  \"sha256\": \"a6d32db3aaa89ca0192eb0be7460513ea4b650bf755510ebb8af2549a44239da\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
     "voc2012/random_feature_local/seed-104729/terminal": {
       "observed_at": "2026-08-23T23:31:47.934225Z",
       "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_random_feature_local_seed104729_terminal_cell_strong_audit.json",
@@ -2009,13 +1753,6 @@
       "returncode": 0,
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed4121_terminal_cell_strong_audit.json\",\n  \"sha256\": \"d8f203be551dccb2a56203b6e96072ecf3fd4187171f48b1fa5136e361f742bd\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
-    },
-    "voc2012/z0/seed-7319/terminal": {
-      "observed_at": "2026-08-24T09:11:08.619704Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_terminal_cell_strong_audit.json",
-      "returncode": 0,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_terminal_cell_strong_audit.json\",\n  \"sha256\": \"fc6b8754274586ac131b9f357ffc49182b3c0651da3201cf446cc067a4c074d9\",\n  \"status\": \"passed\",\n  \"problems\": []\n}\n"
     }
   },
   "transient_audit_races": [
@@ -2050,40 +1787,6 @@
       "returncode": 1,
       "stderr": "",
       "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch29_strong_audit.json\",\n  \"sha256\": \"6f74424f03f69af9a9323576f85d066a04799a2351ec909491936100832fa5bb\",\n  \"status\": \"failed\",\n  \"problems\": [\n    \"history_contiguous\",\n    \"report_epoch_matches\",\n    \"checkpoint_epoch_matches\",\n    \"report_steps_match\",\n    \"checkpoint_steps_match\",\n    \"report_exposures_match\",\n    \"checkpoint_exposures_match\",\n    \"optimizer_state_steps_match\",\n    \"scheduler_last_epoch_matches\"\n  ]\n}\n",
-      "unresolved_scientific_failure": false
-    },
-    {
-      "classification": "unstable_observation_confirmed_by_later_strong_audit",
-      "confirmation_audit": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch70_strong_audit.json",
-      "confirmation_audit_sha256": "da39afb710fd554a868d43e5f71a3bd381eaaa2257fdd02be4fcd5efa318bd44",
-      "confirmed_epoch": 70,
-      "expected_epoch": 68,
-      "failed_artifact_preserved": true,
-      "failed_audit_sha256": "93914d8138ba7072b9e8ecaa90648160176b6ea339da3997440b40effe280c64",
-      "key": "nyuv2/random_feature_local/seed-7319/epoch-68",
-      "migrated_at": "2026-08-24T08:50:58.414319Z",
-      "observed_at": "2026-08-24T08:17:27.011695Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch68_strong_audit.json",
-      "returncode": 1,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/nyuv2_random_feature_local_seed7319_epoch68_strong_audit.json\",\n  \"sha256\": \"93914d8138ba7072b9e8ecaa90648160176b6ea339da3997440b40effe280c64\",\n  \"status\": \"failed\",\n  \"problems\": [\n    \"stable_report_double_read\",\n    \"history_contiguous\",\n    \"report_epoch_matches\",\n    \"checkpoint_epoch_matches\",\n    \"report_steps_match\",\n    \"checkpoint_steps_match\",\n    \"report_exposures_match\",\n    \"checkpoint_exposures_match\",\n    \"optimizer_state_steps_match\",\n    \"scheduler_last_epoch_matches\"\n  ]\n}\n",
-      "unresolved_scientific_failure": false
-    },
-    {
-      "classification": "unstable_observation_confirmed_by_later_strong_audit",
-      "confirmation_audit": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch69_strong_audit.json",
-      "confirmation_audit_sha256": "40117fa6e2f8842898e3e8ba383390cf0654c10e61d1ba1e726f0343dcea1f0e",
-      "confirmed_epoch": 69,
-      "expected_epoch": 66,
-      "failed_artifact_preserved": true,
-      "failed_audit_sha256": "abb4bfe5b1612c7ef971b20c3ab81203e4210309ebab945c52a3a0a61b1d04eb",
-      "key": "voc2012/z0/seed-7319/epoch-66",
-      "migrated_at": "2026-08-24T08:50:58.418125Z",
-      "observed_at": "2026-08-24T08:17:27.011695Z",
-      "output": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch66_strong_audit.json",
-      "returncode": 1,
-      "stderr": "",
-      "stdout": "{\n  \"output\": \"/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/auto-strong-audits/voc2012_z0_seed7319_epoch66_strong_audit.json\",\n  \"sha256\": \"abb4bfe5b1612c7ef971b20c3ab81203e4210309ebab945c52a3a0a61b1d04eb\",\n  \"status\": \"failed\",\n  \"problems\": [\n    \"stable_checkpoint_during_hash_and_load\"\n  ]\n}\n",
       "unresolved_scientific_failure": false
     }
   ]

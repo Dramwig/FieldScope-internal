@@ -1,0 +1,76 @@
+{
+  "atomic_ledger": {
+    "accepted_intermediate_audits": 811,
+    "active_boundaries": {
+      "ade20k": "30",
+      "imagenet100": "76",
+      "nyuv2": "64",
+      "voc2012": "49"
+    },
+    "changes_scientific_verdict": false,
+    "execution_complete": false,
+    "observed_at": "2026-08-26T07:50:56.251715Z",
+    "path": "FieldScope-internal/artifacts/reports/four_task_atomic_ledger_reconstruction_20260826T075200Z.json",
+    "required_terminal_cells": 240,
+    "sha256": "9a67261078e762e0af4778743ccbe376dc6c32a905df091ce47385229d4cb71e",
+    "status": "passed",
+    "terminal_cells": 67,
+    "transient_audit_races": 25,
+    "unresolved_failures": 0
+  },
+  "changes_scientific_verdict": false,
+  "cross_lane_handback": {
+    "a800_heartbeat_sha256": "52edc622cce7c187643779887bef6452fcd1e2ea791f767c629d1a12ebfcf260",
+    "a800_registry_sha256": "ada182c3d3cf60faf015497db3a6b58bce0271ae1ee2469e29fdd47296684978",
+    "a800_status": "armed",
+    "h200_decision": "monitor",
+    "h200_heartbeat_sha256": "f1d8d97a036fe250107fe8722befb2a47aabe17f435b145c78f2b5367180170b",
+    "h200_status": "passed"
+  },
+  "downstream_triggered": false,
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gate_decision": "wait_for_all_240_main_matrix_cells",
+  "live_identity_recheck": {
+    "a800_heartbeat_identity_valid": true,
+    "all_required_processes_alive": true,
+    "analysis_revision_matches": true,
+    "analysis_worktree_clean": true,
+    "formal_revision_matches": true,
+    "formal_worktree_clean": true,
+    "h200_pids_checked": [
+      41610,
+      41096,
+      41355,
+      1542686,
+      102910,
+      1571772,
+      470616,
+      3931791
+    ],
+    "h200_processes_alive": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1
+  },
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-26T07:53:20.441022+00:00",
+  "premature_artifacts_absent": {
+    "causal_evidence": true,
+    "completion_audit": true,
+    "error_registry": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "main_evidence": true
+  },
+  "preserved_evidence": {
+    "operational_failures_preserved": true,
+    "transient_audit_races": 25,
+    "unresolved_failures": 0
+  },
+  "problems": [],
+  "schema_version": 1,
+  "scope": "incremental_cross_host_pretrigger_absence_recheck",
+  "side_worker_machine": "dsw-M3Call",
+  "status": "passed"
+}
