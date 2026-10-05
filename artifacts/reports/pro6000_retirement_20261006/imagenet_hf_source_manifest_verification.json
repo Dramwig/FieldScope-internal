@@ -1,0 +1,8 @@
+{
+  "status": "passed",
+  "source": "/root/autodl-tmp/CoFiTok/datasets/imagenet_1k_256x256_hf/raw/checksums.sha256",
+  "local": "D:/datasets_raw_hub/registry/imagenet_1k_256x256_hf/raw/checksums.sha256",
+  "sha256": "8b8a0ac3889b32a462697af5f77c671396dc50d93bb3b139c13d5e4f28fc7fe4",
+  "source_and_local_match": true,
+  "notes": "This verifies the checksum reference file. Individual raw payload verification is recorded separately and must not be inferred from this reference-file check."
+}

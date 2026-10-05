@@ -1,0 +1,48 @@
+{
+  "status": "passed",
+  "files": [
+    {
+      "path": "data/train-00018-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 435866884,
+      "sha256": "32a691bb4ccc00e333ddf35ff119e9031130d46adb7f314be6cbed7be338e6ae"
+    },
+    {
+      "path": "data/train-00020-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 416494219,
+      "sha256": "5b531e7c4db37503b233077c6febb971ea88c3a4d91e519fc698997059a39812"
+    },
+    {
+      "path": "data/train-00021-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 431546443,
+      "sha256": "da3186b265da61812cc6b7252fad3ee89af907ade7ffd32c3cab985c92494fc4"
+    },
+    {
+      "path": "data/train-00022-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 414222900,
+      "sha256": "4dc2f2360e3fb9460cf62f6d93fe04d4b9807e93df01f09bee737c9e7f6f3546"
+    },
+    {
+      "path": "data/train-00023-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 437687988,
+      "sha256": "6b5a071f2f7dd332c5ba52e5f99232025a55380b830bd787be03ad6acc43a28f"
+    },
+    {
+      "path": "data/train-00024-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 406779922,
+      "sha256": "ef8fc22b561af3632f13e057de85ab9fe5798f124c8d1052b1bbdb1bf08d77fd"
+    },
+    {
+      "path": "data/train-00025-of-00040.parquet",
+      "downloaded_by_this_task": true,
+      "bytes": 418154373,
+      "sha256": "b1af37c8a4d61720050b19bd90392e7a8956b383c6cdb875fb79d0a13e7eb467"
+    }
+  ],
+  "transport": "SSH, independent .fieldscope-partial paths; original concurrent transfer partials untouched"
+}

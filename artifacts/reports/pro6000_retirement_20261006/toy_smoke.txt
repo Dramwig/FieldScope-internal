@@ -1,0 +1,117 @@
+{
+  "status": "passed",
+  "backend": {
+    "backend": "toy",
+    "model_id": "fieldscope/toy-coupled-field-v1",
+    "device": "cpu",
+    "dtype": "float32",
+    "time_convention": "clean_time: 0=noise, 1=image"
+  },
+  "feature_shapes": {
+    "state": [
+      2,
+      64,
+      14
+    ],
+    "response": [
+      2,
+      64,
+      96
+    ],
+    "affinity": [
+      2,
+      64,
+      64
+    ],
+    "baselines": {
+      "z0": [
+        2,
+        64,
+        4
+      ],
+      "zt": [
+        2,
+        64,
+        4
+      ],
+      "velocity": [
+        2,
+        64,
+        4
+      ],
+      "mismatch": [
+        2,
+        64,
+        4
+      ],
+      "endpoint": [
+        2,
+        64,
+        4
+      ],
+      "dit_hidden": [
+        2,
+        64,
+        768
+      ],
+      "trajectory": [
+        2,
+        64,
+        12
+      ]
+    },
+    "graphs": {
+      "dit_attention": [
+        2,
+        64,
+        64
+      ],
+      "dit_attention_adjacency": [
+        2,
+        64,
+        64
+      ]
+    }
+  },
+  "diagnostics": {
+    "batch_size": 2,
+    "patches": 64,
+    "grid_size": [
+      8,
+      8
+    ],
+    "positive_edge_density": 0.1986607164144516,
+    "affinity_mean": 0.18641288578510284,
+    "affinity_std": 0.27727657556533813,
+    "boundary_strength_mean": 0.5116555690765381,
+    "partition_balance": [
+      0.5,
+      0.5
+    ]
+  },
+  "train_steps": 2,
+  "losses": [
+    3.2219009399414062,
+    1.9724924564361572
+  ],
+  "loss_components": {
+    "classification": 0.6939206123352051,
+    "segmentation": 0.677918016910553,
+    "depth": 0.506117045879364,
+    "normals": 0.09453679621219635
+  },
+  "cache": "outputs/smoke/toy/smoke_features.pt",
+  "cache_bytes": 677469,
+  "cache_fingerprint": "f7881f40692de360319050166ea24c31bcbf5567caccf5e7e8648919f40dbf61",
+  "cache_reload_equal": true,
+  "runtime": {
+    "backend_initialization_seconds": 4.1682273149490356e-05,
+    "feature_extraction_seconds": 2.306616198271513,
+    "readout_training_seconds": 5.894075985997915,
+    "total_seconds": 78.99796057119966,
+    "cuda_peak_allocated_bytes": null,
+    "cuda_peak_reserved_bytes": null,
+    "transformer_query_calls": 18,
+    "transformer_evaluated_states": 108
+  }
+}

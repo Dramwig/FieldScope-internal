@@ -1,0 +1,30 @@
+{
+  "tested_revision": "4b9997a45f6d03de80760aabee22276b34a5c6c8",
+  "ruff": {
+    "status": "passed",
+    "version": "0.16.10",
+    "command": "ruff check src tests scripts"
+  },
+  "pytest": {
+    "status": "incomplete_terminated",
+    "exit_code": 137,
+    "termination_cause": "unconfirmed",
+    "assertion_failure_reported_in_captured_log": false,
+    "log": "pytest_terminated.txt",
+    "initial_attempt": "collection failed because scipy was missing; captured in pytest_initial_missing_scipy.txt",
+    "validation_dependencies": "scipy and h5py installed in project-local .incoming/retirement-validation-deps",
+    "container_cpu_cores": 0.5,
+    "container_memory_bytes": 2147483648,
+    "observed_cgroup_oom_kill_count": 0,
+    "notes": "Do not report the full suite as passed or infer a confirmed OOM cause from exit 137 alone."
+  },
+  "toy_smoke": {
+    "status": "passed",
+    "application_exit_code": 0,
+    "command": "python -m fieldscope.cli smoke --config configs/eval/toy_smoke.yaml --steps 2",
+    "log": "toy_smoke.txt",
+    "notes": "The shell wrapper's final display-only tail command had a CRLF filename error after SMOKE_EXIT=0; the complete smoke log was retrieved separately."
+  },
+  "git_fsck": "passed",
+  "changes_scientific_verdict": false
+}

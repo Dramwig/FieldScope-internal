@@ -1,0 +1,66 @@
+[
+  {
+    "path": "datasets/prepared/imagenet1k/metadata/logs/export_hf_full_20260709_192259.log",
+    "bytes": 3768
+  },
+  {
+    "path": "datasets/prepared/imagenet1k/metadata/export_summary.json",
+    "bytes": 622
+  },
+  {
+    "path": "datasets/prepared/imagenet1k/metadata/image_manifest.jsonl",
+    "bytes": 405484553
+  },
+  {
+    "path": "datasets/prepared/imagenet1k/metadata/imagenet_label_to_wnid_train_order.json",
+    "bytes": 24922
+  },
+  {
+    "path": "datasets/prepared/imagenet1k/metadata/label_to_wnid.json",
+    "bytes": 23918
+  },
+  {
+    "path": "datasets/prepared/imagenet1k/raw/SOURCE_HF_IMAGENET_1K_256X256.md",
+    "bytes": 204
+  },
+  {
+    "path": "datasets/prepared/ade20k/fieldscope_preparation.json",
+    "bytes": 371
+  },
+  {
+    "path": "datasets/prepared/imagenet100/fieldscope_preparation.json",
+    "bytes": 2489
+  },
+  {
+    "path": "datasets/prepared/nyuv2/fieldscope_preparation.json",
+    "bytes": 529
+  },
+  {
+    "path": "datasets/prepared/nyuv2/test.json",
+    "bytes": 69981
+  },
+  {
+    "path": "datasets/prepared/nyuv2/train.json",
+    "bytes": 76508
+  },
+  {
+    "path": "datasets/prepared/nyuv2/val.json",
+    "bytes": 8563
+  },
+  {
+    "path": "datasets/prepared/imagenet100/image_manifest.jsonl",
+    "bytes": 24731036
+  },
+  {
+    "path": "datasets/prepared/ade20k/objectInfo150.txt",
+    "bytes": 5689
+  },
+  {
+    "path": "datasets/prepared/ade20k/sceneCategories.txt",
+    "bytes": 646429
+  },
+  {
+    "path": "datasets/prepared/imagenet100/classes.txt",
+    "bytes": 1100
+  }
+]

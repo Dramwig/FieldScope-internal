@@ -1,0 +1,108 @@
+{
+  "status": "verified",
+  "registry": "D:/checkpoints_hub/registry/fal/AuraFlow-v0.3",
+  "schema_version": 1,
+  "model_id": "fal/AuraFlow-v0.3",
+  "revision": "2cd8588f04c886002be4571697d84654a50e3af3",
+  "variant": "fp16",
+  "source_project": "FieldScope",
+  "source_relative_path": "checkpoints/AuraFlow-v0.3",
+  "date": "2026-10-06",
+  "verification": "Every source file verified by full SHA-256 against the server manifest",
+  "download_recipe": "scripts/download.py",
+  "transport": "SSH and pinned-revision hf-mirror.com downloads; identical source checksums required",
+  "files": [
+    {
+      "path": "LICENSE",
+      "bytes": 11356,
+      "sha256": "43070e2d4e532684de521b885f385d0841030efa2b1a20bafb76133a5e1379c1"
+    },
+    {
+      "path": "README.md",
+      "bytes": 2054,
+      "sha256": "4b06a70c7afb2f2a3ab7fbc043373c37c291c5a348a63000e47fde18d5609e11"
+    },
+    {
+      "path": "model_index.json",
+      "bytes": 458,
+      "sha256": "7ffee10ae3277f136a341bac357405d615961f7c949f7c2e231075f8c7d18541"
+    },
+    {
+      "path": "scheduler/scheduler_config.json",
+      "bytes": 142,
+      "sha256": "484263e607c38c2940d914d53fbf80c6391e180009846689bb2da970d5605f14"
+    },
+    {
+      "path": "text_encoder/config.json",
+      "bytes": 949,
+      "sha256": "4fd2fce0b91e37ddfd44b4afec50a4bb8a433e348d15c30e4c412e9556490edc"
+    },
+    {
+      "path": "text_encoder/model.fp16.safetensors",
+      "bytes": 2950448704,
+      "sha256": "decf9b70814ed5e9965bfca9fbd0483462e2bf743790663025b7742f8c014c72"
+    },
+    {
+      "path": "tokenizer/added_tokens.json",
+      "bytes": 2593,
+      "sha256": "ea5a91a3234f66ea642c8e672d67f0f493759a9bee6910ae304ea9b9492118b5"
+    },
+    {
+      "path": "tokenizer/special_tokens_map.json",
+      "bytes": 2677,
+      "sha256": "d8927854091fd9c46871b2e2a077f7509f1231484e5e66edcb3026f9074f3280"
+    },
+    {
+      "path": "tokenizer/tokenizer.json",
+      "bytes": 1861548,
+      "sha256": "f6648b38637e86d7c227794f71fb036207b4fdacc760c9c03da71a3fcbe14c49"
+    },
+    {
+      "path": "tokenizer/tokenizer.model",
+      "bytes": 499723,
+      "sha256": "9e556afd44213b6bd1be2b850ebbbd98f5481437a8021afaf58ee7fb1818d347"
+    },
+    {
+      "path": "tokenizer/tokenizer_config.json",
+      "bytes": 20978,
+      "sha256": "fa2f9e9fd7368f824e2bf44a60761055534b5c8039f2735ad61305bef57d2853"
+    },
+    {
+      "path": "transformer/config.json",
+      "bytes": 379,
+      "sha256": "f80724bd8e8ba2ee0d723c1eb68589bc6d497b2a247af11c23043eb791f7a562"
+    },
+    {
+      "path": "transformer/diffusion_pytorch_model-00001-of-00002.fp16.safetensors",
+      "bytes": 9942269216,
+      "sha256": "6a40b011f287452dbca80face78e667055904c5ad97eb2097ade3200259b2203"
+    },
+    {
+      "path": "transformer/diffusion_pytorch_model-00002-of-00002.fp16.safetensors",
+      "bytes": 3774983112,
+      "sha256": "e46f7a419b9531c293398d8ac012e10fe99f98228bdd71ce0b7dbb51688a36c0"
+    },
+    {
+      "path": "transformer/diffusion_pytorch_model.safetensors.fp16.index.json",
+      "bytes": 37663,
+      "sha256": "6791b87e20fd2ae14e7c0f42edb299f232cb941f6363a38de06d60a689067692"
+    },
+    {
+      "path": "transformer/diffusion_pytorch_model.safetensors.index.fp16.json",
+      "bytes": 37663,
+      "sha256": "6791b87e20fd2ae14e7c0f42edb299f232cb941f6363a38de06d60a689067692"
+    },
+    {
+      "path": "vae/config.json",
+      "bytes": 859,
+      "sha256": "bf2daa82c70fb8437853a3e9cd901c775a3f7a9af9b49227663ad86e93be3bc7"
+    },
+    {
+      "path": "vae/diffusion_pytorch_model.fp16.safetensors",
+      "bytes": 167335342,
+      "sha256": "bcb60880a46b63dea58e9bc591abe15f8350bde47b405f9c38f4be70c6161e68"
+    }
+  ],
+  "total_bytes": 16837515416,
+  "changes_scientific_verdict": false
+}

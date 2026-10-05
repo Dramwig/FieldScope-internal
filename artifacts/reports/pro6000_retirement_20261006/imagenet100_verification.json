@@ -1,0 +1,6 @@
+{
+  "sha256": "c5b57e1f6b6994d709ba5842952e7c669d0dd9b6d5ab2390e603e5fc2ffb0e6d",
+  "bytes": 17319391232,
+  "local": "D:\\datasets_raw_hub\\registry\\imagenet100_full\\imagenet100_full.tar",
+  "remote": "/root/autodl-tmp/FieldScope/datasets/raw/imagenet100/imagenet100_full.tar"
+}

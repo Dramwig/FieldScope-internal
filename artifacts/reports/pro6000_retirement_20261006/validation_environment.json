@@ -1,0 +1,15 @@
+{
+  "python": "3.12.3 | packaged by Anaconda, Inc. | (main, May  6 2024, 19:46:43) [GCC 11.2.0]",
+  "packages": {
+    "torch": "2.8.0+cu128",
+    "torchvision": "0.23.0+cu128",
+    "numpy": "2.3.2",
+    "scipy": "1.18.1",
+    "h5py": "3.16.0",
+    "pytest": "9.0.3",
+    "PyYAML": "6.0.2"
+  },
+  "cpu_max": "50000 100000",
+  "memory_max": "2147483648",
+  "tested_revision": "4b9997a45f6d03de80760aabee22276b34a5c6c8"
+}

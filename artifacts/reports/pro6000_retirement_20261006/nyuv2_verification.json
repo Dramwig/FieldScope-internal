@@ -1,0 +1,21 @@
+{
+  "status": "passed",
+  "registry": "D:/datasets_raw_hub/registry/nyuv2",
+  "artifacts": [
+    {
+      "path": "raw/splits.mat",
+      "bytes": 2626,
+      "sha256": "6e081404491a8bfba2f066beaa9713ef6046f9007aa5f799f2a350506a580cee",
+      "verification": "server and local SHA-256 match"
+    },
+    {
+      "path": "raw/nyu_depth_v2_labeled.mat",
+      "bytes": 2972037809,
+      "sha256": "2d724b0c0ab358aa1ce5df855e5bd14a2279ab7202efe22f32a30d612dcb86aa",
+      "initially_absent_from_server_raw_directory": true,
+      "restored_from": "https://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat",
+      "verification": "downloaded file SHA-256 matches historical fieldscope_preparation.json exactly"
+    }
+  ],
+  "changes_scientific_verdict": false
+}

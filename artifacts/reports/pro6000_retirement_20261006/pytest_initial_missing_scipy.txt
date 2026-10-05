@@ -1,0 +1,16 @@
+
+==================================== ERRORS ====================================
+_________________ ERROR collecting tests/test_prepare_data.py __________________
+ImportError while importing test module '/root/autodl-tmp/FieldScope/FieldScope-internal/tests/test_prepare_data.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/root/miniconda3/lib/python3.12/importlib/__init__.py:90: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_prepare_data.py:4: in <module>
+    from scipy.io import savemat
+E   ModuleNotFoundError: No module named 'scipy'
+=========================== short test summary info ============================
+ERROR tests/test_prepare_data.py
+!!!!!!!!!!!!!!!!!!!! Interrupted: 1 error during collection !!!!!!!!!!!!!!!!!!!!
+1 error in 56.10s

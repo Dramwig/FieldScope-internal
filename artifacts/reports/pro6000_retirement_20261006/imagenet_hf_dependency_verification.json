@@ -1,0 +1,286 @@
+{
+  "status": "passed",
+  "registry": "D:\\datasets_raw_hub\\registry\\imagenet_1k_256x256_hf",
+  "verification_reference": "raw/checksums.sha256 copied from the source dataset",
+  "verified": [
+    {
+      "path": "README.md",
+      "bytes": 88069,
+      "mtime_ns": 1791217413143581800,
+      "sha256": "7c86a39a6f722ebb1a314789c1a0d099f58cafac57fa49273e62c272448715bf"
+    },
+    {
+      "path": "data/test-00000-of-00003.parquet",
+      "bytes": 469051040,
+      "mtime_ns": 1791217647865984000,
+      "sha256": "479e408713a9e51cf4e03061a9145a83dac98a0ad5bb5457db0d0e21de284172"
+    },
+    {
+      "path": "data/test-00001-of-00003.parquet",
+      "bytes": 468807894,
+      "mtime_ns": 1791217995245631800,
+      "sha256": "fc368724cde357e215217adaee72a542267b65e9308daa31b3084ac712ef38fb"
+    },
+    {
+      "path": "data/test-00002-of-00003.parquet",
+      "bytes": 468453138,
+      "mtime_ns": 1791218130516091700,
+      "sha256": "26750b4a13becf2bbd90683f7bd4838c9ac5bc77d0bb513082776a40884a8842"
+    },
+    {
+      "path": "data/train-00000-of-00040.parquet",
+      "bytes": 412671982,
+      "mtime_ns": 1791218337278974100,
+      "sha256": "e39671153384c070d56fa42806b188390af4d8fe71bc8a685c6296aa0ea3a19e"
+    },
+    {
+      "path": "data/train-00001-of-00040.parquet",
+      "bytes": 502076482,
+      "mtime_ns": 1791218576084897300,
+      "sha256": "6d6eaa5c27c5219e4fb18a9673894942705e836b6cf4bf96b890d28b2ab4d993"
+    },
+    {
+      "path": "data/train-00002-of-00040.parquet",
+      "bytes": 498509409,
+      "mtime_ns": 1791218857795218000,
+      "sha256": "9a3522de1aee2a85a215bb0b02ab7bf596dd410a0e6166e734915324176fee97"
+    },
+    {
+      "path": "data/train-00003-of-00040.parquet",
+      "bytes": 448171592,
+      "mtime_ns": 1791219215106639500,
+      "sha256": "ef3b4060641e4dcd68c45a2c4e9124668de12ee0c61f8583fbc4e6d0ab56a51d"
+    },
+    {
+      "path": "data/train-00004-of-00040.parquet",
+      "bytes": 498650200,
+      "mtime_ns": 1791219725734494600,
+      "sha256": "410a023e8ca61db6c9a887ac8be36a7004af973c4588bd6f45da5b2eee34af4f"
+    },
+    {
+      "path": "data/train-00005-of-00040.parquet",
+      "bytes": 458216630,
+      "mtime_ns": 1791220079497328400,
+      "sha256": "cd8e6a967df4b3de7b4543c6572d13779438e889e97f2e41eda93cae0492da89"
+    },
+    {
+      "path": "data/train-00006-of-00040.parquet",
+      "bytes": 427770934,
+      "mtime_ns": 1791220327975213900,
+      "sha256": "1bfab1948e5cd2c00d96c64be6ff09ce890766e00e1f4ef96970220ebd5fc71d"
+    },
+    {
+      "path": "data/train-00007-of-00040.parquet",
+      "bytes": 453754507,
+      "mtime_ns": 1791220620676756300,
+      "sha256": "00a8ebe82fe7e042c7b6de0dc85a915b81aa0ad71f9e0ff578954b278c905c6f"
+    },
+    {
+      "path": "data/train-00008-of-00040.parquet",
+      "bytes": 450654416,
+      "mtime_ns": 1791220949170988800,
+      "sha256": "92288c684115a27593cf592bc80d10f3826a24bee3a923d7c7353eb7bebfa7b9"
+    },
+    {
+      "path": "data/train-00009-of-00040.parquet",
+      "bytes": 450233226,
+      "mtime_ns": 1791222083898281400,
+      "sha256": "4d73e18ca932101de4de947444d7560214bc035904894226c2541db96bf7095e"
+    },
+    {
+      "path": "data/train-00010-of-00040.parquet",
+      "bytes": 456340044,
+      "mtime_ns": 1791223877038505600,
+      "sha256": "53bda06fb9aae4f30de5cc3ba207de23c420bf958ee853da1e1b0c530cd75ec0"
+    },
+    {
+      "path": "data/train-00011-of-00040.parquet",
+      "bytes": 496019835,
+      "mtime_ns": 1791222542910908600,
+      "sha256": "d2db8203dfa96b35fd12829120220b7cdd9ede983c9af3449a19acb4f7d71d5c"
+    },
+    {
+      "path": "data/train-00012-of-00040.parquet",
+      "bytes": 413378733,
+      "mtime_ns": 1791222743775747200,
+      "sha256": "e8371cb152a6fe94e320ab304e2caa2c484e59e270b4c5c580f7ad028e95f722"
+    },
+    {
+      "path": "data/train-00013-of-00040.parquet",
+      "bytes": 508571140,
+      "mtime_ns": 1791223069070188900,
+      "sha256": "66ab27802af0b6cbfa9b1191a9cc63b2f9e32f3859b392224c2afb5d78d84299"
+    },
+    {
+      "path": "data/train-00014-of-00040.parquet",
+      "bytes": 491964587,
+      "mtime_ns": 1791223397909932600,
+      "sha256": "a992d45b104ef8c17ce97b2baf9c35dabe3049809d13b18a1e41e60b1c0b2c9f"
+    },
+    {
+      "path": "data/train-00015-of-00040.parquet",
+      "bytes": 488278319,
+      "mtime_ns": 1791223722302656200,
+      "sha256": "2c46f70f2df4c4dd071c0811ef6eb477df0dab0ff70cab683842a906bd3904e0"
+    },
+    {
+      "path": "data/train-00016-of-00040.parquet",
+      "bytes": 417104097,
+      "mtime_ns": 1791223996571809900,
+      "sha256": "0b8c3965b16211e1fb382d14ab930f082fea09bff47729f2c28a557ceea57845"
+    },
+    {
+      "path": "data/train-00017-of-00040.parquet",
+      "bytes": 424639869,
+      "mtime_ns": 1791224367446053000,
+      "sha256": "33e7d4d69cd6267ea201536072ba8e7af454b23b4e634ce87d12245e6321e10d"
+    },
+    {
+      "path": "data/train-00018-of-00040.parquet",
+      "bytes": 435866884,
+      "mtime_ns": 1791225601051399800,
+      "sha256": "32a691bb4ccc00e333ddf35ff119e9031130d46adb7f314be6cbed7be338e6ae"
+    },
+    {
+      "path": "data/train-00019-of-00040.parquet",
+      "bytes": 433776857,
+      "mtime_ns": 1791219875143066900,
+      "sha256": "d83c4fa6ab3abab22db1b9f5b3f8eed0afa7c5db6512bc35ce5c676b58e1d94a"
+    },
+    {
+      "path": "data/train-00020-of-00040.parquet",
+      "bytes": 416494219,
+      "mtime_ns": 1791225485735809100,
+      "sha256": "5b531e7c4db37503b233077c6febb971ea88c3a4d91e519fc698997059a39812"
+    },
+    {
+      "path": "data/train-00021-of-00040.parquet",
+      "bytes": 431546443,
+      "mtime_ns": 1791226030735912800,
+      "sha256": "da3186b265da61812cc6b7252fad3ee89af907ade7ffd32c3cab985c92494fc4"
+    },
+    {
+      "path": "data/train-00022-of-00040.parquet",
+      "bytes": 414222900,
+      "mtime_ns": 1791226198031650500,
+      "sha256": "4dc2f2360e3fb9460cf62f6d93fe04d4b9807e93df01f09bee737c9e7f6f3546"
+    },
+    {
+      "path": "data/train-00023-of-00040.parquet",
+      "bytes": 437687988,
+      "mtime_ns": 1791226634436052000,
+      "sha256": "6b5a071f2f7dd332c5ba52e5f99232025a55380b830bd787be03ad6acc43a28f"
+    },
+    {
+      "path": "data/train-00024-of-00040.parquet",
+      "bytes": 406779922,
+      "mtime_ns": 1791226786563134300,
+      "sha256": "ef8fc22b561af3632f13e057de85ab9fe5798f124c8d1052b1bbdb1bf08d77fd"
+    },
+    {
+      "path": "data/train-00025-of-00040.parquet",
+      "bytes": 418154373,
+      "mtime_ns": 1791227154449003000,
+      "sha256": "b1af37c8a4d61720050b19bd90392e7a8956b383c6cdb875fb79d0a13e7eb467"
+    },
+    {
+      "path": "data/train-00026-of-00040.parquet",
+      "bytes": 428675195,
+      "mtime_ns": 1791224079612331500,
+      "sha256": "95565ef2d9cd548cdee8ebf8222ba308563d1c67b8e46687aa630e27c0e6dee2"
+    },
+    {
+      "path": "data/train-00027-of-00040.parquet",
+      "bytes": 410881484,
+      "mtime_ns": 1791223738667342500,
+      "sha256": "dd4d6ec99b23ba12ea778c8811c3feb87b90196706c07ab22e6d6f86bca7a810"
+    },
+    {
+      "path": "data/train-00028-of-00040.parquet",
+      "bytes": 403364925,
+      "mtime_ns": 1791223432338368100,
+      "sha256": "5ded8137f220eadd72e25c4939f806257e586bfb2c9311bb9998b948cc2dacee"
+    },
+    {
+      "path": "data/train-00029-of-00040.parquet",
+      "bytes": 416389650,
+      "mtime_ns": 1791223156111443500,
+      "sha256": "2ea1d85adcd259575220cd185e9388e86cf43e40403659e11e80c8a97b751ee7"
+    },
+    {
+      "path": "data/train-00030-of-00040.parquet",
+      "bytes": 413999601,
+      "mtime_ns": 1791222811656575800,
+      "sha256": "536eee59751159ce16407d13c6c3d6258c826b63e12e2a4b22975ae672fd956e"
+    },
+    {
+      "path": "data/train-00031-of-00040.parquet",
+      "bytes": 420469050,
+      "mtime_ns": 1791222592699264500,
+      "sha256": "12688e4da9b1ae3fbd4aa2dc4cd3ee04e60c8028ccde5b4a7a86a222995fc5a1"
+    },
+    {
+      "path": "data/train-00032-of-00040.parquet",
+      "bytes": 433261993,
+      "mtime_ns": 1791222227535799000,
+      "sha256": "b48f20bc2ff297fa410d11afdaa27d2f2784c6f7eb0998f38ebbad946ed24592"
+    },
+    {
+      "path": "data/train-00033-of-00040.parquet",
+      "bytes": 412622002,
+      "mtime_ns": 1791221792027001300,
+      "sha256": "c61dd29d661c138fef693ccd4e04dedd64daffdc043b3591c6c9eed6d27a86d2"
+    },
+    {
+      "path": "data/train-00034-of-00040.parquet",
+      "bytes": 453143611,
+      "mtime_ns": 1791221081304408100,
+      "sha256": "7955fd0cb3e8c40cb439d185208afa4becd23eb13406aa245f78f680786a7cc9"
+    },
+    {
+      "path": "data/train-00035-of-00040.parquet",
+      "bytes": 408058872,
+      "mtime_ns": 1791220674744080000,
+      "sha256": "ca3fec2d560a13fbd7fe8990a9712bd733291ec5dc4a19ecd5ad59eb11f28727"
+    },
+    {
+      "path": "data/train-00036-of-00040.parquet",
+      "bytes": 425528409,
+      "mtime_ns": 1791220351131756300,
+      "sha256": "84e3e9d7934646d945820188c752243222da7e9cde020cbd2ed66529e808240a"
+    },
+    {
+      "path": "data/train-00037-of-00040.parquet",
+      "bytes": 436023339,
+      "mtime_ns": 1791220078102370700,
+      "sha256": "69fccfc11d181f1c1362847efc2b1e3a4446c02592f0c31fb545576d038fccb9"
+    },
+    {
+      "path": "data/train-00038-of-00040.parquet",
+      "bytes": 431730256,
+      "mtime_ns": 1791217856249688200,
+      "sha256": "0aa83ea1a01ec9bb36c7a510681c87b91dd53c7e45bba88ceba65783d1cce1f5"
+    },
+    {
+      "path": "data/train-00039-of-00040.parquet",
+      "bytes": 464228199,
+      "mtime_ns": 1791217516447427300,
+      "sha256": "a370bdbd11d33ef6c16d992f1519ccc7d9aa7554c865a3a795c811d32b42c0a0"
+    },
+    {
+      "path": "data/validation-00000-of-00002.parquet",
+      "bytes": 351766666,
+      "mtime_ns": 1791219602119917600,
+      "sha256": "399ae54c309fa71f99b6f3c121ad4507ae3103f0205923e6695b6a6bac52c6eb"
+    },
+    {
+      "path": "data/validation-00001-of-00002.parquet",
+      "bytes": 351313139,
+      "mtime_ns": 1791219235309937400,
+      "sha256": "3c665d47c5057e237be8c15348570466478e4a73b8d4ff913ed319cd8e3f16f7"
+    }
+  ],
+  "missing": [],
+  "failed": [],
+  "changes_scientific_verdict": false
+}

@@ -61,3 +61,13 @@ matching pretrigger report is artifacts/reports/downstream_gate_cross_host_pretr
 2026-08-24T15:31:34Z watcher/reconstructor update: 318 accepted intermediate audits, 21/240 terminal cells, five classified races, zero unresolved failures; active boundaries ImageNet-100/ADE20K/NYUv2/VOC2012 = 46/9/75/zt-seed4121-epoch9. Ledger SHA-256 `8cdc397be10aa262dd40065aef9fa9f1ddc791fd7ee8bac9da2c2a2a473d69a4`; execution_complete=false and changes_scientific_verdict=false.
 
 2026-08-24T15:41:41Z watcher/reconstructor update: 320 accepted intermediate audits, 21/240 terminal cells, five classified races, zero unresolved failures; active boundaries ImageNet-100/ADE20K/NYUv2/VOC2012 = 46/9/79/zt-seed4121-epoch12. Ledger SHA-256 `5fe709c9341d33cf7a8ca6a068db5f61677b6e2d0484bd52cf0e9adc982075e5`; execution_complete=false and changes_scientific_verdict=false.
+
+## 2026-10-06 归档入口
+
+pro6000 释放前归档已完成，代码与归档记录发布到 GitHub `main`。当前实际观察与历史
+迁移记录的边界、资产位置和最终验收状态见
+`docs/records/2026-10-06_pro6000_local_archive.md`。raw 数据、权重与实验档案校验通过；
+完整 pytest 以退出码 137 中止，未确认终止原因。本次未释放服务器或删除原项目，
+不恢复正式训练，不将归档、接口或 toy 测试通过写为科学结论。
+临时目录 `tmp/retirement-20261006/` 的删除被自动审批阻止，仍待本机用户清理；
+必要内容已归档且没有活动进程使用该目录。

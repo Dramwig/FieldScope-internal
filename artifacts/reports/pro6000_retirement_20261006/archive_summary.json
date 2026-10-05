@@ -1,0 +1,136 @@
+{
+  "schema_version": 1,
+  "date": "2026-10-06",
+  "status": "assets_verified_cleanup_blocked",
+  "code_repository": "https://github.com/Dramwig/FieldScope-internal",
+  "datasets": {
+    "cifar10": {
+      "path": "raw/cifar-10-python.tar.gz",
+      "bytes": 170498071,
+      "sha256": "6d958be074577803d12ecdefd02955f39262c83c16fe9348329d7fe0b5c001ce",
+      "status": "verified_existing_local",
+      "verified_at": "2026-10-06",
+      "source_project": "FieldScope",
+      "remote_raw_available": false
+    },
+    "ade20k": {
+      "path": "raw/ADEChallengeData2016.zip",
+      "bytes": 965371974,
+      "sha256": "a4a2860390141240c3c05981b5c0084c1d773b2a8c39ac14209da40602cc11ea",
+      "status": "verified_existing_local",
+      "verified_at": "2026-10-06",
+      "source_project": "FieldScope",
+      "remote_raw_available": false
+    },
+    "pascal_voc_2012": {
+      "path": "raw/VOCtrainval_11-May-2012.tar",
+      "bytes": 1999639040,
+      "sha256": "e14f763270cf193d0b5f74b169f44157a4b0c6efa708f4dd0ff78ee691763bcb",
+      "status": "verified_existing_local",
+      "verified_at": "2026-10-06",
+      "source_project": "FieldScope",
+      "remote_raw_available": false
+    },
+    "nyuv2": {
+      "status": "passed",
+      "registry": "D:/datasets_raw_hub/registry/nyuv2",
+      "artifacts": [
+        {
+          "path": "raw/splits.mat",
+          "bytes": 2626,
+          "sha256": "6e081404491a8bfba2f066beaa9713ef6046f9007aa5f799f2a350506a580cee",
+          "verification": "server and local SHA-256 match"
+        },
+        {
+          "path": "raw/nyu_depth_v2_labeled.mat",
+          "bytes": 2972037809,
+          "sha256": "2d724b0c0ab358aa1ce5df855e5bd14a2279ab7202efe22f32a30d612dcb86aa",
+          "initially_absent_from_server_raw_directory": true,
+          "restored_from": "https://horatio.cs.nyu.edu/mit/silberman/nyu_depth_v2/nyu_depth_v2_labeled.mat",
+          "verification": "downloaded file SHA-256 matches historical fieldscope_preparation.json exactly"
+        }
+      ],
+      "changes_scientific_verdict": false
+    },
+    "imagenet100_full": {
+      "sha256": "c5b57e1f6b6994d709ba5842952e7c669d0dd9b6d5ab2390e603e5fc2ffb0e6d",
+      "bytes": 17319391232,
+      "local": "D:\\datasets_raw_hub\\registry\\imagenet100_full\\imagenet100_full.tar",
+      "remote": "/root/autodl-tmp/FieldScope/datasets/raw/imagenet100/imagenet100_full.tar"
+    },
+    "imagenet_1k_256x256_hf": {
+      "status": "passed",
+      "verified_files": 46,
+      "report": "imagenet_hf_dependency_verification.json"
+    }
+  },
+  "model_manifest": "D:/checkpoints_hub/registry/fal/AuraFlow-v0.3/archive_manifest.json",
+  "experiment_manifest": "D:/checkpoints_hub/registry/FieldScope/experiments/manifest.json",
+  "additional_archives": [
+    {
+      "status": "passed",
+      "archive": "outputs/retirement-20261006/dataset-provenance.tar",
+      "bytes": 431104000,
+      "sha256": "a21c813d0a6199bba2b5acb6b99b137282588dfb6cad8a69ee138a0dab45f649",
+      "source_archive_sha256_matches_local": true,
+      "contents": "Prepared-data metadata, manifests, label mappings, splits, class lists and source notes; no image arrays or feature cache",
+      "changes_scientific_verdict": false
+    },
+    {
+      "status": "passed",
+      "archive": "outputs/retirement-20261006/source-records-precommit.tar",
+      "bytes": 29726720,
+      "sha256": "76e969ce3ede573f65f6dd1bc62661c577a16f03ae05c1f2e520ad7ab9797fd2",
+      "files": 1410,
+      "initial_source_snapshot_sha256": "171eec335915ce25d5e5a5332babdf8a7f1fe8786df63844374e6f40a5510d7d",
+      "purpose": "Preserve exact pre-commit server record bytes, including line endings, independently of Git text normalization. No .git directory is included.",
+      "changes_scientific_verdict": false
+    }
+  ],
+  "validation": {
+    "tested_revision": "4b9997a45f6d03de80760aabee22276b34a5c6c8",
+    "ruff": {
+      "status": "passed",
+      "version": "0.16.10",
+      "command": "ruff check src tests scripts"
+    },
+    "pytest": {
+      "status": "incomplete_terminated",
+      "exit_code": 137,
+      "termination_cause": "unconfirmed",
+      "assertion_failure_reported_in_captured_log": false,
+      "log": "pytest_terminated.txt",
+      "initial_attempt": "collection failed because scipy was missing; captured in pytest_initial_missing_scipy.txt",
+      "validation_dependencies": "scipy and h5py installed in project-local .incoming/retirement-validation-deps",
+      "container_cpu_cores": 0.5,
+      "container_memory_bytes": 2147483648,
+      "observed_cgroup_oom_kill_count": 0,
+      "notes": "Do not report the full suite as passed or infer a confirmed OOM cause from exit 137 alone."
+    },
+    "toy_smoke": {
+      "status": "passed",
+      "application_exit_code": 0,
+      "command": "python -m fieldscope.cli smoke --config configs/eval/toy_smoke.yaml --steps 2",
+      "log": "toy_smoke.txt",
+      "notes": "The shell wrapper's final display-only tail command had a CRLF filename error after SMOKE_EXIT=0; the complete smoke log was retrieved separately."
+    },
+    "git_fsck": "passed",
+    "changes_scientific_verdict": false
+  },
+  "cleanup": {
+    "model_temporary_files_removed": 17,
+    "experiment_transfer_parts_removed": 4,
+    "local_bundle_files_found": 0,
+    "extra_registered_worktrees": 0,
+    "temporary_directory_remaining": "D:/PaperField/FieldScope/FieldScope-internal/tmp/retirement-20261006",
+    "reason": "Automatic approval rejected batch and exact-directory recursive deletion: blocked by policy",
+    "active_archive_helpers": 0,
+    "other_workflow_partial_files_untouched": true
+  },
+  "final_git_sync": {
+    "receipt": "outputs/retirement-20261006/git_sync.json",
+    "receipt_rule": "Written only after local HEAD, GitHub main and server main agree and both code worktrees are clean"
+  },
+  "server_originals_deleted": false,
+  "changes_scientific_verdict": false
+}

@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "bytes": 16223567872,
+  "sha256": "a7626a5ebb000029200c0aa37b7a25ca80fb5065e880a1e7fa01ddaa8d53fc00",
+  "source_archive_sha256_matches_local": true,
+  "source": "/root/autodl-tmp/FieldScope/.incoming/retirement-20261006-experiment-evidence.tar",
+  "changes_scientific_verdict": false,
+  "archive": "D:/checkpoints_hub/registry/FieldScope/experiments/pro6000-20261006.tar"
+}

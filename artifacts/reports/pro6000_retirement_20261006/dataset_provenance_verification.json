@@ -1,0 +1,9 @@
+{
+  "status": "passed",
+  "archive": "outputs/retirement-20261006/dataset-provenance.tar",
+  "bytes": 431104000,
+  "sha256": "a21c813d0a6199bba2b5acb6b99b137282588dfb6cad8a69ee138a0dab45f649",
+  "source_archive_sha256_matches_local": true,
+  "contents": "Prepared-data metadata, manifests, label mappings, splits, class lists and source notes; no image arrays or feature cache",
+  "changes_scientific_verdict": false
+}

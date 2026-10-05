@@ -1,0 +1,10 @@
+{
+  "status": "passed",
+  "archive": "outputs/retirement-20261006/source-records-precommit.tar",
+  "bytes": 29726720,
+  "sha256": "76e969ce3ede573f65f6dd1bc62661c577a16f03ae05c1f2e520ad7ab9797fd2",
+  "files": 1410,
+  "initial_source_snapshot_sha256": "171eec335915ce25d5e5a5332babdf8a7f1fe8786df63844374e6f40a5510d7d",
+  "purpose": "Preserve exact pre-commit server record bytes, including line endings, independently of Git text normalization. No .git directory is included.",
+  "changes_scientific_verdict": false
+}
