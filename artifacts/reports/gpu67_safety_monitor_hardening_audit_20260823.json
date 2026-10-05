@@ -1,0 +1,25 @@
+{
+  "changes_scientific_verdict": false,
+  "contract": "on primary recovery exit, TERM the verified VOC-only process group; after 15 seconds KILL the group if the CLI remains",
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "new_monitor_command": "bash -c \n  set -u\n  primary=$1; worker=$2; pgid=$3\n  while kill -0 $primary 2>/dev/null && kill -0 $worker 2>/dev/null; do sleep 30; done\n  if ! kill -0 $primary 2>/dev/null && kill -0 $worker 2>/dev/null; then\n    echo $(date --iso-8601=seconds) primary recovery exited; terminating verified VOC process group pgid=$pgid\n    kill -TERM -- -$pgid 2>/dev/null || true\n    sleep 15\n    if kill -0 $worker 2>/dev/null; then\n      echo $(date --iso-8601=seconds) VOC process group survived TERM; escalating KILL pgid=$pgid\n      kill -KILL -- -$pgid 2>/dev/null || true\n    fi\n  fi\n bash 41610 3925626 3921096",
+  "new_monitor_pid": 2925950,
+  "observed_at": "2026-08-23T10:27:08.184521Z",
+  "old_monitor_limitation": "sent TERM only to the VOC parent shell and could leave child CLI processes orphaned",
+  "old_monitor_pid": 3961934,
+  "problems": [],
+  "schema_version": 1,
+  "status": "passed",
+  "training_outputs_modified": false,
+  "training_restarted": false,
+  "verified_process_group_members": [
+    3925620,
+    3925624,
+    3925625,
+    3925626
+  ],
+  "voc_process_group_id": 3921096
+}

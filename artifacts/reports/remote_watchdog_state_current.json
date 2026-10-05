@@ -1,0 +1,272 @@
+{
+  "analyzer": {
+    "alive": true,
+    "pid": 41355,
+    "repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/analysis-020c1de",
+    "worker_alive": false
+  },
+  "changes_scientific_verdict": false,
+  "decision_artifacts": {
+    "causal": {
+      "exists": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/causal/final_evidence_decision.json"
+    },
+    "completion_audit": {
+      "exists": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/analysis-output/formal-supervised-errors-020c1de/completion_audit.json"
+    },
+    "error_registry": {
+      "exists": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/analysis-output/formal-supervised-errors-020c1de/registry.json"
+    },
+    "extension": {
+      "exists": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/extension/extension_evidence_decision.json"
+    },
+    "final": {
+      "exists": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/final_evidence_decision.json"
+    },
+    "main": {
+      "exists": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/evidence_decision.json"
+    }
+  },
+  "evidence_scope": "external_process_recovery_only",
+  "expected_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-24T19:23:46.676579+00:00",
+  "preserved_negative_evidence": {
+    "signal_decision": {
+      "code_dirty": false,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "exists": true,
+      "paper_evidence": false,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/signal_gate/promotion_decision.json",
+      "sha256": "0378867d09a99c99b69ec7179a8ac7d20523106cc3f7b53236177e37a0e76a1e",
+      "status": "failed",
+      "verdict": "stop_or_redesign"
+    },
+    "voc2012_unsupervised": {
+      "code_dirty": false,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "exists": true,
+      "num_samples": 1449,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/voc2012_unsupervised.json",
+      "sha256": "4382c9e53be7fa4a77b5d5a6409011cd8ce21ff4dcb3f4422bb4f668c6aa840e",
+      "status": "passed"
+    }
+  },
+  "recovery": {
+    "alive": true,
+    "pid": 41610
+  },
+  "registered_progress": {
+    "observed_optimizer_steps": 1492568,
+    "observed_training_sample_exposures": 143177156,
+    "optimizer_step_fraction": 0.029258466436138098,
+    "representations_per_task": 20,
+    "required_matrix_runs": 240,
+    "required_optimizer_steps": 51013200,
+    "required_supervised_replays": 132,
+    "required_tasks": 4,
+    "required_training_sample_exposures": 725922600,
+    "seeds_per_representation": 3,
+    "training_sample_exposure_fraction": 0.1972347410040685
+  },
+  "resources": {
+    "disk_free_bytes": 56299207262208,
+    "disk_total_bytes": 841126395248640,
+    "disk_used_bytes": 784827187986432,
+    "memory_current_bytes": 182620426240,
+    "memory_events": {
+      "high": 0,
+      "low": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_group_kill": 0,
+      "oom_kill": 0
+    },
+    "memory_max_bytes": 1073741824000
+  },
+  "schema_version": 1,
+  "status": "active",
+  "tasks": {
+    "ade20k": {
+      "active_cells": [
+        {
+          "committed_epoch": 11,
+          "completed_optimizer_steps": 100045,
+          "completed_training_sample_exposures": 200079,
+          "report": "outputs/full_validation/auraflow_v03/ade20k/random_feature_local/seed-4121/segmentation_random_feature_local_seed4121_report.json",
+          "report_mtime_ns": 1787597541526727818,
+          "representation": "random_feature_local",
+          "seed": 4121,
+          "target_epochs": 80
+        }
+      ],
+      "cache_manifests": {
+        "test": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 2000
+        },
+        "train": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 18189
+        },
+        "val": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 2021
+        }
+      },
+      "completed_optimizer_steps": 100045,
+      "completed_training_sample_exposures": 200079,
+      "matrix": {
+        "exists": false,
+        "runs": 0,
+        "status": null
+      },
+      "maximum_committed_epoch": 11,
+      "training_report_files": 1,
+      "training_report_statuses": {
+        "running": 1
+      }
+    },
+    "imagenet100": {
+      "active_cells": [
+        {
+          "committed_epoch": 48,
+          "completed_optimizer_steps": 43680,
+          "completed_training_sample_exposures": 5589840,
+          "report": "outputs/full_validation/auraflow_v03/imagenet100/velocity/seed-7319/classification_velocity_seed7319_report.json",
+          "report_mtime_ns": 1787594846636083193,
+          "representation": "velocity",
+          "seed": 7319,
+          "target_epochs": 90
+        }
+      ],
+      "cache_manifests": {
+        "test": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 5000
+        },
+        "train": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 116455
+        },
+        "val": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 12940
+        }
+      },
+      "completed_optimizer_steps": 1108380,
+      "completed_training_sample_exposures": 141842190,
+      "matrix": {
+        "exists": true,
+        "runs": 13,
+        "status": "running"
+      },
+      "maximum_committed_epoch": 90,
+      "training_report_files": 14,
+      "training_report_statuses": {
+        "passed": 13,
+        "running": 1
+      }
+    },
+    "nyuv2": {
+      "active_cells": [
+        {
+          "committed_epoch": 37,
+          "completed_optimizer_steps": 6623,
+          "completed_training_sample_exposures": 26455,
+          "report": "outputs/full_validation/auraflow_v03/nyuv2/z0/seed-104729/depth_z0_seed104729_report.json",
+          "report_mtime_ns": 1787599374821228486,
+          "representation": "z0",
+          "seed": 104729,
+          "target_epochs": 80
+        }
+      ],
+      "cache_manifests": {
+        "test": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 654
+        },
+        "train": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 715
+        },
+        "val": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 80
+        }
+      },
+      "completed_optimizer_steps": 78223,
+      "completed_training_sample_exposures": 312455,
+      "matrix": {
+        "exists": true,
+        "runs": 5,
+        "status": "running"
+      },
+      "maximum_committed_epoch": 80,
+      "training_report_files": 6,
+      "training_report_statuses": {
+        "passed": 5,
+        "running": 1
+      }
+    },
+    "voc2012": {
+      "active_cells": [
+        {
+          "committed_epoch": 64,
+          "completed_optimizer_steps": 21120,
+          "completed_training_sample_exposures": 84352,
+          "report": "outputs/full_validation/auraflow_v03/voc2012/zt/seed-7319/segmentation_zt_seed7319_report.json",
+          "report_mtime_ns": 1787599368331138467,
+          "representation": "zt",
+          "seed": 7319,
+          "target_epochs": 80
+        }
+      ],
+      "cache_manifests": {
+        "test": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 1449
+        },
+        "train": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 1318
+        },
+        "val": {
+          "complete": true,
+          "exists": true,
+          "num_samples": 146
+        }
+      },
+      "completed_optimizer_steps": 205920,
+      "completed_training_sample_exposures": 822432,
+      "matrix": {
+        "exists": true,
+        "runs": 7,
+        "status": "running"
+      },
+      "maximum_committed_epoch": 80,
+      "training_report_files": 8,
+      "training_report_statuses": {
+        "passed": 7,
+        "running": 1
+      }
+    }
+  },
+  "watchdog_pid": 41096
+}

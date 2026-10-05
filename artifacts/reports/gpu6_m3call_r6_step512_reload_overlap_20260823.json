@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "scope": "gpu6_external_m3call_r6_step512_reload_evaluation_overlap_provenance",
+  "status": "passed",
+  "observed_at": "2026-08-23T18:18:19Z",
+  "server": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "authorized_physical_gpus": [6, 7],
+  "fieldscope_parallel_scope": "cross_task_only",
+  "per_task_seed_workers": 1,
+  "preceding_external_training": {
+    "run": "omnicall-stage1-h200-gpu67-train-20260823-r6",
+    "gpu6_pid": 1815680,
+    "gpu7_pid": 1815681,
+    "launcher_pid": 1815248,
+    "all_three_absent_at_observation": true,
+    "planned_stop_after_step": 512
+  },
+  "current_external_process": {
+    "project": "M3Call",
+    "launcher_pid": 3659582,
+    "launcher": "run_stage1_r6_canary.sh",
+    "pid": 3528022,
+    "physical_gpu": 6,
+    "used_memory_mib": 60854,
+    "started_at": "2026-08-23T17:56:26Z",
+    "command_role": "evaluate_stage1_checkpoint_step_512_reload_r1",
+    "checkpoint": "omnicall-stage1-h200-gpu67-train-20260823-r6/checkpoints/step-00000512",
+    "expected_step": 512
+  },
+  "gpu7_external_m3call_process_absent": true,
+  "fieldscope_workers": [
+    {
+      "task": "imagenet100",
+      "pid": 102910,
+      "physical_gpu": 6,
+      "used_memory_mib": 2174
+    },
+    {
+      "task": "nyuv2",
+      "pid": 1571768,
+      "physical_gpu": 6,
+      "used_memory_mib": 938
+    },
+    {
+      "task": "voc2012",
+      "pid": 1571769,
+      "physical_gpu": 7,
+      "used_memory_mib": 880
+    },
+    {
+      "task": "ade20k",
+      "pid": 1571772,
+      "physical_gpu": 7,
+      "used_memory_mib": 862
+    }
+  ],
+  "gpu_snapshot": [
+    {
+      "physical_gpu": 6,
+      "memory_total_mib": 143771,
+      "memory_used_mib": 64806,
+      "memory_free_mib": 78351,
+      "utilization_gpu_percent": 13,
+      "power_draw_w": 128.14
+    },
+    {
+      "physical_gpu": 7,
+      "memory_total_mib": 143771,
+      "memory_used_mib": 2577,
+      "memory_free_mib": 140580,
+      "utilization_gpu_percent": 0,
+      "power_draw_w": 112.37
+    }
+  ],
+  "actions": {
+    "external_processes_terminated": false,
+    "external_processes_modified": false,
+    "fieldscope_workers_restarted": false,
+    "fieldscope_batch_or_runtime_contract_changed": false,
+    "duplicate_dataset_or_cell_writer_started": false,
+    "four_fieldscope_tasks_kept_running": true
+  },
+  "resource_overlap_scientific_effect": "not_inferred",
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

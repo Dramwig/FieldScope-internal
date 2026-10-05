@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "candidate_cross_host_formal_worker_migration_readiness_only",
+  "observed_at": "2026-08-24T08:56:00Z",
+  "ssh_alias": "dsw-M3Call",
+  "runtime_hostname": "interactive-upozjqcdg5ie-57fcf4446c-tvk2d",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "analysis_worktree_clean": true,
+  "pytorch": "2.7.1+cu126",
+  "cuda": "12.6",
+  "logical_cpus": 128,
+  "gpus": [
+    {
+      "physical_index": 0,
+      "name": "NVIDIA A800-SXM4-80GB",
+      "uuid": "GPU-be5276b3-290c-8ed6-3776-fee7c4fc506b",
+      "memory_mib": 81920
+    },
+    {
+      "physical_index": 1,
+      "name": "NVIDIA A800-SXM4-80GB",
+      "uuid": "GPU-cef35e91-7538-4d6b-20e0-486a39e282ee",
+      "memory_mib": 81920
+    }
+  ],
+  "shared_storage": {
+    "filesystem": "ceph",
+    "mount": "/mnt/omni_ssd",
+    "same_source_as_dsw_h200": true,
+    "same_formal_report_inode_size_and_mtime_observed": true,
+    "cross_host_flock_test": {
+      "h200_lock_held": true,
+      "a800_nonblocking_attempt_returncode": 1,
+      "passed": true
+    }
+  },
+  "registered_config": {
+    "sha256": "0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1"
+  },
+  "registered_runtime_profile": {
+    "sha256": "878ae28a98a08c66c4dec54243c4fbd8861ee3aba0ee04fd726d6aa3d35cb28e",
+    "seed_workers": 1
+  },
+  "cache_manifests": {
+    "imagenet100": {
+      "train": {"samples": 116455, "sha256": "dbbbae5d442acc6c52068ba01f4bf25f1aeb22f8a4b1deebdd20a3b240fb67d2"},
+      "val": {"samples": 12940, "sha256": "2dc104e78ab8c9e18e4bb3acc24b16522db97a944824c7cdc40ebf841e6036fb"},
+      "test": {"samples": 5000, "sha256": "e92f56bbdaa4941e3693f185a8548351824dfffae622de9835c0e7088a9791e7"}
+    },
+    "voc2012": {
+      "train": {"samples": 1318, "sha256": "907040640bc41384ba648d1bffcaf808d23cb75f3e98d4196bd7b341fd1d083e"},
+      "val": {"samples": 146, "sha256": "3bee502654b6a7643370fb94d60b5f6b407b4a9aa069885f00828ef3d4b77b4d"},
+      "test": {"samples": 1449, "sha256": "940677865f95b9309651cb3df417b31ae8a18f83cf090bcaa625c34908b5e8f0"}
+    },
+    "nyuv2": {
+      "train": {"samples": 715, "sha256": "302dc8da8cc7d87655d8c644dfb65773c922f4c58061d8bdba5152efcbc428d9"},
+      "val": {"samples": 80, "sha256": "3038eebaf0276ac39a5125c6591cebddc321a69285628e2a1ac749109d5013d2"},
+      "test": {"samples": 654, "sha256": "66adc764339848d1d7d9e981f0f24f06708c750bb4e1dfaf511412e160dc24d7"}
+    },
+    "ade20k": {
+      "train": {"samples": 18189, "sha256": "e83276167077f8e1fe7e1703ea0e472ecaee77ccd8517b1317f645a41edb1f81"},
+      "val": {"samples": 2021, "sha256": "592af67413a3f4d85bb176c59f3eccccc8ebfda4a371479c07ef6ceea1369bfe"},
+      "test": {"samples": 2000, "sha256": "a4695f688dd38178839b390bfbf22fb144bea1a521ef85562e69b45d251da37c"}
+    }
+  },
+  "candidate_partition": {
+    "dsw_h200_gpu6": "imagenet100",
+    "dsw_h200_gpu7": "ade20k",
+    "dsw_m3call_gpu0": "nyuv2",
+    "dsw_m3call_gpu1": "voc2012"
+  },
+  "estimated_effect": {
+    "a800_single_task_faster_than_h200_single_task": false,
+    "cross_host_parallelism_may_reduce_wall_clock": true,
+    "conservative_total_throughput_multiplier_range": [1.2, 1.5],
+    "scientific_effect_inferred": false
+  },
+  "formal_workers_started_on_a800": false,
+  "migration_executed": false,
+  "authorization_inferred_from_readiness": false,
+  "problems": [],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

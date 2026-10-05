@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "pretrigger_absence_and_fixed_revision_downstream_chain_identity",
+  "observed_at": "2026-08-24T08:07:03.432349Z",
+  "machine": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "analysis_worktree_clean": true,
+  "main_matrix_terminal_cells": {
+    "imagenet100": 13,
+    "voc2012": 4,
+    "ade20k": 0,
+    "nyuv2": 1,
+    "required_per_task": 60
+  },
+  "active_matrix_writers": {
+    "imagenet100": {
+      "pid": 102910,
+      "physical_gpu": 6,
+      "alive": true
+    },
+    "voc2012": {
+      "pid": 1571769,
+      "physical_gpu": 7,
+      "alive": true
+    },
+    "nyuv2": {
+      "pid": 1571768,
+      "physical_gpu": 6,
+      "alive": true
+    },
+    "ade20k": {
+      "pid": 1571772,
+      "physical_gpu": 7,
+      "alive": true
+    }
+  },
+  "unique_matrix_writer_count": 4,
+  "one_writer_per_task": true,
+  "per_task_seed_workers": 1,
+  "atomic_watcher": {
+      "pid": 1870499,
+    "alive": true,
+      "observed_at": "2026-08-24T08:07:03.432349Z",
+      "state_sha256": "083515ea87366303d5132ebba2908e5ebb41bf2ae222d6f84aefe508cbd448d3",
+      "failures": [],
+      "transient_audit_races": 2
+  },
+  "premature_artifacts_absent": {
+    "main_evidence": true,
+    "causal_evidence": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "error_registry": true,
+    "completion_audit": true
+  },
+  "paths": {
+    "main_evidence": "outputs/full_validation/auraflow_v03/evidence_decision.json",
+    "causal_evidence": "outputs/full_validation/auraflow_v03/causal/final_evidence_decision.json",
+    "extension_evidence": "outputs/full_validation/auraflow_v03/extension/extension_evidence_decision.json",
+    "final_evidence": "outputs/full_validation/auraflow_v03/final_evidence_decision.json",
+    "error_registry": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/analysis-output/formal-supervised-errors-020c1de/registry.json",
+    "completion_audit": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/analysis-output/formal-supervised-errors-020c1de/completion_audit.json"
+  },
+  "chain_scripts": {
+    "readout_recovery_wrapper_sha256": "98fc2baea7203d3c225a890deb6eb26307f4164deb8d94f1b73997b7b662f3e9",
+    "final_recovery_wrapper_sha256": "8e918f0053768e50025ddb7d281b329c1de2e71288547bbc574a6af1db95e9b1",
+    "extension_recovery_wrapper_sha256": "ebd52059cc65de0562b2446847c0e4bce82212251102730695f281a105280233",
+    "causal_runbook_sha256": "4d07f189a6a210a09e4fb9921d83cc81742f119d9b0a2be33be7db27dc5e4556",
+    "supervised_error_analysis_sha256": "920184d3083389fd138ed464a007dd0df111714dc2f0b84e48acf96074a606cb",
+    "formal_and_analysis_replay_script_match": true,
+    "watchdog_sha256": "23a2a22c6fa6a28c368094a9536989c38ad574178a4736e11f66660aea691963"
+  },
+  "registered_chain": {
+    "causal_runs_after_complete_positive_or_negative_main": true,
+    "extension_runs_only_after_positive_main": true,
+    "supervised_replays_run_only_after_final_decision": true,
+    "required_replays_per_task": 33,
+    "required_replays_total": 132,
+    "registry_generated_after_all_four_replay_summaries_pass": true,
+    "completion_audit_requires_status_passed": true,
+    "completion_audit_requires_execution_complete_true": true,
+    "completion_audit_requires_changes_scientific_verdict_false": true
+  },
+  "problems": [],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

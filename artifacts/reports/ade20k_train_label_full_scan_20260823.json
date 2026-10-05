@@ -1,0 +1,48 @@
+{
+  "all_ignore_epoch1_batch_count": 1,
+  "all_ignore_epoch1_batches": [
+    {
+      "batch_index": 1697,
+      "sample_indices": [
+        5336,
+        5328
+      ]
+    }
+  ],
+  "all_ignore_sample_count": 16,
+  "all_ignore_sample_indices": [
+    4653,
+    4654,
+    4656,
+    4815,
+    4906,
+    5328,
+    5336,
+    5874,
+    11970,
+    13180,
+    13415,
+    13813,
+    13823,
+    14353,
+    17774,
+    17895
+  ],
+  "batch_size": 2,
+  "changes_scientific_verdict": false,
+  "dataset": "ade20k",
+  "elapsed_seconds": 517.3455030918121,
+  "epoch1_seed": 4121,
+  "expected_num_samples": 18189,
+  "formal_outputs_modified": false,
+  "ignore_index": 255,
+  "invalid_non_ignore_sample_count": 0,
+  "invalid_non_ignore_sample_indices": [],
+  "maximum_valid_pixels": 262144,
+  "minimum_valid_pixels": 0,
+  "num_samples": 18189,
+  "schema_version": 1,
+  "segmentation_classes": 150,
+  "split": "train",
+  "status": "passed"
+}

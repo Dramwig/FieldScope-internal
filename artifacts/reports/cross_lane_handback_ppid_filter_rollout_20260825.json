@@ -1,0 +1,138 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "cross_lane_handback_transient_control_process_false_positive_hardening",
+  "observed_at": "2026-08-25T13:27:54Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "scientific_authority": false,
+  "trigger": {
+    "first_failed_heartbeat_observed_at": "2026-08-25T13:08:43.402338Z",
+    "preserved_failed_heartbeat": "artifacts/reports/a800_handback_duplicate_nyuv2_failed_20260825T130843Z.json",
+    "preserved_failed_heartbeat_sha256": "4c1a46e1d5962bfc12bbdcfce547b40faf42c75ae3e083557f112b5bfc16464d",
+    "preserved_payload_observed_at": "2026-08-25T13:09:16.003038Z",
+    "problem": "duplicate_a800_control_process:nyuv2",
+    "signals_sent_by_failure_path": false,
+    "formal_worker_identity_changed": false
+  },
+  "classification": {
+    "unresolved_scientific_failure": false,
+    "long_lived_duplicate_control_process_found": false,
+    "exact_transient_pid_captured": false,
+    "cause_proven": false,
+    "most_specific_supported_classification": "control_process_scan_false_positive_consistent_with_transient_bash_child_inheriting_parent_argv",
+    "evidence": [
+      "the heartbeat recovered to armed without intervention after 32 seconds",
+      "the only persistent NYUv2 supervisor and monitor retained their original PID, PGID, start ticks, and argv SHA-256",
+      "the failure branch publishes a heartbeat and does not signal a worker or control process",
+      "the supervisor performs command substitutions that can briefly create a child Bash with inherited argv"
+    ]
+  },
+  "hardening": {
+    "change": "count only detached PPID-1 Bash supervisor and monitor processes as independently owned controls",
+    "source": "scripts/ops/fieldscope_cross_lane_handback_gate.py",
+    "source_sha256": "4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02",
+    "test": "tests/unit/test_cross_lane_handback_gate.py",
+    "test_sha256": "a1590d27422a7eda5d96dcf3291289634efc2f6cc3a0a52446f6a4d03e34bfa8",
+    "fixed_formal_worktree_modified": false,
+    "training_code_or_conditions_modified": false
+  },
+  "verification": {
+    "ruff": {
+      "status": "passed",
+      "scope": "src tests scripts"
+    },
+    "pytest": {
+      "status": "passed",
+      "scope": [
+        "tests/unit/test_cross_lane_handback_gate.py",
+        "tests/test_runbooks.py"
+      ],
+      "tests": 26
+    },
+    "candidate_registration": {
+      "a800": "armed",
+      "h200": "armed"
+    },
+    "candidate_audit": {
+      "a800": "armed",
+      "h200": "passed"
+    }
+  },
+  "rollout": {
+    "gate_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/handback/fieldscope_cross_lane_handback_gate-4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02.py",
+    "a800": {
+      "old_supervisor_pgid": 226373,
+      "new_supervisor_pid": 275271,
+      "new_gate_pid": 275281,
+      "started_at": "2026-08-25T13:19:14Z",
+      "registration": "artifacts/reports/a800_handback_registration_ppid_filter_20260825T132754Z.json",
+      "registration_sha256": "7cc2531c6480966dc8a8e9cd4d7d5baad5b26d2c4951c479f295f1fa6167460b",
+      "heartbeat": "artifacts/reports/a800_handback_heartbeat_ppid_filter_20260825T132754Z.json",
+      "heartbeat_sha256": "ec2419e8a9d37d9ed6ba72f861441b33a2250cf727fbea73d957a894045734a2",
+      "stable_status": "armed"
+    },
+    "h200": {
+      "old_supervisor_pgid": 1243084,
+      "new_supervisor_pid": 470616,
+      "new_gate_pid": 470916,
+      "started_at": "2026-08-25T13:19:54Z",
+      "registration": "artifacts/reports/h200_handback_registration_ppid_filter_20260825T132754Z.json",
+      "registration_sha256": "722650b587c373f3bae9948a78fea8e7a7baf6063e4de7b1049f1e0fe3005a12",
+      "heartbeat": "artifacts/reports/h200_handback_heartbeat_ppid_filter_20260825T132754Z.json",
+      "heartbeat_sha256": "6e25add2cf4673b892b6a7f2c8ed2f1478393fbc0d0fd814611d36a2a58e1cdc",
+      "stable_status": "passed"
+    },
+    "signals_sent": [
+      {
+        "signal": "SIGTERM",
+        "exact_old_gate_process_group": 226373
+      },
+      {
+        "signal": "SIGTERM",
+        "exact_old_gate_process_group": 1243084
+      }
+    ],
+    "formal_training_or_task_control_process_signaled": false
+  },
+  "formal_identity_continuity": {
+    "imagenet100_worker_pid": 102910,
+    "ade20k_worker_pid": 1571772,
+    "nyuv2_worker": {
+      "pid": 53492,
+      "pgid": 53467,
+      "start_time_ticks": 163542700,
+      "argv_sha256": "2ea0152506acd3d5d75a034ea779639153d69bceb34548ee0bf62f547d413ab2"
+    },
+    "voc2012_worker": {
+      "pid": 53491,
+      "pgid": 53466,
+      "start_time_ticks": 163542700,
+      "argv_sha256": "b831ef768740d1d97c54bbb6272909fd8e98c84ca2410eaebb2b340c65c1776c"
+    },
+    "nyuv2_monitor_pid": 55616,
+    "voc2012_monitor_pid": 55621,
+    "nyuv2_task_supervisor_pid": 61255,
+    "voc2012_task_supervisor_pid": 61253,
+    "atomic_watcher_pid": 1542686,
+    "recovery_pid": 41610,
+    "per_task_seed_workers": 1,
+    "duplicate_formal_output_writer_observed": false
+  },
+  "post_rollout_observation": {
+    "duration_seconds_at_least": 480,
+    "a800_armed_observations": [
+      "2026-08-25T13:19:18.787396Z",
+      "2026-08-25T13:21:24.594555Z",
+      "2026-08-25T13:21:55.206111Z",
+      "2026-08-25T13:25:36.987760Z",
+      "2026-08-25T13:27:42.787548Z"
+    ],
+    "duplicate_control_failure_recurred": false,
+    "h200_status": "passed",
+    "a800_status": "armed"
+  },
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

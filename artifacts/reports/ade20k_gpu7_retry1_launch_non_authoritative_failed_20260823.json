@@ -1,0 +1,44 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "authoritative": false,
+  "observed_at": "2026-08-23T11:24:02Z",
+  "scope": "post-launch read-only checks",
+  "failures": [
+    {
+      "check": "prelaunch PyTorch UUID assertion",
+      "cause": "The diagnostic compared torch._C._CUuuid directly with a prefixed string instead of normalizing its string form.",
+      "gpu_work_started": false
+    },
+    {
+      "check": "PyTorch device inventory JSON rendering",
+      "cause": "torch._C._CUuuid is not directly JSON serializable.",
+      "formal_training_changed": false
+    },
+    {
+      "check": "first post-launch log stat",
+      "cause": "A PowerShell-to-SSH pipeline appended a carriage return to the final remote log path.",
+      "formal_training_changed": false
+    },
+    {
+      "check": "first corrected worktree status tail",
+      "cause": "The same pipeline appended a carriage return to porcelain version v1 in the final remote command.",
+      "formal_training_changed": false
+    }
+  ],
+  "corrected_checks": {
+    "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+    "logical_device_count": 1,
+    "cublas_stress_status": "passed",
+    "retry_parent_alive": true,
+    "retry_cli_alive": true,
+    "retry_monitor_alive": true,
+    "retry_lock_held": true,
+    "retry_output_files_at_audit": 0
+  },
+  "training_restarted_by_failed_checks": false,
+  "training_outputs_modified_by_failed_checks": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

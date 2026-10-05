@@ -1,0 +1,209 @@
+{
+  "authorized_physical_gpus": [
+    6,
+    7
+  ],
+  "cache_manifests": {
+    "test": {
+      "code_dirty": false,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "complete": true,
+      "num_samples": 1449,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/voc2012_test/dataset_manifest.json",
+      "sha256": "940677865f95b9309651cb3df417b31ae8a18f83cf090bcaa625c34908b5e8f0",
+      "status": "passed"
+    },
+    "train": {
+      "code_dirty": false,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "complete": true,
+      "num_samples": 1318,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/voc2012_train/dataset_manifest.json",
+      "sha256": "907040640bc41384ba648d1bffcaf808d23cb75f3e98d4196bd7b341fd1d083e",
+      "status": "passed"
+    },
+    "val": {
+      "code_dirty": false,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "complete": true,
+      "num_samples": 146,
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/voc2012_val/dataset_manifest.json",
+      "sha256": "3bee502654b6a7643370fb94d60b5f6b407b4a9aa069885f00828ef3d4b77b4d",
+      "status": "passed"
+    }
+  },
+  "changes_scientific_verdict": false,
+  "checks": {
+    "clean_worktree": true,
+    "fixed_revision": true,
+    "gpu6_guard_pause": true,
+    "gpu7_guard_pause": true,
+    "imagenet_gpu6": true,
+    "imagenet_worker_alive": true,
+    "primary_recovery_alive": true,
+    "readout_batch_128_unchanged": true,
+    "registered_seed_workers_1": true,
+    "safety_monitor_alive": true,
+    "voc_batch_4": true,
+    "voc_cache_manifests_complete": true,
+    "voc_epochs_80": true,
+    "voc_gpu7": true,
+    "voc_parent_alive": true,
+    "voc_task_segmentation": true,
+    "voc_worker_alive": true
+  },
+  "execution_complete": false,
+  "external_processes_untouched": true,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gpu_compute_apps": [
+    {
+      "gpu_uuid": "GPU-9fc77154-0d5a-e85b-297e-bb92035de79f",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 814
+    },
+    {
+      "gpu_uuid": "GPU-9fc77154-0d5a-e85b-297e-bb92035de79f",
+      "pid": 34355,
+      "process_name": "sgl_diffusion::scheduler",
+      "used_memory_mib": 125012
+    },
+    {
+      "gpu_uuid": "GPU-18cbabd4-9a32-f38e-0df9-059e6ded89a4",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 1326
+    },
+    {
+      "gpu_uuid": "GPU-18cbabd4-9a32-f38e-0df9-059e6ded89a4",
+      "pid": 34362,
+      "process_name": "sgl_diffusion::scheduler",
+      "used_memory_mib": 125012
+    },
+    {
+      "gpu_uuid": "GPU-86608e69-7575-177c-5471-4386db690ad0",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 1326
+    },
+    {
+      "gpu_uuid": "GPU-86608e69-7575-177c-5471-4386db690ad0",
+      "pid": 34359,
+      "process_name": "sgl_diffusion::scheduler",
+      "used_memory_mib": 125012
+    },
+    {
+      "gpu_uuid": "GPU-57c937ef-0a5a-fd28-26eb-e66bfe3d69ce",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 1326
+    },
+    {
+      "gpu_uuid": "GPU-57c937ef-0a5a-fd28-26eb-e66bfe3d69ce",
+      "pid": 34360,
+      "process_name": "sgl_diffusion::scheduler",
+      "used_memory_mib": 125012
+    },
+    {
+      "gpu_uuid": "GPU-fc2fabe5-3ba1-6596-4acd-cb5ac0dbf61b",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 814
+    },
+    {
+      "gpu_uuid": "GPU-fc2fabe5-3ba1-6596-4acd-cb5ac0dbf61b",
+      "pid": 34358,
+      "process_name": "sgl_diffusion::scheduler",
+      "used_memory_mib": 140210
+    },
+    {
+      "gpu_uuid": "GPU-32c66119-81e0-5ff7-fad6-1b2bf92fbf8a",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 1326
+    },
+    {
+      "gpu_uuid": "GPU-32c66119-81e0-5ff7-fad6-1b2bf92fbf8a",
+      "pid": 34361,
+      "process_name": "sgl_diffusion::scheduler",
+      "used_memory_mib": 125012
+    },
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 814
+    },
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 102910,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+      "used_memory_mib": 2174
+    },
+    {
+      "gpu_uuid": "GPU-72d0ef85-2ae1-ea5d-a8f4-1d7f48cb7f74",
+      "pid": 1368198,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/venvs/m3call_baselines/bin/python",
+      "used_memory_mib": 61924
+    },
+    {
+      "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+      "pid": 1813,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/conda_envs/py310/bin/python",
+      "used_memory_mib": 814
+    },
+    {
+      "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+      "pid": 1368199,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/tools/venvs/m3call_baselines/bin/python",
+      "used_memory_mib": 61926
+    },
+    {
+      "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+      "pid": 3925626,
+      "process_name": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python",
+      "used_memory_mib": 870
+    }
+  ],
+  "guard_pause_present": {
+    "6": true,
+    "7": true
+  },
+  "initial_non_authoritative_failed_launch_artifact": {
+    "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260822/gpu67_cross_task_parallel_launch_non_authoritative_failed_20260822.json",
+    "sha256": "296bf56ea72ebfa8b9a4b49094371ecd79584b5d3fd8d2c54474e431c1d9a43e"
+  },
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-22T06:17:31.015905Z",
+  "parallel_scope": "cross_task_only",
+  "parallel_task": {
+    "batch_size": 4,
+    "command": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/voc2012_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/voc2012_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/voc2012_test --output-dir outputs/full_validation/auraflow_v03/voc2012 --task segmentation --epochs 80 --batch-size 4 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --segmentation-classes 21 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+    "dataset": "voc2012",
+    "epochs": 80,
+    "parent_pid": 3925620,
+    "physical_gpu": 7,
+    "representations": 20,
+    "seeds": [
+      4121,
+      7319,
+      104729
+    ],
+    "worker_pid": 3925626
+  },
+  "per_task_seed_workers": 1,
+  "primary_recovery_pid": 41610,
+  "primary_task": {
+    "command": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/.venv/bin/python -m fieldscope.cli run-readout-matrix --config /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/auraflow_v03_readout_0g_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1.yaml --train-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_train --val-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_val --test-cache-dir /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/imagenet100_test --output-dir outputs/full_validation/auraflow_v03/imagenet100 --task classification --epochs 90 --batch-size 128 --learning-rate 0.001 --weight-decay 0.0001 --reference dit_hidden_local --readout-runtime-profile /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/fixed-revision-readout/readout_runtime_profile_020c1de567edd88e0eda245fd085335ffe678f47_0be38fa17ba13c1a9e0b248642c85832cd8cf7e63afe2b799fe89f0f0ea98ed1_30c6073ce73f6de74803eb29f497ceedf1ee3cafc488340cf236395824ea42e3.json --num-classes 100 --representation random_feature_local --representation z0 --representation zt --representation trajectory --representation velocity --representation mismatch --representation endpoint --representation state --representation state_nograph --representation state_graph --representation response_nograph --representation response_local --representation response --representation full_nograph --representation full_local --representation full --representation dit_hidden_local --representation dit_hidden_attention --representation response_shuffled --representation full_shuffled --seed 4121 --seed 7319 --seed 104729",
+    "dataset": "imagenet100",
+    "physical_gpu": 6,
+    "worker_pid": 102910
+  },
+  "problems": [],
+  "resource_overlap_scientific_effect": "not_inferred",
+  "safety_monitor_contract": "terminate the GPU-7 parallel parent if the primary recovery PID exits, preventing the parallel worker from masking watchdog recovery of the primary chain",
+  "safety_monitor_pid": 3961934,
+  "schema_version": 1,
+  "status": "passed"
+}

@@ -1,0 +1,105 @@
+{
+  "schema_version": 1,
+  "scope": "gpu67_external_m3call_r6_resource_overlap_provenance",
+  "status": "passed",
+  "observed_at": "2026-08-23T17:26:20Z",
+  "server": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "authorized_physical_gpus": [
+    6,
+    7
+  ],
+  "fieldscope_parallel_scope": "cross_task_only",
+  "per_task_seed_workers": 1,
+  "fieldscope_workers": [
+    {
+      "task": "imagenet100",
+      "pid": 102910,
+      "physical_gpu": 6,
+      "used_memory_mib": 2174
+    },
+    {
+      "task": "nyuv2",
+      "pid": 1571768,
+      "physical_gpu": 6,
+      "used_memory_mib": 938
+    },
+    {
+      "task": "voc2012",
+      "pid": 1571769,
+      "physical_gpu": 7,
+      "used_memory_mib": 880
+    },
+    {
+      "task": "ade20k",
+      "pid": 1571772,
+      "physical_gpu": 7,
+      "used_memory_mib": 862
+    }
+  ],
+  "external_processes": [
+    {
+      "project": "M3Call",
+      "run": "omnicall-stage1-h200-gpu67-train-20260823-r6",
+      "pid": 1815680,
+      "physical_gpu": 6,
+      "used_memory_mib": 61974,
+      "started_at": "2026-08-23T15:32:44Z",
+      "command_role": "stage1_trainer_resume_step_256_stop_after_step_512"
+    },
+    {
+      "project": "M3Call",
+      "run": "omnicall-stage1-h200-gpu67-train-20260823-r6",
+      "pid": 1815681,
+      "physical_gpu": 7,
+      "used_memory_mib": 61954,
+      "started_at": "2026-08-23T15:32:44Z",
+      "command_role": "stage1_trainer_resume_step_256_stop_after_step_512"
+    }
+  ],
+  "resource_guard": {
+    "pid": 1813,
+    "gpu6_state": "paused",
+    "gpu7_state": "paused",
+    "gpu6_pause_scope": "device",
+    "gpu7_pause_scope": "device",
+    "gpu6_pause_file_present": true,
+    "gpu7_pause_file_present": true,
+    "state_snapshot": "/mnt/omni_ssd/user_workspace/wangzixi/tools/dsw_resource_guard/run/interactive-eouhw7dc45t3-9576ccc4b-stg7v/gpu.state.json",
+    "state_snapshot_sha256": "f8ed09df0059aff4f9833dbb092a27a5fcd7bd2c91bcc5c16f20a6f0e002217d",
+    "state_updated_at": "2026-08-23T17:26:37.497557+00:00"
+  },
+  "gpu_snapshot": [
+    {
+      "physical_gpu": 6,
+      "memory_total_mib": 143771,
+      "memory_used_mib": 65926,
+      "memory_free_mib": 77231,
+      "utilization_gpu_percent": 11,
+      "utilization_memory_percent": 1,
+      "power_draw_w": 148.4
+    },
+    {
+      "physical_gpu": 7,
+      "memory_total_mib": 143771,
+      "memory_used_mib": 64536,
+      "memory_free_mib": 78621,
+      "utilization_gpu_percent": 100,
+      "utilization_memory_percent": 0,
+      "power_draw_w": 112.76
+    }
+  ],
+  "actions": {
+    "external_processes_terminated": false,
+    "external_processes_modified": false,
+    "fieldscope_workers_restarted": false,
+    "fieldscope_batch_or_runtime_contract_changed": false,
+    "duplicate_dataset_or_cell_writer_started": false,
+    "four_fieldscope_tasks_kept_running": true
+  },
+  "resource_overlap_scientific_effect": "not_inferred",
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

@@ -1,0 +1,53 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_at": "2026-08-23T12:03:30Z",
+  "machine": "dsw-h200",
+  "task": "ade20k",
+  "fixed_base_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "train_target_scan": {
+    "path": "artifacts/reports/ade20k_train_label_full_scan_20260823.json",
+    "sha256": "ef4d7b5a0a9474fbe8692de8ca3c87191a80b8335155ce292719cb28fcf83788",
+    "num_samples": 18189,
+    "all_ignore_samples": 16,
+    "invalid_non_ignore_samples": 0
+  },
+  "full_training_schedule": {
+    "path": "artifacts/reports/ade20k_all_ignore_full_schedule_20260823.json",
+    "sha256": "ace13a3ba06dd20f28e45a29a9e692e30ff657a7c91e2a84412f1a50de0571fd",
+    "epochs_per_seed": 80,
+    "batch_size": 2,
+    "all_ignore_batches": {
+      "4121": 7,
+      "7319": 10,
+      "104729": 5
+    },
+    "total_all_ignore_batches": 22,
+    "total_registered_optimizer_steps": 43656000,
+    "all_ignore_step_fraction": 5.0393980208906e-7
+  },
+  "validation_and_test_scan": {
+    "path": "artifacts/reports/ade20k_val_test_label_full_scan_20260823.json",
+    "sha256": "e60d7cbd259baff88986b17cbae2118e89510674e80101d7b08e7c847e9c0e78",
+    "validation": {
+      "num_samples": 2021,
+      "all_ignore_samples": 1,
+      "sequential_batch_size2_all_ignore_batches": 0,
+      "invalid_non_ignore_samples": 0
+    },
+    "test": {
+      "num_samples": 2000,
+      "all_ignore_samples": 0,
+      "sequential_batch_size2_all_ignore_batches": 0,
+      "invalid_non_ignore_samples": 0
+    }
+  },
+  "compatibility_scope_required_for_all_training_epochs": true,
+  "compatibility_needed_for_current_validation_or_test_batching": false,
+  "all_samples_retained": true,
+  "formal_outputs_modified": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

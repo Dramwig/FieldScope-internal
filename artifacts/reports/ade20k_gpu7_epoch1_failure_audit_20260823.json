@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "observed_at": "2026-08-23T11:17:02Z",
+  "machine": "dsw-h200",
+  "task": "ade20k",
+  "task_type": "segmentation",
+  "representation": "random_feature_local",
+  "seed": 4121,
+  "target_epoch": 1,
+  "assigned_physical_gpu": 7,
+  "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+  "repository_clean": true,
+  "analysis_repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/analysis-020c1de",
+  "analysis_repository_clean": true,
+  "launch_audit": {
+    "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/FieldScope-internal/artifacts/reports/ade20k_gpu7_parallel_launch_audit_20260823.json",
+    "sha256": "e5a82171b85833351447023dfe2429b3fa7eda855a78d6d03f13dd2be882970b",
+    "status": "passed"
+  },
+  "formal_contract": {
+    "epochs": 80,
+    "batch_size": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "segmentation_classes": 150,
+    "representations": 20,
+    "seeds": [
+      4121,
+      7319,
+      104729
+    ],
+    "seed_workers": 1,
+    "readout_memory_cache_gib": 0,
+    "training_condition_changed_before_failure": false
+  },
+  "failed_processes": {
+    "parent": {
+      "pid": 2969678,
+      "alive_at_audit": false
+    },
+    "cli": {
+      "pid": 2969687,
+      "alive_at_audit": false
+    },
+    "safety_monitor": {
+      "pid": 2969870,
+      "alive_at_audit": false
+    },
+    "worker_pid_file_present_at_audit": false,
+    "monitor_pid_file_present_at_audit": true,
+    "independent_lock_free_at_audit": true
+  },
+  "failure_log": {
+    "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.log",
+    "size_bytes": 2077,
+    "mtime": "2026-08-23T11:11:58.123685065Z",
+    "sha256": "519edea4a325e5fb24ccd5d3939cd538b283d065303d159f5eaf9428490d029f",
+    "primary_assertion": "Non-finite training loss task=segmentation representation=random_feature_local seed=4121 epoch=1",
+    "terminal_exception": "RuntimeError: CUDA error: CUBLAS_STATUS_EXECUTION_FAILED when calling cublasSgemmStridedBatched(...)"
+  },
+  "atomic_output_state": {
+    "output_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k",
+    "files_present": 0,
+    "training_report_present": false,
+    "checkpoint_present": false,
+    "matrix_report_present": false,
+    "committed_epoch": 0,
+    "formal_progress_credited": false
+  },
+  "cache_manifests": {
+    "train": {
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_train/dataset_manifest.json",
+      "sha256": "e83276167077f8e1fe7e1703ea0e472ecaee77ccd8517b1317f645a41edb1f81",
+      "status": "passed",
+      "complete": true,
+      "num_samples": 18189,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "code_dirty": false
+    },
+    "val": {
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_val/dataset_manifest.json",
+      "sha256": "592af67413a3f4d85bb176c59f3eccccc8ebfda4a371479c07ef6ceea1369bfe",
+      "status": "passed",
+      "complete": true,
+      "num_samples": 2021,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "code_dirty": false
+    },
+    "test": {
+      "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/datasets/feature_cache/auraflow_v03/ade20k_test/dataset_manifest.json",
+      "sha256": "a4695f688dd38178839b390bfbf22fb144bea1a521ef85562e69b45d251da37c",
+      "status": "passed",
+      "complete": true,
+      "num_samples": 2000,
+      "code_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+      "code_dirty": false
+    }
+  },
+  "host_resource_evidence": {
+    "cgroup_memory_events": {
+      "low": 0,
+      "high": 0,
+      "max": 0,
+      "oom": 0,
+      "oom_kill": 0,
+      "oom_group_kill": 0
+    },
+    "filesystem_total_bytes": 841126395248640,
+    "filesystem_used_bytes": 798005183643648,
+    "filesystem_available_bytes": 43121211604992,
+    "filesystem_percent_used": 95,
+    "failure_classified_as_oom": false,
+    "failure_classified_as_disk_full": false
+  },
+  "gpu_health_evidence": {
+    "observed_memory_total_mib": 143771,
+    "observed_memory_used_mib": 1749,
+    "observed_memory_free_mib": 141408,
+    "ecc_volatile_correctable": 0,
+    "ecc_volatile_uncorrectable": 0,
+    "ecc_aggregate_correctable": 0,
+    "ecc_aggregate_uncorrectable": 0,
+    "row_remapping_pending": false,
+    "gpu_recovery_action": "None",
+    "subsequent_kernel_event": {
+      "timestamp": "2026-08-23T11:14:27Z",
+      "event": "NVRM Xid 43",
+      "reported_pid": 1067227,
+      "reported_process_name": "python",
+      "reported_pid_present_at_audit": false,
+      "reported_pid_matches_failed_ade_processes": false,
+      "causal_attribution": "not_inferred"
+    }
+  },
+  "failure_interpretation": {
+    "non_finite_loss_confirmed": true,
+    "cublas_failure_confirmed": true,
+    "device_side_assert_path": "torch._assert_async followed by loss.backward",
+    "hardware_fault_confirmed": false,
+    "cache_corruption_confirmed": false,
+    "scientific_hypothesis_result": false,
+    "required_recovery": "Preserve this failure, perform fixed-revision no-condition-change diagnostics, and retry only with an exclusive ADE20K writer under the original formal contract."
+  },
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": [
+    "ADE20K first formal cell exited before any atomic epoch/report/checkpoint was committed.",
+    "The training loss became non-finite under the original formal condition.",
+    "A later GPU-7 Xid 43 was observed, but its reported PID did not match the failed ADE20K processes and causal attribution is not inferred."
+  ]
+}

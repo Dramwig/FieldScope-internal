@@ -1,0 +1,124 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "operational_a800_same_gpu_colocation_benchmark_decision",
+  "observed_at": "2026-08-25T08:36:22Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "scientific_authority": false,
+  "decision": "reject_same_gpu_colocation_while_a800_formal_lane_is_active",
+  "decision_boundary": {
+    "reject": "a second long-running readout worker on an A800 GPU that already owns a formal task",
+    "not_evaluated": "one-to-one migration to an otherwise idle A800 GPU",
+    "retain_current_formal_partition": {
+      "dsw-h200_gpu6": "imagenet100",
+      "dsw-h200_gpu7": "ade20k",
+      "dsw-M3Call_gpu0": "nyuv2",
+      "dsw-M3Call_gpu1": "voc2012"
+    }
+  },
+  "benchmark": {
+    "authority": "non_authoritative_throughput_only",
+    "launch_audit": "artifacts/reports/a800_imagenet_ade_throughput_benchmark_launch_20260825.json",
+    "started_at": "2026-08-25T08:17:18Z",
+    "term_sent_at": "2026-08-25T08:31:21Z",
+    "observed_runtime_seconds": 844,
+    "stop_reason": "measured degradation of both incumbent formal lanes exceeded any plausible aggregate throughput gain",
+    "term_signal_sent_to_exact_process_groups": [230148, 230149],
+    "benchmark_processes_absent_after_term": [230148, 230149, 230150, 230151],
+    "benchmark_completed_one_epoch": false,
+    "atomic_report_written": false,
+    "checkpoint_written": false,
+    "partial_directories_and_locks_preserved": true,
+    "formal_output_directories_written": false,
+    "logs": {
+      "imagenet100_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "ade20k_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "partial_throughput_observation": {
+    "interpretation": "projection from process rchar divided by registered train-cache bytes; directional operational evidence only",
+    "imagenet100": {
+      "process_rchar_bytes": 1840793770,
+      "registered_train_cache_bytes": 67977889028,
+      "observed_cache_fraction": 0.0270793017600441,
+      "projected_train_cache_pass_seconds": 31167.7164898445,
+      "projected_train_cache_pass_hours": 8.6576990249568,
+      "same_cell_h200_epoch1_train_plus_validation_seconds": 3538.2573828836903
+    },
+    "ade20k": {
+      "process_rchar_bytes": 372465253,
+      "registered_train_cache_bytes": 15392318882,
+      "observed_cache_fraction": 0.0241981247825866,
+      "projected_train_cache_pass_seconds": 34878.7357525884,
+      "projected_train_cache_pass_hours": 9.68853770905235,
+      "same_cell_h200_epoch1_train_plus_validation_seconds": 8845.354368342087
+    }
+  },
+  "incumbent_formal_lane_effect": {
+    "nyuv2": {
+      "baseline_epochs": [27, 37],
+      "baseline_mean_train_plus_validation_seconds": 58.829199,
+      "fully_overlapped_epochs": {
+        "38": 262.886,
+        "39": 585.138
+      },
+      "slowdown_factors": {
+        "38": 4.468639,
+        "39": 9.946386
+      },
+      "post_stop_epochs": {
+        "40": 46.941,
+        "41": 61.302
+      },
+      "post_stop_recovered": true
+    },
+    "voc2012": {
+      "baseline_epochs": [49, 59],
+      "baseline_mean_train_plus_validation_seconds": 87.465432,
+      "fully_overlapped_epochs": {
+        "60": 724.909146
+      },
+      "slowdown_factors": {
+        "60": 8.28795
+      },
+      "partially_overlapped_epoch_61_seconds": 217.219818,
+      "post_stop_epochs": {
+        "62": 79.474429,
+        "63": 82.615261
+      },
+      "post_stop_recovered": true
+    }
+  },
+  "formal_integrity": {
+    "formal_worker_pids_unchanged": {
+      "imagenet100": 102910,
+      "ade20k": 1571772,
+      "nyuv2": 53492,
+      "voc2012": 53491
+    },
+    "per_task_seed_workers": 1,
+    "duplicate_formal_output_writer_observed": false,
+    "formal_reports_or_checkpoints_deleted_or_rewritten_by_benchmark": false,
+    "cache_manifest_hashes_unchanged": true
+  },
+  "transient_handback_gate_observation": {
+    "failed_heartbeat_observed_at": "2026-08-25T08:34:14.932408+00:00",
+    "problem": "duplicate_a800_control_process:voc2012",
+    "failed_payload_preserved_in_this_decision": true,
+    "exact_duplicate_pid_captured": false,
+    "cause_proven": false,
+    "signals_sent_by_gate": false,
+    "formal_worker_identity_changed": false,
+    "recovered_status": "armed",
+    "recovered_at": "2026-08-25T08:34:46.646517+00:00",
+    "recovered_with_original_worker_supervisor_monitor_identities": true,
+    "unresolved_scientific_failure": false
+  },
+  "benchmark_execution_complete": false,
+  "operational_decision_complete": true,
+  "migration_executed": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

@@ -1,0 +1,18 @@
+observed_at=2026-08-23T11:39:29Z
+status=retry_exited
+retry_parent=3232226
+recovery_pid=41610
+retry_parent_alive=false
+recovery_alive=true
+b4a6c06672677cf0e25ec72bec83beae33305cee4b8087f168962014373b02bb  /mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7-retry1.log
+log_size=11 log_mtime=2026-08-23 11:38:55.242488308 +0000
+output_files=0
+low 0
+high 0
+max 0
+oom 0
+oom_kill 0
+oom_group_kill 0
+[Sun Aug 23 11:14:27 2026] NVRM: GPU at PCI:0000:db:00: GPU-55d637d1-840f-58dd-d99d-2a460126cba9
+[Sun Aug 23 11:14:27 2026] NVRM: GPU Board Serial Number: 1652325031183
+[Sun Aug 23 11:14:27 2026] NVRM: Xid (PCI:0000:db:00): 43, pid=1067227, name=python, channel 0x0000001e

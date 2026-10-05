@@ -1,0 +1,139 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_at": "2026-08-23T11:24:02Z",
+  "machine": "dsw-h200",
+  "task": "ade20k",
+  "task_type": "segmentation",
+  "formal_retry_index": 1,
+  "assigned_physical_gpu": 7,
+  "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+  "authorized_physical_gpus": [
+    6,
+    7
+  ],
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+  "repository_clean": true,
+  "analysis_repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/analysis-020c1de",
+  "analysis_repository_clean": true,
+  "prior_failure": {
+    "preserved": true,
+    "audit_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/FieldScope-internal/artifacts/reports/ade20k_gpu7_epoch1_failure_audit_20260823.json",
+    "audit_sha256": "f99e09df5876c2f703892a56322947538c4eac0b87cb7344f543c928859a95db",
+    "log_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.log",
+    "log_sha256": "519edea4a325e5fb24ccd5d3939cd538b283d065303d159f5eaf9428490d029f",
+    "overwritten": false
+  },
+  "prelaunch_gpu_diagnostic": {
+    "status": "passed",
+    "device_binding": "CUDA_VISIBLE_DEVICES=7",
+    "logical_device_count": 1,
+    "resolved_gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+    "cublas_workspace_config": ":4096:8",
+    "deterministic_algorithms": "enabled_warn_only",
+    "matrix_shape": [
+      4096,
+      4096
+    ],
+    "iterations": 12,
+    "all_checked_losses_finite": true,
+    "elapsed_seconds": 0.4997262954711914,
+    "gpu_ecc_errors_observed": 0,
+    "gpu_recovery_action": "None",
+    "scope": "operational_health_only"
+  },
+  "formal_contract": {
+    "epochs": 80,
+    "batch_size": 2,
+    "learning_rate": 0.001,
+    "weight_decay": 0.0001,
+    "segmentation_classes": 150,
+    "representations": 20,
+    "seeds": [
+      4121,
+      7319,
+      104729
+    ],
+    "seed_workers": 1,
+    "readout_memory_cache_gib": 0,
+    "condition_changed_from_failed_attempt": false,
+    "strict_host_sync_added": false
+  },
+  "processes": {
+    "parent": {
+      "pid": 3232226,
+      "pgid": 3232226,
+      "alive": true
+    },
+    "task_script": {
+      "pid": 3232245,
+      "ppid": 3232226,
+      "pgid": 3232226,
+      "alive": true
+    },
+    "matrix_script": {
+      "pid": 3232249,
+      "ppid": 3232245,
+      "pgid": 3232226,
+      "alive": true
+    },
+    "cli": {
+      "pid": 3232250,
+      "ppid": 3232249,
+      "pgid": 3232226,
+      "alive": true
+    },
+    "safety_monitor": {
+      "pid": 3232368,
+      "alive": true
+    },
+    "verified_process_group_exclusive_to_ade20k": true
+  },
+  "isolation": {
+    "parallel_scope": "cross_task_only",
+    "independent_lock": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock",
+    "independent_lock_held": true,
+    "pid_file": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.pid",
+    "pid_file_value": 3232226,
+    "output_root": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de/outputs/full_validation/auraflow_v03/ade20k",
+    "output_files_at_launch_audit": 0,
+    "duplicate_ade_writer_present": false,
+    "guard_pause_file": "/mnt/omni_ssd/user_workspace/wangzixi/tools/dsw_resource_guard/run/interactive-eouhw7dc45t3-9576ccc4b-stg7v/gpu.7.pause",
+    "guard_pause_present": true
+  },
+  "logs": {
+    "current_attempt": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7-retry1.log",
+    "current_attempt_size_bytes_at_audit": 0,
+    "safety_monitor": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7-retry1-group-monitor.log",
+    "prior_attempt_preserved_separately": true
+  },
+  "gpu_snapshot": {
+    "memory_total_mib": 143771,
+    "memory_used_mib": 2605,
+    "memory_free_mib": 140552,
+    "fieldscope_compute_processes": [
+      {
+        "pid": 3925626,
+        "task": "voc2012",
+        "used_memory_mib": 920
+      },
+      {
+        "pid": 3232250,
+        "task": "ade20k",
+        "used_memory_mib": 850
+      }
+    ]
+  },
+  "primary_recovery": {
+    "pid": 41610,
+    "alive": true,
+    "termination_contract": "If primary recovery exits while retry1 is alive, TERM the verified ADE20K process group, wait 15 seconds, then KILL the group if the CLI remains."
+  },
+  "training_restarted": true,
+  "training_outputs_modified_before_restart": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

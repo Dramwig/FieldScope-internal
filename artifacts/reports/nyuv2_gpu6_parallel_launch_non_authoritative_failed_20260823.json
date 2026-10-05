@@ -1,0 +1,20 @@
+{
+  "authoritative": false,
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "failure_reason": "PowerShell-to-SSH script appended a carriage-return-only command after the authoritative audit had been written",
+  "failure_scope": "post_audit_shell_transport",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "nyuv2_parent_pid": 2992173,
+  "nyuv2_worker_pid": 2992183,
+  "observed_at": "2026-08-23T10:42:14.246312Z",
+  "preserved": true,
+  "safety_monitor_pid": 2992347,
+  "schema_version": 1,
+  "status": "failed",
+  "training_failed": false,
+  "training_outputs_modified_by_failure": false,
+  "training_restarted": false
+}

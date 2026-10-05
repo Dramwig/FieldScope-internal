@@ -1,0 +1,42 @@
+{
+  "ade_lock": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7.lock",
+  "ade_matrix_complete": false,
+  "ade_monitor": {
+    "argv_sha256": "d5736ced9266a3b57b250bf0c025f644c3d933b0737ed60c4077072469273ce6",
+    "pgid": 1615504,
+    "pid": 1615515,
+    "start_time_ticks": 778758865
+  },
+  "ade_worker": {
+    "argv_sha256": "3212c024fe4712197fc0a6dc9b8293188add3890e68d50416e61fbcbe0f24961",
+    "pgid": 1571745,
+    "pid": 1571772,
+    "start_time_ticks": 778733476
+  },
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gate_script_sha256": "4c4eae542a1125dc7a659d3a4e2a29be168edef1b453c567d810f4c1311cbf02",
+  "h200_monitor": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960.sh",
+  "h200_registry": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers-486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189.json",
+  "h200_registry_sha256": "486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189",
+  "image_worker": {
+    "argv_sha256": "7a3b042c708dfc6f7590fd3e89134f9d190cb8b3173beba058f70f9eb377cbca",
+    "pgid": 41094,
+    "pid": 102910,
+    "start_time_ticks": 750900375
+  },
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-25T13:19:55.716741+00:00",
+  "recovery": {
+    "argv_sha256": "6a290c1b2ede1b25b990d6de544791bb4ed87a92defcef4617cb179d79fbdd18",
+    "pgid": 41094,
+    "pid": 41610,
+    "start_time_ticks": 750821956
+  },
+  "recovery_wrapper_sha256": "98fc2baea7203d3c225a890deb6eb26307f4164deb8d94f1b73997b7b662f3e9",
+  "repository": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/worktrees/formal-020c1de",
+  "role": "h200",
+  "schema_version": 1,
+  "status": "armed"
+}

@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "observed_at": "2026-08-21T14:04:51Z",
+  "status": "active",
+  "machine": "dsw-h200",
+  "physical_gpu": 6,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "fieldscope_worker_pid": 102910,
+  "fieldscope_active_cell": {
+    "task": "imagenet100",
+    "representation": "velocity",
+    "seed": 4121,
+    "committed_epoch": 85,
+    "target_epochs": 90
+  },
+  "resource_guard": {
+    "pid": 1813,
+    "monitor_alive": true,
+    "gpu6_state": "paused",
+    "pause_scope": "device"
+  },
+  "external_overlap": {
+    "project": "M3Call",
+    "launcher_pid": 2056981,
+    "gpu6_pid": 2057281,
+    "gpu7_pid": 2057282,
+    "started_at": "2026-08-21T14:01:15Z",
+    "gpu6_memory_mib": 61010,
+    "gpu6_observed_sm_percent_range": [15, 21],
+    "command_scope": "omnicall AVA natural-512 validation for stage1 H200 GPU67 train r2",
+    "ended_observed_at": "2026-08-21T14:21:18Z",
+    "ended_naturally": true,
+    "terminated_by_fieldscope": false,
+    "scientific_effect": "not_inferred"
+  },
+  "fieldscope_continuity": {
+    "worker_alive": true,
+    "watchdog_alive": true,
+    "report_still_running": true,
+    "report_committed_epoch": 85,
+    "rchar_growth_observed": true,
+    "fieldscope_observed_sm_percent_range": [0, 1]
+  },
+  "scientific_verdict": null,
+  "changes_scientific_verdict": false
+}

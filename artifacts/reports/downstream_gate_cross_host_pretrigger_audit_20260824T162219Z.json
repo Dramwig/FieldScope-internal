@@ -1,0 +1,67 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "incremental_cross_host_pretrigger_absence_recheck",
+  "observed_at": "2026-08-24T16:22:19.740711Z",
+  "machine": "dsw-h200",
+  "side_worker_machine": "dsw-M3Call",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260824T162300Z.json",
+    "sha256": "53526279519e3ab0dff0dbc920ad0e995125ba86da9a42d565455c5593a4dc72",
+    "observed_at": "2026-08-24T16:22:19.740711Z",
+    "accepted_intermediate_audits": 328,
+    "terminal_cells": 22,
+    "required_terminal_cells": 240,
+    "transient_audit_races": 5,
+    "unresolved_failures": 0,
+    "active_boundaries": {
+      "imagenet100": 46,
+      "ade20k": 9,
+      "nyuv2": 34,
+      "voc2012": 37
+    },
+    "status": "passed",
+    "execution_complete": false,
+    "changes_scientific_verdict": false
+  },
+  "live_identity_recheck": {
+    "formal_worktree_clean": true,
+    "analysis_worktree_clean": true,
+    "all_required_processes_alive": true,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1,
+    "recovery_pid": 41610,
+    "watchdog_pid": 41096,
+    "supervised_error_waiter_pid": 41355,
+    "atomic_watcher_pid": 1542686,
+    "imagenet100_pid": 102910,
+    "ade20k_pid": 1571772,
+    "nyuv2_pid": 53492,
+    "voc2012_pid": 53491,
+    "nyuv2_monitor_pid": 55616,
+    "voc2012_monitor_pid": 55621,
+    "nyuv2_supervisor_pid": 61255,
+    "voc2012_supervisor_pid": 61253
+  },
+  "premature_artifacts_absent": {
+    "main_evidence": true,
+    "causal_evidence": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "error_registry": true,
+    "completion_audit": true
+  },
+  "preserved_evidence": {
+    "checkpoint_ahead_failed_audit_sha256": "09bce9d05511805f18ae959db99014795cb31984553bef9709c035edc0f37d76",
+    "transient_audit_races": 5,
+    "unresolved_failures": 0,
+    "operational_failures_preserved": true
+  },
+  "gate_decision": "wait_for_all_240_main_matrix_cells",
+  "downstream_triggered": false,
+  "problems": [],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "independent_reconstruction_of_current_formal_main_matrix_atomic_ledger",
+  "observed_at": "2026-08-24T08:07:03.432349Z",
+  "machine": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "analysis_worktree_clean": true,
+  "terminal_cells": {
+    "imagenet100": {
+      "count": 13,
+      "matrix_report": "outputs/full_validation/auraflow_v03/imagenet100/matrix_report.json",
+      "matrix_report_sha256": "cf26e15d07864c41d5ba8b12ddb053614c808831e2d3a4688c512fd9f6febf38",
+      "optimizer_steps": 1064700,
+      "training_sample_exposures": 136252350
+    },
+    "voc2012": {
+      "count": 4,
+      "matrix_report": "outputs/full_validation/auraflow_v03/voc2012/matrix_report.json",
+      "matrix_report_sha256": "8114ed52f971ab9d61257056ad6c2be7b06e4259263f28240b34001c61e24d3a",
+      "optimizer_steps": 105600,
+      "training_sample_exposures": 421760
+    },
+    "nyuv2": {
+      "count": 1,
+      "matrix_report": "outputs/full_validation/auraflow_v03/nyuv2/matrix_report.json",
+      "matrix_report_sha256": "ba1a80a51a248435e0a006a70744176fc58326af4e7f0d56580910d9c9f8429e",
+      "optimizer_steps": 14320,
+      "training_sample_exposures": 57200
+    },
+    "ade20k": {
+      "count": 0,
+      "optimizer_steps": 0,
+      "training_sample_exposures": 0
+    }
+  },
+  "terminal_subtotal": {
+    "cells": 18,
+    "optimizer_steps": 1184620,
+    "training_sample_exposures": 136731310
+  },
+  "unique_active_cells": {
+    "imagenet100_velocity_seed7319_epoch42": {
+      "report_sha256": "4f5f99e0cce022c2aa2ed393bc019239d4b0e47d312df3a728366048df91dc71",
+      "strong_audit_sha256": "3a76bba9f6c47a9c2881ae8815ac0ab7be0d658dcea81b5cf0ddcfbd74a90244",
+      "optimizer_steps": 38220,
+      "training_sample_exposures": 4891110
+    },
+    "voc2012_z0_seed7319_epoch64": {
+      "report_sha256": "bee58edbf12e44da7bab2a2e62e801aaaafe76167ef7dd30e44fa826e28a6ef9",
+      "strong_audit_sha256": "3a7aab2100775c3fe1250819528cb80bec3d7d6f19a95024e7075ee17b3053a3",
+      "optimizer_steps": 21120,
+      "training_sample_exposures": 84352
+    },
+    "nyuv2_random_feature_local_seed7319_epoch67": {
+      "report_sha256": "56fa3dd1e51212ea855fe0191e5544083557d03f3f20d89091737d341b4752a5",
+      "strong_audit_sha256": "40a4298c57e5a03b079e3dad4da582084528d0125208423c173946fad72c5867",
+      "optimizer_steps": 11993,
+      "training_sample_exposures": 47905
+    },
+    "ade20k_random_feature_local_seed4121_epoch6": {
+      "report_sha256": "abf45f4108611c984610cd311f3094adf979ea1d33c89fb7a9f36eedc2991a71",
+      "strong_audit_sha256": "91aae3325cefade072cad7c40041240cb9187eb80b9d75a261a089cc8afb10f9",
+      "optimizer_steps": 54570,
+      "training_sample_exposures": 109134
+    }
+  },
+  "active_subtotal": {
+    "cells": 4,
+    "optimizer_steps": 125903,
+    "training_sample_exposures": 5132501
+  },
+  "reconstructed_global": {
+    "optimizer_steps": 1310523,
+    "training_sample_exposures": 141863811
+  },
+  "registered_global": {
+    "optimizer_steps": 51013200,
+    "training_sample_exposures": 725922600
+  },
+  "matches_progress_report": true,
+  "problems": [],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

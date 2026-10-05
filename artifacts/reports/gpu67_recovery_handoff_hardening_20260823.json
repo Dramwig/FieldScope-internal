@@ -1,0 +1,96 @@
+{
+  "schema_version": 1,
+  "status": "superseded_failed",
+  "scope": "external_orchestration_hardening_for_registered_gpu67_cross_task_workers",
+  "observed_at": "2026-08-23T14:50:08Z",
+  "superseded_at": "2026-08-23T15:15:37Z",
+  "superseded_by": "artifacts/reports/gpu67_parallel_monitor_false_watchdog_recovery_20260823.json",
+  "subsequent_failure": {
+    "detected_at": "2026-08-23T15:04:17Z",
+    "cause": "the replacement monitor resolved relative watchdog argv against the monitor cwd instead of /proc/<watchdog_pid>/cwd",
+    "effect": "all three registered side-worker process groups were falsely terminated after the watchdog grace period",
+    "committed_atomic_reports_or_checkpoints_modified": false,
+    "uncommitted_current_epoch_work_lost": true,
+    "scientific_evidence_preserved": true
+  },
+  "machine": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "analysis_worktree_clean": true,
+  "problem_prevented": "legacy side-worker monitors would terminate registered cross-task workers whenever the current primary recovery PID exited, including a normal future dataset handoff",
+  "old_monitors": {
+    "voc2012": 2925950,
+    "nyuv2": 2992347,
+    "ade20k": 3635008
+  },
+  "old_monitors_identity_verified_before_stop": true,
+  "old_monitors_stopped": true,
+  "new_monitor_script": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-9317f0e108c769c1d7533e56a80c1e97c92d3aa8cc94ef57dc4d96885d417b3f.sh",
+  "new_monitor_script_sha256": "9317f0e108c769c1d7533e56a80c1e97c92d3aa8cc94ef57dc4d96885d417b3f",
+  "worker_registry": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers_20260823.json",
+  "worker_registry_sha256": "50bc7d697ae4fc152431d6f9eecd1c634d271285e64a9f9b7c6be49936d2e02d",
+  "new_monitors": {
+    "voc2012": {
+      "pid": 1330465,
+      "start_time_ticks": 778609277,
+      "status": "active"
+    },
+    "nyuv2": {
+      "pid": 1330468,
+      "start_time_ticks": 778609277,
+      "status": "active"
+    },
+    "ade20k": {
+      "pid": 1330475,
+      "start_time_ticks": 778609280,
+      "status": "active"
+    }
+  },
+  "monitor_contract": {
+    "poll_seconds": 30,
+    "watchdog_grace_seconds": 900,
+    "terminates_on_fixed_revision_checkout_invalid": true,
+    "terminates_on_authoritative_watchdog_absent_beyond_grace": true,
+    "terminates_on_current_primary_recovery_pid_exit": false,
+    "binds_worker_pid_pgid_start_time_cwd_command_dataset_and_output": true
+  },
+  "workers_unchanged_across_monitor_replacement": {
+    "voc2012": {
+      "pid": 3925626,
+      "pgid": 3921096,
+      "start_time_ticks": 766870704
+    },
+    "nyuv2": {
+      "pid": 2992183,
+      "pgid": 2992173,
+      "start_time_ticks": 777122866
+    },
+    "ade20k": {
+      "pid": 3634699,
+      "pgid": 3634680,
+      "start_time_ticks": 777535163
+    }
+  },
+  "recovery_wrapper": {
+    "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.sh",
+    "old_sha256": "fef17407a2b261335183ae17f9dd23dedf4446aa36eb41f32f3776a22d21c251",
+    "new_sha256": "98fc2baea7203d3c225a890deb6eb26307f4164deb8d94f1b73997b7b662f3e9",
+    "old_backup": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/wrappers/run_fixed_revision_readout_recovery_h200.fef17407a2b261335183ae17f9dd23dedf4446aa36eb41f32f3776a22d21c251.bak",
+    "bash_syntax_passed": true,
+    "future_ade_recovery_requires_shim_sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+    "current_recovery_process_restarted": false
+  },
+  "watchdog_pid": 41096,
+  "primary_recovery_pid": 41610,
+  "training_workers_restarted": false,
+  "training_outputs_modified": false,
+  "registered_training_contract_modified": false,
+  "per_task_seed_workers": 1,
+  "resource_overlap_scientific_effect": "not_inferred",
+  "problems": [
+    "This initially accepted monitor revision later produced false terminated_watchdog_absent decisions for VOC2012, NYUv2, and ADE20K at 2026-08-23T15:04:17Z."
+  ],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

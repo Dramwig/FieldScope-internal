@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "cross_host_a800_formal_worker_supervisor_deployment",
+  "observed_at": "2026-08-24T11:52:22Z",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "destination_ssh_alias": "dsw-M3Call",
+  "destination_runtime_hostname": "interactive-upozjqcdg5ie-57fcf4446c-tvk2d",
+  "immutable_handoff_audit": {
+    "path": "artifacts/reports/dsw_m3call_a800_cross_host_handoff_20260824.json",
+    "sha256": "88eca19e88a75a5a1431ba8739681fbedf330f7647b68f069e3457dc17849bcb"
+  },
+  "content_addressed_components": {
+    "heartbeat_helper_sha256": "7d25c2e51f1d9cc880c0ad486f30abbfd20689f29d6ffad33918a172ab0e728b",
+    "launcher_sha256": "9ee18e3b4b7a01c5ffa7bc376e3c13cff09234910265ae34a5b3882f33033cde",
+    "monitor_sha256": "a59ebefcec01a67db6b56051a9f105983168cb6152273985956e04558768c306",
+    "registrar_sha256": "38db57548bc51725ef97039cafb312635ba5b673d560bd3d1a2862f85ce4f84b",
+    "supervisor_sha256": "5d39bfe899459e688962898ab9354696ccb526fb83a39bb64d9d3c85c488fe66"
+  },
+  "preserved_non_authoritative_failures": [
+    {
+      "attempt": "initial_pid_capture",
+      "failure": "supervisor PID files contained the literal shell token $!",
+      "persistent_supervisor_started": false,
+      "formal_worker_restarted": false,
+      "formal_output_modified": false,
+      "scientific_evidence_changed": false
+    },
+    {
+      "attempt": "initial_background_persistence",
+      "failure": "the first background persistence command left no persistent supervisor process",
+      "persistent_supervisor_started": false,
+      "formal_worker_restarted": false,
+      "formal_output_modified": false,
+      "scientific_evidence_changed": false
+    }
+  ],
+  "superseded_operational_deployment": {
+    "supervisor_sha256": "579a955e63aa755d3e6a13ea6bcec6214c80a3ef2ee499bad2b98eb1d8a69a27",
+    "nyuv2_supervisor_pid": 60215,
+    "voc2012_supervisor_pid": 60207,
+    "superseded_after_replacement_selftests": true,
+    "formal_workers_restarted_during_rollover": false
+  },
+  "active_deployment": {
+    "started_at": "2026-08-24T11:40:13Z",
+    "nyuv2": {
+      "physical_gpu": 0,
+      "worker_pid": 53492,
+      "worker_pgid": 53467,
+      "monitor_pid": 55616,
+      "supervisor_pid": 61255
+    },
+    "voc2012": {
+      "physical_gpu": 1,
+      "worker_pid": 53491,
+      "worker_pgid": 53466,
+      "monitor_pid": 55621,
+      "supervisor_pid": 61253
+    }
+  },
+  "checks": {
+    "bash_syntax_passed": true,
+    "nyuv2_live_selftest_passed": true,
+    "voc2012_live_selftest_passed": true,
+    "fixed_revision_worktree_clean": true,
+    "shared_h200_heartbeat_fresh": true,
+    "dataset_locks_held": true,
+    "worker_identity_exact": true,
+    "monitor_binding_exact": true,
+    "supervisor_lock_exclusion_enabled": true,
+    "worker_pids_unchanged_from_handoff": true,
+    "automatic_restart_destructively_exercised": false
+  },
+  "restart_policy": {
+    "poll_seconds": 60,
+    "missing_worker_grace_seconds": 180,
+    "requires_incomplete_60_cell_task_matrix": true,
+    "requires_dataset_lock_free": true,
+    "requires_fresh_h200_heartbeat": true,
+    "requires_clean_fixed_revision_worktree": true,
+    "registers_exact_two_worker_identity_before_monitor_start": true
+  },
+  "measured_operational_throughput": {
+    "nyuv2": {
+      "h200_epochs": "1-5",
+      "h200_mean_train_plus_validation_seconds": 489.32539593428373,
+      "a800_epochs": "6-27",
+      "a800_mean_train_plus_validation_seconds": 176.99799079104031,
+      "observed_speedup": 2.764577133965591,
+      "cuda_peak_reserved_bytes": 253755392
+    },
+    "voc2012": {
+      "h200_epochs": "1-25",
+      "h200_mean_train_plus_validation_seconds": 218.39920346401632,
+      "a800_epochs": "26-44",
+      "a800_mean_train_plus_validation_seconds": 203.90097961090751,
+      "observed_speedup": 1.071104729989486,
+      "cuda_peak_reserved_bytes": 199229440
+    },
+    "interpretation": "operational throughput only; does not change the scientific verdict"
+  },
+  "post_deployment_atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260824T114833Z.json",
+    "sha256": "e1c1b12c3debe3779ebb7c4a40d2530d603d647228f8f3aca7273122a97006db",
+    "observed_at": "2026-08-24T11:48:33.965717Z",
+    "accepted_intermediate_audits": 273,
+    "terminal_cells": 20,
+    "unresolved_failures": 0,
+    "status": "passed",
+    "execution_complete": false
+  },
+  "post_edit_verification": {
+    "ruff": {
+      "status": "passed",
+      "scope": "src tests scripts"
+    },
+    "pytest": {
+      "status": "passed",
+      "tests": 180,
+      "seconds": 2852.31
+    },
+    "toy_smoke": {
+      "status": "passed",
+      "backend": "toy",
+      "device": "cpu",
+      "steps": 2,
+      "cache_reload_equal": true,
+      "cache_fingerprint": "f7881f40692de360319050166ea24c31bcbf5567caccf5e7e8648919f40dbf61"
+    }
+  },
+  "latest_post_verification_atomic_ledger": {
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260824T123927Z.json",
+    "sha256": "07402d0b9bd130140999b27f7855f96fc37e7df932c6db7a1723e7996c66991a",
+    "observed_at": "2026-08-24T12:39:27.532713Z",
+    "accepted_intermediate_audits": 284,
+    "terminal_cells": 20,
+    "active_epochs": {
+      "imagenet100": 44,
+      "ade20k": 8,
+      "nyuv2": 33,
+      "voc2012": 51
+    },
+    "unresolved_failures": 0,
+    "status": "passed",
+    "execution_complete": false
+  },
+  "problems": [],
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

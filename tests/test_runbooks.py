@@ -277,6 +277,12 @@ def test_supervised_error_waiter_runs_all_tasks_only_after_final_decision() -> N
     assert "run-readout-error-analysis" in script
     assert "FIELDSCOPE_EXPECTED_SOURCE_REVISION" in script
     assert "FIELDSCOPE_EXPECTED_ANALYZER_REVISION" in script
+    assert (
+        'output_root="${FIELDSCOPE_ERROR_ANALYSIS_OUTPUT_ROOT:-'
+        '$FIELDSCOPE_ROOT/recovery/analysis-output/formal-supervised-errors}"'
+        in script
+    )
+    assert "$FIELDSCOPE_ROOT/../" not in script
     assert "flock -n 9" in script
     assert "changes_main_verdict" in script
     assert 'for dataset in imagenet100 voc2012 ade20k nyuv2' in script

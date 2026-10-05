@@ -1,0 +1,26 @@
+{
+  "changes_scientific_verdict": false,
+  "details": {
+    "ade_matrix_complete": false,
+    "decision": "monitor",
+    "recovery_stopped": false,
+    "registration_sha256": "05a7a31c78f74857ffded941af177a435c2d65a24b0a1afa42ce86b03f12a07c",
+    "responder_heartbeat_sha256": "02bdcd80a661ebf2d532c27f33344305c64767a5cd44babe6cd37f65e32a0c5d",
+    "terminal_counts": {
+      "ade20k": 0,
+      "imagenet100": 13,
+      "nyuv2": 14,
+      "voc2012": 13
+    },
+    "watcher_state_sha256": "b43b99efa0ffcee6bcedc5f806d942f4d5e867c191776e240496e3605eee73cd"
+  },
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-25T07:56:23.398261+00:00",
+  "problems": [],
+  "role": "h200",
+  "schema_version": 1,
+  "scope": "cross_lane_ownership_handback_gate",
+  "status": "passed"
+}

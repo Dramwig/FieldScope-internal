@@ -1,0 +1,131 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "observed_at": "2026-08-23T11:47:00Z",
+  "machine": "dsw-h200",
+  "scope": "fixed_revision_runtime_compatibility_recovery",
+  "task": "ade20k",
+  "fixed_base_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "formal_worktree_clean": true,
+  "analysis_worktree_clean": true,
+  "protocol": {
+    "path": "docs/experiment_plans/2026-08-23_ade20k_all_ignore_recovery_protocol.md",
+    "locked_before_retry2": true
+  },
+  "deterministic_root_cause": {
+    "confirmed": true,
+    "original_failure_audit": {
+      "path": "artifacts/reports/ade20k_gpu7_epoch1_failure_audit_20260823.json",
+      "sha256": "f99e09df5876c2f703892a56322947538c4eac0b87cb7344f543c928859a95db"
+    },
+    "complete_label_scan": {
+      "path": "artifacts/reports/ade20k_train_label_full_scan_20260823.json",
+      "sha256": "ef4d7b5a0a9474fbe8692de8ca3c87191a80b8335155ce292719cb28fcf83788",
+      "num_samples": 18189,
+      "invalid_non_ignore_sample_count": 0,
+      "all_ignore_sample_count": 16,
+      "minimum_valid_pixels": 0,
+      "maximum_valid_pixels": 262144
+    },
+    "registered_epoch1_collision": {
+      "seed": 4121,
+      "batch_size": 2,
+      "zero_based_batch_index": 1697,
+      "cache_sample_indices": [
+        5336,
+        5328
+      ],
+      "sample_ids": [
+        "ADE_train_00005913",
+        "ADE_train_00005905"
+      ],
+      "both_samples_valid_pixels": 0
+    },
+    "pytorch_behavior": {
+      "version": "2.7.1+cu126",
+      "operation": "mean cross_entropy with ignore_index=255",
+      "all_ignore_batch_result": "nan",
+      "causes_fixed_revision_finite_loss_assertion": true
+    }
+  },
+  "retry1": {
+    "same_condition_launch_audit": {
+      "path": "artifacts/reports/ade20k_gpu7_retry1_launch_audit_20260823.json",
+      "sha256": "cd0849e3c7d2d7f78f32d900f58ffcbd7bb0c617465f0a0e7e9ac73cdf46a27c"
+    },
+    "stopped_after_root_cause_confirmation": true,
+    "stop_reason": "The fixed sampler guarantees the same all-ignore batch, so continuing would deterministically reproduce the already preserved NaN failure.",
+    "log_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/gpu67-parallel-20260823/ade20k-gpu7-retry1.log",
+    "log_sha256": "b4a6c06672677cf0e25ec72bec83beae33305cee4b8087f168962014373b02bb",
+    "exit_evidence": {
+      "path": "artifacts/reports/ade20k_gpu7_retry1_exit_evidence_20260823.txt",
+      "sha256": "aad83fc4aae8b5c5d67c5e0fffe9576ee07d04f28955a2712953ea417a779703"
+    },
+    "output_files": 0,
+    "atomic_epochs": 0,
+    "formal_progress_credited": false
+  },
+  "compatibility_semantics": {
+    "all_samples_retained": true,
+    "labels_modified": false,
+    "batch_size_changed": false,
+    "sampler_changed": false,
+    "seed_changed": false,
+    "learning_rate_changed": false,
+    "weight_decay_changed": false,
+    "epoch_count_changed": false,
+    "representation_order_changed": false,
+    "optimizer_step_budget_changed": false,
+    "sample_exposure_budget_changed": false,
+    "valid_batch_behavior": "original_torch_cross_entropy",
+    "all_ignore_batch_behavior": "return logits.sum() * 0.0, then execute the registered optimizer step",
+    "all_ignore_gradient": "exact_zero",
+    "nonfinite_logits_still_rejected": true
+  },
+  "runtime_shim": {
+    "source_path": "scripts/ops/ade20k_all_ignore_sitecustomize.py",
+    "sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4",
+    "remote_path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/sitecompat-ade-all-ignore-f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4/sitecustomize.py",
+    "includes_existing_rng_restore_compatibility": true,
+    "loaded_only_for_ade20k": true,
+    "fixed_worktree_modified": false,
+    "ruff_status": "passed",
+    "py_compile_status": "passed"
+  },
+  "gpu_selftest": {
+    "path": "artifacts/reports/ade20k_all_ignore_shim_selftest_20260823.json",
+    "sha256": "1aa00970165abc2ace956ba60259df0d5cc1b845acfe42f9a678d0162c291cc8",
+    "gpu_uuid": "GPU-55d637d1-840f-58dd-d99d-2a460126cba9",
+    "valid_loss_exact_equal": true,
+    "valid_gradient_exact_equal": true,
+    "mixed_loss_exact_equal": true,
+    "mixed_gradient_exact_equal": true,
+    "original_all_ignore_is_nan": true,
+    "patched_all_ignore_loss": 0.0,
+    "patched_all_ignore_gradient_nonzero": 0,
+    "nonfinite_logits_preserved": true,
+    "non_mean_reduction_unchanged": true
+  },
+  "preserved_non_authoritative_candidates": [
+    {
+      "sha256": "0fb3bcc35cc38e31ee74a83bc927b074e669f49defe276ee0c9f584c9911ab1b",
+      "used_for_formal_training": false,
+      "reason_rejected": "ruff import-order gate failed"
+    },
+    {
+      "sha256": "88d0bfebade04a2f1383d70c50aa0ca5a4e40c766d801cb5d00c8c8092e5d561",
+      "used_for_formal_training": false,
+      "reason_rejected": "ruff import-order gate failed"
+    },
+    {
+      "sha256": "2648df2a4b7de374946621f9203524fc6c9a10d176de72d7be0d2128f5d4e1fa",
+      "used_for_formal_training": false,
+      "reason_rejected": "ruff import-order gate failed"
+    }
+  ],
+  "retry2_authorized": true,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false,
+  "problems": []
+}

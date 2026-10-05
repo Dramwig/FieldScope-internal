@@ -1,0 +1,72 @@
+{
+  "atomic_ledger": {
+    "accepted_intermediate_audits": 396,
+    "active_boundaries": {
+      "ade20k": 12,
+      "imagenet100": 50,
+      "nyuv2": 15,
+      "voc2012": 74
+    },
+    "changes_scientific_verdict": false,
+    "execution_complete": false,
+    "observed_at": "2026-08-24T21:57:40.140718Z",
+    "path": "artifacts/reports/four_task_atomic_ledger_reconstruction_20260824T215800Z.json",
+    "required_terminal_cells": 240,
+    "sha256": "77cc24c7408440b00891300908d30790181fcc833cab4a1a27b2fc939b9b533f",
+    "status": "passed",
+    "terminal_cells": 28,
+    "transient_audit_races": 9,
+    "unresolved_failures": 0
+  },
+  "changes_scientific_verdict": false,
+  "downstream_triggered": false,
+  "execution_complete": false,
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gate_decision": "wait_for_all_240_main_matrix_cells",
+  "live_identity_recheck": {
+    "ade20k_pid": 1571772,
+    "all_required_processes_alive": true,
+    "analysis_revision_matches": true,
+    "analysis_worktree_clean": true,
+    "atomic_watcher_pid": 1542686,
+    "formal_revision_matches": true,
+    "formal_worktree_clean": true,
+    "imagenet100_pid": 102910,
+    "nyuv2_monitor_pid": 55616,
+    "nyuv2_pid": 53492,
+    "nyuv2_supervisor_pid": 61255,
+    "one_writer_per_task": true,
+    "per_task_seed_workers": 1,
+    "recovery_pid": 41610,
+    "supervised_error_waiter_pid": 41355,
+    "voc2012_monitor_pid": 55621,
+    "voc2012_pid": 53491,
+    "voc2012_supervisor_pid": 61253,
+    "watchdog_pid": 41096
+  },
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-24T21:57:40.140718Z",
+  "premature_artifacts_absent": {
+    "causal_evidence": true,
+    "completion_audit": true,
+    "error_registry": true,
+    "extension_evidence": true,
+    "final_evidence": true,
+    "main_evidence": true
+  },
+  "preserved_evidence": {
+    "checkpoint_ahead_failed_audit_sha256": "09bce9d05511805f18ae959db99014795cb31984553bef9709c035edc0f37d76",
+    "new_failed_intermediate_audit": "nyuv2_zt_seed4121_epoch68_strong_audit.json",
+    "new_failed_intermediate_audit_reason": "stable_checkpoint_during_hash_and_load",
+    "new_failed_intermediate_audit_sha256": "93914d8138ba7072b9e8ecaa90648160176b6ea339da3997440b40effe280c64",
+    "operational_failures_preserved": true,
+    "transient_audit_races": 9,
+    "unresolved_failures": 0
+  },
+  "problems": [],
+  "schema_version": 1,
+  "scope": "incremental_cross_host_pretrigger_absence_recheck",
+  "side_worker_machine": "dsw-M3Call",
+  "status": "passed"
+}

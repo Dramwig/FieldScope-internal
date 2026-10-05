@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "status": "failed",
+  "authority": "non_authoritative_deployment_attempt",
+  "scope": "cross_lane_handback_a800_registration_attempt1",
+  "observed_at": null,
+  "timestamp_precision": "attempt_date_known_but_exact_utc_time_not_recorded",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "gate_script_sha256": "fe1680352088e023c2b050e4c1e1f5e4873cb2228ed44a6330e329ce2306dc2c",
+  "problems": [
+    "expected_one_process:(monitor_cross_host_registered_worker,nyuv2):found=2",
+    "monitor_script_path_was_matched_as_an_incidental_supervisor_argv_argument"
+  ],
+  "corrective_action": "require_bash_script_path_at_argv_index_1_and_cover_with_regression_test",
+  "signals_sent": false,
+  "writes_to_formal_outputs": false,
+  "current_formal_workers_restarted": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

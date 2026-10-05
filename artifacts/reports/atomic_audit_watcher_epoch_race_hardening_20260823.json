@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "atomic_audit_watcher_report_advance_race_classification_and_restart",
+  "observed_at": "2026-08-23T15:41:28Z",
+  "machine": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "incident": {
+    "watcher_observed_at": "2026-08-23T15:33:41.572916Z",
+    "key": "nyuv2/random_feature_local/seed-4121/epoch-30",
+    "cause": "the watcher selected expected epoch 30, then the training process atomically advanced report and checkpoint to epoch 31 before the audit helper read them",
+    "failed_artifact": "artifacts/reports/nyuv2_random_feature_local_seed4121_epoch30_strong_audit_non_authoritative_failed_race_20260823.json",
+    "failed_artifact_sha256": "e360b37cb1ffc612215e4c554032dc570aa87999449e1d0a815266b5e82ead60",
+    "failed_artifact_preserved": true,
+    "unresolved_scientific_failure": false,
+    "training_failure": false
+  },
+  "stable_reaudit": {
+    "manual_epoch31_artifact": "artifacts/reports/nyuv2_random_feature_local_seed4121_epoch31_strong_audit_manual_after_epoch_race.json",
+    "manual_epoch31_artifact_sha256": "2b5300348ee1d48e1e694abcad37a0408c1cded8be79a60e978ab3bab98f0d43",
+    "watcher_epoch31_artifact": "artifacts/reports/nyuv2_random_feature_local_seed4121_epoch31_strong_audit.json",
+    "watcher_epoch31_artifact_sha256": "17c026af12f0993a3dc9dec623924c53603b7cfc47e0454b99fd4607c83cd388",
+    "report_sha256": "49e5b90afe27a514889289bd26e416be4f3985e8e8a3f8cadacc956f4d9b1ca6",
+    "committed_epoch": 31,
+    "completed_optimizer_steps": 5549,
+    "completed_training_sample_exposures": 22165,
+    "both_reaudits_passed": true,
+    "problems": []
+  },
+  "watcher_hardening": {
+    "old_pid": 3062994,
+    "old_sha256": "ae99087a7fb34519ed8938df02b8f65150908b198e76342c95e47c6576317648",
+    "old_backup": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/logs/audit_helpers/fieldscope_atomic_audit_watcher-ae99087a7fb34519ed8938df02b8f65150908b198e76342c95e47c6576317648.py",
+    "new_pid": 1870499,
+    "new_sha256": "e02012a02729ebbba6f0a3c2b85f81bb0770a68df251219e8aa1c442a0057c55",
+    "new_started_at": "2026-08-23T15:40:29Z",
+    "python_compile_passed": true,
+    "exact_race_selftest_passed": true,
+    "classification": "report_advanced_during_audit",
+    "race_requires_only_expected_mismatch_problems": true,
+    "race_requires_stable_report_and_checkpoint_reads": true,
+    "race_requires_report_checkpoint_history_equal": true,
+    "failed_artifact_preserved_in_transient_audit_races": true,
+    "unresolved_failures_after_migration": [],
+    "training_workers_restarted": false,
+    "training_outputs_modified": false,
+    "formal_worktree_clean": true,
+    "analysis_worktree_clean": true
+  },
+  "watcher_state": {
+    "artifact": "artifacts/reports/atomic_audit_watcher_state_live_20260823.json",
+    "artifact_sha256": "80689174c2771390d82d8f731de012ebbf16a97077f86c6b8e181ae6267f1b91",
+    "status": "active",
+    "observed_at": "2026-08-23T15:40:30.244330Z",
+    "failures": [],
+    "transient_audit_races": 1
+  },
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

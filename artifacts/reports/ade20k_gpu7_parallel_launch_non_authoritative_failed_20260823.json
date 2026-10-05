@@ -1,0 +1,21 @@
+{
+  "ade20k_parent_pid": 2969678,
+  "ade20k_process_group_id": 2969678,
+  "ade20k_worker_pid": 2969687,
+  "authoritative": false,
+  "changes_scientific_verdict": false,
+  "execution_complete": false,
+  "failure_reason": "PowerShell-to-SSH script retained a trailing carriage return in the log-tail path; the ADE20K worker, lock, and group monitor had already launched successfully",
+  "failure_scope": "post_launch_log_tail_read_only_check",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "machine": "dsw-h200",
+  "method_effectiveness_conclusion": null,
+  "observed_at": "2026-08-23T10:37:12.076154Z",
+  "preserved": true,
+  "safety_monitor_pid": 2969870,
+  "schema_version": 1,
+  "status": "failed",
+  "training_failed": false,
+  "training_outputs_modified_by_failure": false,
+  "training_restarted": false
+}

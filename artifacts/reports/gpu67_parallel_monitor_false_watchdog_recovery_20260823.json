@@ -1,0 +1,115 @@
+{
+  "schema_version": 1,
+  "status": "passed",
+  "scope": "false_watchdog_absence_termination_preservation_fix_recovery_and_monitor_relaunch",
+  "observed_at": "2026-08-23T15:15:37Z",
+  "machine": "dsw-h200",
+  "fixed_revision": "020c1de567edd88e0eda245fd085335ffe678f47",
+  "incident": {
+    "detected_at": "2026-08-23T15:04:17Z",
+    "cause": "relative watchdog argv bash watchdog_h200.sh was resolved against the side-monitor cwd rather than /proc/<watchdog_pid>/cwd",
+    "old_monitor_script_sha256": "9317f0e108c769c1d7533e56a80c1e97c92d3aa8cc94ef57dc4d96885d417b3f",
+    "old_registry_sha256": "50bc7d697ae4fc152431d6f9eecd1c634d271285e64a9f9b7c6be49936d2e02d",
+    "exit_artifacts": {
+      "voc2012": {
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/voc2012.monitor.exit.json",
+        "sha256": "41f09f3c2d5365349b697263d4b2b9d5cc5b4291c16f447cd9cc047eb76f1258",
+        "observed_at": "2026-08-23T15:04:17.282322+00:00",
+        "old_worker_pid": 3925626,
+        "old_pgid": 3921096,
+        "old_worker_start_time_ticks": 766870704,
+        "status": "terminated_watchdog_absent"
+      },
+      "nyuv2": {
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/nyuv2.monitor.exit.json",
+        "sha256": "af603b957490ff7e50181e8a169ef2bcf420f7e50be4fa1a32753e52f4de877d",
+        "observed_at": "2026-08-23T15:04:17.177200+00:00",
+        "old_worker_pid": 2992183,
+        "old_pgid": 2992173,
+        "old_worker_start_time_ticks": 777122866,
+        "status": "terminated_watchdog_absent"
+      },
+      "ade20k": {
+        "path": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/ade20k.monitor.exit.json",
+        "sha256": "117b7e6bb6b82398da2e3413e90e1db27d623d8d6dcb7459043669cbaa3df992",
+        "observed_at": "2026-08-23T15:04:17.428742+00:00",
+        "old_worker_pid": 3634699,
+        "old_pgid": 3634680,
+        "old_worker_start_time_ticks": 777535163,
+        "status": "terminated_watchdog_absent"
+      }
+    },
+    "last_accepted_atomic_progress": {
+      "voc2012": "random_feature_local seed 104729 epoch 48",
+      "nyuv2": "random_feature_local seed 4121 epoch 28",
+      "ade20k": "random_feature_local seed 4121 epoch 1"
+    },
+    "training_outputs_modified": false,
+    "committed_atomic_reports_or_checkpoints_modified": false,
+    "uncommitted_current_epoch_work_lost": true,
+    "negative_and_failure_evidence_preserved": true
+  },
+  "recovery": {
+    "workers_relaunched_at": "2026-08-23T15:09:34Z",
+    "workers": {
+      "voc2012": {
+        "worker_pid": 1571769,
+        "pgid": 1571730,
+        "worker_start_time_ticks": 778733472,
+        "physical_gpu": 7
+      },
+      "nyuv2": {
+        "worker_pid": 1571768,
+        "pgid": 1571732,
+        "worker_start_time_ticks": 778733472,
+        "physical_gpu": 6
+      },
+      "ade20k": {
+        "worker_pid": 1571772,
+        "pgid": 1571745,
+        "worker_start_time_ticks": 778733476,
+        "physical_gpu": 7,
+        "ade_all_ignore_shim_sha256": "f95bbb0ed70ebbc127e6e08cd8d47c7bb18e6d394c2233a5677dc9cdfbf7bac4"
+      }
+    },
+    "resumed_from_last_accepted_atomic_checkpoints": true,
+    "duplicate_dataset_or_cell_writers": false,
+    "per_task_seed_workers": 1
+  },
+  "monitor_fix": {
+    "new_monitor_script": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/monitor_registered_parallel_worker-e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960.sh",
+    "new_monitor_script_sha256": "e0677f25e01dccb4ccaf723a7f188efecd5cc760aa423877bce5a843161b8960",
+    "new_registry": "/mnt/omni_ssd/user_workspace/wangzixi/FieldScope/recovery/orchestration/020c1de/parallel-monitor/gpu67_registered_parallel_workers-486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189.json",
+    "new_registry_sha256": "486c21301c656fedf2ea662a0240e2c14fe43708e195a2dd178ca6ded0aea189",
+    "bash_syntax_passed": true,
+    "self_tests": {
+      "voc2012": "parallel monitor self-test passed",
+      "nyuv2": "parallel monitor self-test passed",
+      "ade20k": "parallel monitor self-test passed"
+    },
+    "short_live_timeout_tests_passed": true,
+    "new_monitors_launched_at": "2026-08-23T15:13:48Z",
+    "new_monitors": {
+      "voc2012": 1615506,
+      "nyuv2": 1615510,
+      "ade20k": 1615515
+    },
+    "verified_after_full_poll_interval": true,
+    "new_exit_artifacts_present": false,
+    "formal_worktree_clean": true,
+    "authoritative_watchdog_pid": 41096,
+    "authoritative_watchdog_command": "bash watchdog_h200.sh",
+    "relative_watchdog_path_resolved_against_proc_cwd": true
+  },
+  "supersedes": "artifacts/reports/gpu67_recovery_handoff_hardening_20260823.json",
+  "scientific_state": {
+    "status": "active",
+    "execution_complete": false,
+    "method_effectiveness_conclusion": null,
+    "changes_scientific_verdict": false
+  },
+  "training_outputs_modified": false,
+  "execution_complete": false,
+  "method_effectiveness_conclusion": null,
+  "changes_scientific_verdict": false
+}

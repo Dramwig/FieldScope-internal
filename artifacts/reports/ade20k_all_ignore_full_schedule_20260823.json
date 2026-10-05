@@ -1,0 +1,304 @@
+{
+  "all_ignore_sample_count": 16,
+  "batch_size": 2,
+  "changes_scientific_verdict": false,
+  "dataset": "ade20k",
+  "epochs": 80,
+  "execution_complete": false,
+  "formal_outputs_modified": false,
+  "method_effectiveness_conclusion": null,
+  "num_samples": 18189,
+  "per_seed": {
+    "104729": {
+      "epochs_with_all_ignore_batch": 5,
+      "events": [
+        {
+          "batches": [
+            {
+              "batch_index": 7701,
+              "sample_indices": [
+                4654,
+                4653
+              ]
+            }
+          ],
+          "epoch": 13
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 8056,
+              "sample_indices": [
+                5328,
+                5336
+              ]
+            }
+          ],
+          "epoch": 36
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 4972,
+              "sample_indices": [
+                13813,
+                13823
+              ]
+            }
+          ],
+          "epoch": 37
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 8476,
+              "sample_indices": [
+                13813,
+                13823
+              ]
+            }
+          ],
+          "epoch": 62
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 6715,
+              "sample_indices": [
+                4654,
+                4656
+              ]
+            }
+          ],
+          "epoch": 74
+        }
+      ],
+      "total_all_ignore_batches": 5
+    },
+    "4121": {
+      "epochs_with_all_ignore_batch": 7,
+      "events": [
+        {
+          "batches": [
+            {
+              "batch_index": 1697,
+              "sample_indices": [
+                5336,
+                5328
+              ]
+            }
+          ],
+          "epoch": 1
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 8762,
+              "sample_indices": [
+                4654,
+                4656
+              ]
+            }
+          ],
+          "epoch": 14
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 4163,
+              "sample_indices": [
+                5336,
+                5328
+              ]
+            }
+          ],
+          "epoch": 47
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 7655,
+              "sample_indices": [
+                4656,
+                4654
+              ]
+            }
+          ],
+          "epoch": 51
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 2440,
+              "sample_indices": [
+                13823,
+                13813
+              ]
+            }
+          ],
+          "epoch": 60
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 218,
+              "sample_indices": [
+                4656,
+                4653
+              ]
+            }
+          ],
+          "epoch": 74
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 3522,
+              "sample_indices": [
+                13813,
+                13823
+              ]
+            }
+          ],
+          "epoch": 80
+        }
+      ],
+      "total_all_ignore_batches": 7
+    },
+    "7319": {
+      "epochs_with_all_ignore_batch": 10,
+      "events": [
+        {
+          "batches": [
+            {
+              "batch_index": 1822,
+              "sample_indices": [
+                4656,
+                4653
+              ]
+            }
+          ],
+          "epoch": 1
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 7468,
+              "sample_indices": [
+                4656,
+                4654
+              ]
+            }
+          ],
+          "epoch": 8
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 4029,
+              "sample_indices": [
+                5328,
+                5336
+              ]
+            }
+          ],
+          "epoch": 18
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 2455,
+              "sample_indices": [
+                4653,
+                4656
+              ]
+            }
+          ],
+          "epoch": 31
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 2898,
+              "sample_indices": [
+                4654,
+                4653
+              ]
+            }
+          ],
+          "epoch": 36
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 7453,
+              "sample_indices": [
+                4656,
+                4653
+              ]
+            }
+          ],
+          "epoch": 38
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 7437,
+              "sample_indices": [
+                5336,
+                5328
+              ]
+            }
+          ],
+          "epoch": 41
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 3175,
+              "sample_indices": [
+                13823,
+                13813
+              ]
+            }
+          ],
+          "epoch": 45
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 3675,
+              "sample_indices": [
+                4656,
+                4654
+              ]
+            }
+          ],
+          "epoch": 54
+        },
+        {
+          "batches": [
+            {
+              "batch_index": 2443,
+              "sample_indices": [
+                4654,
+                4653
+              ]
+            }
+          ],
+          "epoch": 57
+        }
+      ],
+      "total_all_ignore_batches": 10
+    }
+  },
+  "schema_version": 1,
+  "seeds": [
+    4121,
+    7319,
+    104729
+  ],
+  "split": "train",
+  "status": "passed",
+  "total_all_ignore_batches": 22
+}
