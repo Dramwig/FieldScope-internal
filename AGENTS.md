@@ -67,7 +67,9 @@ matching pretrigger report is artifacts/reports/downstream_gate_cross_host_pretr
 pro6000 释放前归档已完成，代码与归档记录发布到 GitHub `main`。当前实际观察与历史
 迁移记录的边界、资产位置和最终验收状态见
 `docs/records/2026-10-06_pro6000_local_archive.md`。raw 数据、权重与实验档案校验通过；
-完整 pytest 以退出码 137 中止，未确认终止原因。本次未释放服务器或删除原项目，
+完整 pytest 以退出码 137 中止，未确认终止原因。2026-10-06 再次完整校验本地 73 个
+归档文件通过，复核远端无新增改动及活动进程后，已按用户授权删除旧 pro6000 项目目录，
+核验目录不存在，未释放服务器。删除回执见同一归档审计目录的 `server_deletion_receipt.json`。
 不恢复正式训练，不将归档、接口或 toy 测试通过写为科学结论。
 临时目录 `tmp/retirement-20261006/` 的删除被自动审批阻止，仍待本机用户清理；
 必要内容已归档且没有活动进程使用该目录。

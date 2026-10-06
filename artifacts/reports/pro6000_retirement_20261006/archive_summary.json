@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "date": "2026-10-06",
-  "status": "assets_verified_cleanup_blocked",
+  "status": "assets_verified_server_deleted_local_cleanup_blocked",
   "code_repository": "https://github.com/Dramwig/FieldScope-internal",
   "datasets": {
     "cifar10": {
@@ -131,6 +131,7 @@
     "receipt": "outputs/retirement-20261006/git_sync.json",
     "receipt_rule": "Written only after local HEAD, GitHub main and server main agree and both code worktrees are clean"
   },
-  "server_originals_deleted": false,
-  "changes_scientific_verdict": false
+  "server_originals_deleted": true,
+  "changes_scientific_verdict": false,
+  "server_deletion_receipt": "server_deletion_receipt.json"
 }

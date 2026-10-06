@@ -1,0 +1,16 @@
+{
+  "status": "deleted",
+  "deleted_path": "/root/autodl-tmp/FieldScope",
+  "verified_absent": true,
+  "deleted_at_utc": "2026-10-06T02:43:40.341054+00:00",
+  "deleted_at_asia_shanghai": "2026-10-06T10:43:40.341054+08:00",
+  "source_code_revision": "e20cdfc05133a11379faba15e97db0fb6555ebff",
+  "sibling_names_unchanged": true,
+  "server_released": false,
+  "changes_scientific_verdict": false,
+  "local_predelete_verification": "predelete_local_verification.json",
+  "remote_predelete_inventory": "predelete_remote_inventory.json",
+  "verified_local_files": 73,
+  "verified_local_bytes": 76708246880,
+  "authorization": "User explicitly authorized deletion after confirming archival completeness."
+}

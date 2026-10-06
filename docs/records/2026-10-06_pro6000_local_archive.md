@@ -102,5 +102,26 @@ GitHub `main` 的最终提交号核对回执位于被 Git 忽略的
 `outputs/retirement-20261006/git_sync.json`（仅在三端一致后生成）。根目录入口说明的
 本次快照另保存在 `pro6000_archive_20261006/local_root_AGENTS.md`。
 
-没有释放服务器或删除服务器原项目、数据、权重。本记录确认本次范围内文件保存完成，
+初次归档完成时没有释放服务器或删除服务器原项目、数据、权重。本记录确认本次范围内文件保存完成，
 不确认其他项目的释放条件，也不改变任何科学结论：`changes_scientific_verdict=false`。
+
+## 用户授权后的服务器目录删除
+
+2026-10-06 10:43:40（Asia/Shanghai），按用户“归档确认完成后删除”的明确授权，
+删除了 `pro6000:/root/autodl-tmp/FieldScope`，并确认目录不存在。同级目录名称列表
+保持一致；未释放服务器，也未删除其他项目或共享 CoFiTok raw 来源。
+
+删除前重新完整读取并计算本地 73 个文件的 SHA-256，共 76,708,246,880 字节，全部与
+归档清单一致，包括五个核心数据集、共享 HF ImageNet 的 45 个 Parquet 分片及 README、
+18 个模型源文件、实验整包和两份来源档案。GitHub `main` 与源服务器 HEAD 均为
+`e20cdfc05133a11379faba15e97db0fb6555ebff`，源工作区干净。
+
+远端 4,420 个实验归档条目按路径、文件大小、mtime 和符号链接目标核对无变化，
+没有发现新增实验文件或归档后的数据/权重修改。删除执行前再次确认精确真实路径、
+没有目录内挂载点、没有引用目录的进程及源代码无未提交改动。
+
+审计文件位于 `artifacts/reports/pro6000_retirement_20261006/`：
+`predelete_local_verification.json`、`predelete_remote_inventory.json` 与
+`server_deletion_receipt.json`。原三端 Git 同步回执是删除前的历史快照；服务器代码目录
+已经不存在，后续提交只同步本地与 GitHub。本地临时目录的历史清理阻塞未在本次重试，
+与远端删除是独立事项。科学结论不变。
